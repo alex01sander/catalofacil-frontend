@@ -81,13 +81,14 @@ const ProductGrid = ({ searchTerm, selectedCategory }: ProductGridProps) => {
 
   return (
     <>
-      <section id="produtos" className="py-16 px-4">
+      <section id="produtos" className="py-8 md:py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Nossos Produtos
+          {/* Mobile-first title */}
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
+              PRODUTOS EM DESTAQUE
             </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 text-sm md:text-lg max-w-2xl mx-auto">
               Descubra nossa seleção cuidadosa de produtos de alta qualidade
             </p>
           </div>
@@ -99,7 +100,8 @@ const ProductGrid = ({ searchTerm, selectedCategory }: ProductGridProps) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            /* Mobile: 2 columns, Desktop: 3-4 columns */
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
