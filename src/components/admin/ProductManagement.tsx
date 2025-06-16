@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProductForm from "./ProductForm";
 
@@ -24,6 +23,7 @@ const ProductManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   
   // Dados de exemplo dos produtos
   const [products, setProducts] = useState<Product[]>([
@@ -86,7 +86,6 @@ const ProductManagement = () => {
 
   const handleFormSubmit = (productData: Omit<Product, 'id'>) => {
     if (editingProduct) {
-      // Editando produto existente
       setProducts(prev => prev.map(product => 
         product.id === editingProduct.id 
           ? { ...productData, id: editingProduct.id }
@@ -97,7 +96,6 @@ const ProductManagement = () => {
         description: "Produto atualizado com sucesso!",
       });
     } else {
-      // Adicionando novo produto
       const newProduct = {
         ...productData,
         id: Math.max(...products.map(p => p.id)) + 1
@@ -131,12 +129,21 @@ const ProductManagement = () => {
     });
   };
 
+  const confirmDelete = (productId: number) => {
+    setShowDeleteConfirm(productId);
+  };
+
   const deleteProduct = (productId: number) => {
     setProducts(prev => prev.filter(product => product.id !== productId));
+    setShowDeleteConfirm(null);
     toast({
       title: "Produto removido",
       description: "Produto removido com sucesso!",
     });
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(null);
   };
 
   if (showForm) {
@@ -167,7 +174,6 @@ const ProductManagement = () => {
         </Button>
       </div>
 
-      {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
@@ -178,7 +184,6 @@ const ProductManagement = () => {
         />
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -268,34 +273,54 @@ const ProductManagement = () => {
                       </Badge>
                     </td>
                     <td className="p-3">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleProductStatus(product.id)}
-                        >
-                          {product.isActive ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditProduct(product)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteProduct(product.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {showDeleteConfirm === product.id ? (
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteProduct(product.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={cancelDelete}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleProductStatus(product.id)}
+                          >
+                            {product.isActive ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => confirmDelete(product.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

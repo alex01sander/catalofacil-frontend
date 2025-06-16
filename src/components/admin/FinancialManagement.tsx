@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +6,23 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import SaleForm from "./SaleForm";
+
+interface Sale {
+  id: number;
+  product: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  date: string;
+  status: string;
+}
 
 const FinancialManagement = () => {
   const { toast } = useToast();
+  const [showSaleForm, setShowSaleForm] = useState(false);
   
-  // Dados de exemplo
-  const [sales, setSales] = useState([
+  const [sales, setSales] = useState<Sale[]>([
     {
       id: 1,
       product: "Smartphone Galaxy Pro",
@@ -62,12 +72,39 @@ const FinancialManagement = () => {
   const totalSales = sales.length;
   const averageTicket = totalRevenue / totalSales;
 
-  const addSale = () => {
+  const handleAddSale = () => {
+    setShowSaleForm(true);
+  };
+
+  const handleSaleSubmit = (saleData: Omit<Sale, 'id'>) => {
+    const newSale = {
+      ...saleData,
+      id: Math.max(...sales.map(s => s.id)) + 1
+    };
+    
+    setSales(prev => [newSale, ...prev]);
+    setShowSaleForm(false);
+    
     toast({
       title: "Venda registrada",
       description: "Nova venda adicionada com sucesso!",
     });
   };
+
+  const handleSaleCancel = () => {
+    setShowSaleForm(false);
+  };
+
+  if (showSaleForm) {
+    return (
+      <div className="space-y-6">
+        <SaleForm
+          onSubmit={handleSaleSubmit}
+          onCancel={handleSaleCancel}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -76,13 +113,12 @@ const FinancialManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
           <p className="text-gray-600">Controle suas vendas e receitas</p>
         </div>
-        <Button onClick={addSale} className="bg-purple-600 hover:bg-purple-700">
+        <Button onClick={handleAddSale} className="bg-purple-600 hover:bg-purple-700">
           <Plus className="h-4 w-4 mr-2" />
           Registrar Venda
         </Button>
       </div>
 
-      {/* Financial Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
@@ -163,9 +199,7 @@ const FinancialManagement = () => {
         </Card>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Vendas e Lucro Mensal</CardTitle>
@@ -189,7 +223,6 @@ const FinancialManagement = () => {
           </CardContent>
         </Card>
 
-        {/* Growth Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Crescimento de Vendas</CardTitle>
@@ -214,7 +247,6 @@ const FinancialManagement = () => {
         </Card>
       </div>
 
-      {/* Top Products */}
       <Card>
         <CardHeader>
           <CardTitle>Produtos Mais Vendidos</CardTitle>
@@ -244,7 +276,6 @@ const FinancialManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Sales */}
       <Card>
         <CardHeader>
           <CardTitle>Vendas Recentes</CardTitle>

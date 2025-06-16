@@ -1,16 +1,22 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Tag } from "lucide-react";
+import { Plus, Edit, Trash2, Tag, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface Category {
+  id: number;
+  name: string;
+  productCount: number;
+  color: string;
+}
 
 const CategoryManagement = () => {
   const { toast } = useToast();
   
-  const [categories, setCategories] = useState([
+  const [categories, setCategories] = useState<Category[]>([
     { id: 1, name: "Eletrônicos", productCount: 12, color: "#8B5CF6" },
     { id: 2, name: "Roupas", productCount: 25, color: "#06D6A0" },
     { id: 3, name: "Casa", productCount: 8, color: "#F59E0B" },
@@ -19,6 +25,9 @@ const CategoryManagement = () => {
   ]);
 
   const [newCategory, setNewCategory] = useState("");
+  const [editingCategory, setEditingCategory] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   const addCategory = () => {
     if (newCategory.trim()) {
@@ -40,12 +49,48 @@ const CategoryManagement = () => {
     }
   };
 
+  const startEditing = (category: Category) => {
+    setEditingCategory(category.id);
+    setEditingName(category.name);
+  };
+
+  const saveEdit = () => {
+    if (editingName.trim()) {
+      setCategories(prev => prev.map(cat => 
+        cat.id === editingCategory 
+          ? { ...cat, name: editingName.trim() }
+          : cat
+      ));
+      
+      toast({
+        title: "Categoria atualizada",
+        description: "Nome da categoria atualizado com sucesso!",
+      });
+    }
+    setEditingCategory(null);
+    setEditingName("");
+  };
+
+  const cancelEdit = () => {
+    setEditingCategory(null);
+    setEditingName("");
+  };
+
+  const confirmDelete = (categoryId: number) => {
+    setDeleteConfirm(categoryId);
+  };
+
   const deleteCategory = (categoryId: number) => {
     setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+    setDeleteConfirm(null);
     toast({
       title: "Categoria removida",
       description: "Categoria removida com sucesso!",
     });
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
   };
 
   return (
@@ -118,25 +163,66 @@ const CategoryManagement = () => {
           <Card key={category.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 flex-1">
                   <div 
                     className="w-4 h-4 rounded-full"
                     style={{ backgroundColor: category.color }}
                   ></div>
-                  <h3 className="text-lg font-semibold">{category.name}</h3>
+                  {editingCategory === category.id ? (
+                    <Input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && saveEdit()}
+                      className="text-lg font-semibold"
+                      autoFocus
+                    />
+                  ) : (
+                    <h3 className="text-lg font-semibold">{category.name}</h3>
+                  )}
                 </div>
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteCategory(category.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {editingCategory === category.id ? (
+                    <>
+                      <Button variant="outline" size="sm" onClick={saveEdit}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={cancelEdit}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : deleteConfirm === category.id ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteCategory(category.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={cancelDelete}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => startEditing(category)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => confirmDelete(category.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
               
@@ -195,7 +281,17 @@ const CategoryManagement = () => {
                           className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: category.color }}
                         ></div>
-                        <span className="font-medium">{category.name}</span>
+                        {editingCategory === category.id ? (
+                          <Input
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && saveEdit()}
+                            className="font-medium"
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="font-medium">{category.name}</span>
+                        )}
                       </div>
                     </td>
                     <td className="p-3">
@@ -209,19 +305,48 @@ const CategoryManagement = () => {
                       </span>
                     </td>
                     <td className="p-3">
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteCategory(category.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {editingCategory === category.id ? (
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm" onClick={saveEdit}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={cancelEdit}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : deleteConfirm === category.id ? (
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteCategory(category.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={cancelDelete}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => startEditing(category)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => confirmDelete(category.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
