@@ -6,17 +6,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ProductForm from "./ProductForm";
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+  stock: number;
+  isActive: boolean;
+  image: string;
+}
 
 const ProductManagement = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   // Dados de exemplo dos produtos
-  const [products, setProducts] = useState([
+  const [products, setProducts] = useState<Product[]>([
     {
       id: 1,
       name: "Smartphone Galaxy Pro",
       price: 1299.99,
+      description: "Smartphone premium com câmera profissional",
       category: "Eletrônicos",
       stock: 15,
       isActive: true,
@@ -26,6 +41,7 @@ const ProductManagement = () => {
       id: 2,
       name: "Camiseta Premium Cotton",
       price: 89.90,
+      description: "Camiseta 100% algodão premium",
       category: "Roupas",
       stock: 25,
       isActive: true,
@@ -35,6 +51,7 @@ const ProductManagement = () => {
       id: 3,
       name: "Sofá Moderno 3 Lugares",
       price: 2499.99,
+      description: "Sofá confortável para sala de estar",
       category: "Casa",
       stock: 8,
       isActive: false,
@@ -44,6 +61,7 @@ const ProductManagement = () => {
       id: 4,
       name: "Kit Skincare Completo",
       price: 149.90,
+      description: "Kit completo para cuidados com a pele",
       category: "Beleza",
       stock: 2,
       isActive: true,
@@ -55,6 +73,49 @@ const ProductManagement = () => {
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setShowForm(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setShowForm(true);
+  };
+
+  const handleFormSubmit = (productData: Omit<Product, 'id'>) => {
+    if (editingProduct) {
+      // Editando produto existente
+      setProducts(prev => prev.map(product => 
+        product.id === editingProduct.id 
+          ? { ...productData, id: editingProduct.id }
+          : product
+      ));
+      toast({
+        title: "Produto atualizado",
+        description: "Produto atualizado com sucesso!",
+      });
+    } else {
+      // Adicionando novo produto
+      const newProduct = {
+        ...productData,
+        id: Math.max(...products.map(p => p.id)) + 1
+      };
+      setProducts(prev => [...prev, newProduct]);
+      toast({
+        title: "Produto criado",
+        description: "Novo produto adicionado com sucesso!",
+      });
+    }
+    setShowForm(false);
+    setEditingProduct(null);
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingProduct(null);
+  };
 
   const toggleProductStatus = (productId: number) => {
     setProducts(prev => prev.map(product => 
@@ -78,6 +139,18 @@ const ProductManagement = () => {
     });
   };
 
+  if (showForm) {
+    return (
+      <div className="space-y-6">
+        <ProductForm
+          product={editingProduct || undefined}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -85,7 +158,10 @@ const ProductManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
           <p className="text-gray-600">Gerencie seu catálogo de produtos</p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700">
+        <Button 
+          className="bg-purple-600 hover:bg-purple-700"
+          onClick={handleAddProduct}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Novo Produto
         </Button>
@@ -204,7 +280,11 @@ const ProductManagement = () => {
                             <Eye className="h-4 w-4" />
                           )}
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
