@@ -27,13 +27,41 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
   const [quantity, setQuantity] = useState(1);
 
   const handleWhatsAppClick = () => {
-    const message = `Olá! Tenho interesse no produto: *${product.name}* - R$ ${product.price.toFixed(2).replace('.', ',')}
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+    const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const orderNumber = Math.floor(Math.random() * 10000);
+    const subtotal = product.price * quantity;
     
-Quantidade: ${quantity}
-Total: R$ ${(product.price * quantity).toFixed(2).replace('.', ',')}
+    const message = `🛍️ *Novo Pedido*
 
-Gostaria de saber mais detalhes sobre este produto.`;
-    
+📋 *Detalhes do Pedido:*
+• Produto: ${product.name}
+• Preço Unitário: R$ ${product.price.toFixed(2).replace('.', ',')}
+• Quantidade: ${quantity}
+• Categoria: ${product.category}
+• Descrição: ${product.description}
+
+💰 *Resumo Financeiro:*
+• Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}
+• Taxa de Entrega: A combinar
+• Pagamento: A combinar
+• *Total: R$ ${subtotal.toFixed(2).replace('.', ',')}*
+
+📅 Data: ${currentDate}
+⏰ Horário: ${currentTime}
+📝 Pedido: #${orderNumber}
+
+📍 *Endereço para entrega:*
+(Aguardando informação do cliente)
+
+🎯 *Próximos Passos:*
+Por favor, me informe:
+• Seu endereço completo para entrega
+• Forma de pagamento (PIX, Cartão, Dinheiro)
+• Observações especiais ou preferências
+
+Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
+
     window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -149,7 +177,7 @@ Gostaria de saber mais detalhes sobre este produto.`;
                 onClick={handleWhatsAppClick}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                Comprar pelo WhatsApp
+                Fazer Pedido pelo WhatsApp
               </Button>
               
               <Button

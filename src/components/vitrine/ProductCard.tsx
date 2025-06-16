@@ -21,7 +21,33 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
   const handleWhatsAppClick = () => {
-    const message = `Olá! Tenho interesse no produto: *${product.name}* - R$ ${product.price.toFixed(2).replace('.', ',')}`;
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+    const orderNumber = Math.floor(Math.random() * 10000);
+    
+    const message = `🛍️ *Novo Pedido*
+
+📋 *Detalhes do Pedido:*
+• Produto: ${product.name}
+• Preço: R$ ${product.price.toFixed(2).replace('.', ',')}
+• Quantidade: 1
+• Categoria: ${product.category}
+
+💰 *Resumo Financeiro:*
+• Subtotal: R$ ${product.price.toFixed(2).replace('.', ',')}
+• Taxa de Entrega: A combinar
+• Total: R$ ${product.price.toFixed(2).replace('.', ',')}
+
+📅 Data do Pedido: ${currentDate}
+📝 Número do Pedido: #${orderNumber}
+
+📍 *Próximos Passos:*
+Por favor, me informe:
+• Endereço para entrega
+• Forma de pagamento preferida
+• Observações especiais
+
+Obrigado pela preferência! 😊`;
+
     window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
   };
 
