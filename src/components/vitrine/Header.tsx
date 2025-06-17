@@ -23,10 +23,11 @@ const Header = () => {
 
           {/* Logo - Centered on mobile */}
           <Link to="/" className="flex items-center space-x-2 flex-1 md:flex-none justify-center md:justify-start">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">Minha Loja</span>
+            <img 
+              src="/lovable-uploads/4e76fa9e-adfb-440b-a373-b991de11248f.png" 
+              alt="LinkStore Logo" 
+              className="h-8 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}

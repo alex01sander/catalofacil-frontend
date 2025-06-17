@@ -57,12 +57,14 @@ const AdminSidebar = ({ currentView, onViewChange }: AdminSidebarProps) => {
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="p-6">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg flex items-center justify-center">
-            <Store className="h-5 w-5 text-white" />
-          </div>
+          <img 
+            src="/lovable-uploads/4e76fa9e-adfb-440b-a373-b991de11248f.png" 
+            alt="LinkStore Logo" 
+            className="h-8 w-auto"
+          />
           <div>
             <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
-            <p className="text-sm text-gray-500">Minha Loja</p>
+            <p className="text-sm text-gray-500">LinkStore</p>
           </div>
         </div>
       </SidebarHeader>
