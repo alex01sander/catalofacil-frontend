@@ -1,7 +1,10 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Package, ShoppingCart, DollarSign } from "lucide-react";
+import { TrendingUp, Package, ShoppingCart, DollarSign, Calculator } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const AdminDashboard = () => {
   // Dados de exemplo para os gráficos
@@ -52,6 +55,41 @@ const AdminDashboard = () => {
     },
   ];
 
+  // Estado para simulação de preço
+  const [priceSimulation, setPriceSimulation] = useState({
+    cost: 0,
+    margin: 30,
+    taxes: 10,
+    expenses: 5,
+    currentPrice: 0
+  });
+
+  const [suggestedPrice, setSuggestedPrice] = useState(0);
+  const [profitAmount, setProfitAmount] = useState(0);
+
+  const calculatePrice = () => {
+    const { cost, margin, taxes, expenses } = priceSimulation;
+    
+    // Calcula o preço base com margem
+    const basePrice = cost / (1 - (margin / 100));
+    
+    // Adiciona impostos e despesas
+    const finalPrice = basePrice * (1 + (taxes / 100) + (expenses / 100));
+    
+    // Calcula o lucro líquido
+    const profit = finalPrice - cost - (finalPrice * (taxes / 100)) - (finalPrice * (expenses / 100));
+    
+    setSuggestedPrice(finalPrice);
+    setProfitAmount(profit);
+  };
+
+  const handleSimulationChange = (field: string, value: number) => {
+    setPriceSimulation(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -78,6 +116,172 @@ const AdminDashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Simulação de Preço */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calculator className="h-5 w-5 text-purple-600" />
+            Simulação de Preço
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Inputs de Simulação */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="cost">Custo do Produto (R$)</Label>
+                  <Input
+                    id="cost"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={priceSimulation.cost}
+                    onChange={(e) => handleSimulationChange('cost', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="margin">Margem Desejada (%)</Label>
+                  <Input
+                    id="margin"
+                    type="number"
+                    placeholder="30"
+                    value={priceSimulation.margin}
+                    onChange={(e) => handleSimulationChange('margin', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="taxes">Impostos (%)</Label>
+                  <Input
+                    id="taxes"
+                    type="number"
+                    placeholder="10"
+                    value={priceSimulation.taxes}
+                    onChange={(e) => handleSimulationChange('taxes', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="expenses">Despesas Operacionais (%)</Label>
+                  <Input
+                    id="expenses"
+                    type="number"
+                    placeholder="5"
+                    value={priceSimulation.expenses}
+                    onChange={(e) => handleSimulationChange('expenses', parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="currentPrice">Preço Atual no Mercado (R$)</Label>
+                <Input
+                  id="currentPrice"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={priceSimulation.currentPrice}
+                  onChange={(e) => handleSimulationChange('currentPrice', parseFloat(e.target.value) || 0)}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Preço de referência da concorrência
+                </p>
+              </div>
+
+              <Button 
+                onClick={calculatePrice} 
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                <Calculator className="h-4 w-4 mr-2" />
+                Calcular Preço Sugerido
+              </Button>
+            </div>
+
+            {/* Resultados */}
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3">Resultados da Simulação</h4>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-white rounded border">
+                    <span className="text-sm text-gray-600">Preço Sugerido:</span>
+                    <span className="font-bold text-lg text-green-600">
+                      R$ {suggestedPrice.toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center p-3 bg-white rounded border">
+                    <span className="text-sm text-gray-600">Lucro Líquido:</span>
+                    <span className="font-bold text-purple-600">
+                      R$ {profitAmount.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {priceSimulation.currentPrice > 0 && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded border">
+                      <span className="text-sm text-gray-600">Preço Atual:</span>
+                      <span className="font-bold text-blue-600">
+                        R$ {priceSimulation.currentPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+
+                  {suggestedPrice > 0 && priceSimulation.currentPrice > 0 && (
+                    <div className="p-3 bg-white rounded border">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600">Comparação:</span>
+                        <span className={`font-bold ${
+                          suggestedPrice > priceSimulation.currentPrice 
+                            ? 'text-red-600' 
+                            : 'text-green-600'
+                        }`}>
+                          {suggestedPrice > priceSimulation.currentPrice ? '+' : ''}
+                          R$ {(suggestedPrice - priceSimulation.currentPrice).toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {suggestedPrice > priceSimulation.currentPrice 
+                          ? 'Preço sugerido acima do mercado' 
+                          : 'Preço sugerido competitivo'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Breakdown de custos */}
+              {suggestedPrice > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h5 className="font-medium text-blue-900 mb-2">Breakdown de Custos</h5>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Custo do produto:</span>
+                      <span>R$ {priceSimulation.cost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Impostos ({priceSimulation.taxes}%):</span>
+                      <span>R$ {(suggestedPrice * (priceSimulation.taxes / 100)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Despesas ({priceSimulation.expenses}%):</span>
+                      <span>R$ {(suggestedPrice * (priceSimulation.expenses / 100)).toFixed(2)}</span>
+                    </div>
+                    <div className="border-t pt-1 flex justify-between font-medium">
+                      <span>Margem de lucro:</span>
+                      <span className="text-green-600">
+                        {((profitAmount / suggestedPrice) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
