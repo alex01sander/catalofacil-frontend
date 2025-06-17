@@ -14,7 +14,7 @@ const Header = () => {
 
           {/* Logo - Centered on mobile */}
           <Link to="/" className="flex items-center space-x-2 flex-1 md:flex-none justify-center md:justify-start">
-            <img alt="LinkStore Logo" className="h-8 w-auto" src="/lovable-uploads/2228c2c3-7b60-4e42-9005-0ba45f48d8ac.png" />
+            
           </Link>
 
           {/* Desktop Navigation */}
