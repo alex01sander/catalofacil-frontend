@@ -30,7 +30,7 @@ const HeroBanner = () => {
               <ArrowDown className="ml-2 h-5 w-5" />
             </Button>
             
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-purple-700 px-8 py-3 text-lg" onClick={() => window.open('https://wa.me/5511999999999?text=Olá! Gostaria de saber mais sobre os produtos.', '_blank')}>
+            <Button variant="outline" size="lg" onClick={() => window.open('https://wa.me/5511999999999?text=Olá! Gostaria de saber mais sobre os produtos.', '_blank')} className="border-white text-purple-700 hover:bg-white hover:text-purple-700 px-8 py-3 text-lg">
               Falar no WhatsApp
             </Button>
           </div>
