@@ -1,33 +1,20 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Menu, X, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+  return <header className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
+          <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
 
           {/* Logo - Centered on mobile */}
           <Link to="/" className="flex items-center space-x-2 flex-1 md:flex-none justify-center md:justify-start">
-            <img 
-              src="/lovable-uploads/4e76fa9e-adfb-440b-a373-b991de11248f.png" 
-              alt="LinkStore Logo" 
-              className="h-8 w-auto"
-            />
+            <img alt="LinkStore Logo" className="h-8 w-auto" src="/lovable-uploads/2228c2c3-7b60-4e42-9005-0ba45f48d8ac.png" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -54,10 +41,7 @@ const Header = () => {
                 Admin
               </Link>
             </Button>
-            <Button
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-              onClick={() => window.open('https://wa.me/5511999999999?text=Olá! Vi seus produtos no catálogo e gostaria de saber mais.', '_blank')}
-            >
+            <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800" onClick={() => window.open('https://wa.me/5511999999999?text=Olá! Vi seus produtos no catálogo e gostaria de saber mais.', '_blank')}>
               <ShoppingCart className="h-4 w-4 mr-2" />
               WhatsApp
             </Button>
@@ -72,8 +56,7 @@ const Header = () => {
         </div>
 
         {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t">
+        {isMobileMenuOpen && <div className="md:hidden py-4 border-t">
             <nav className="space-y-2">
               <Link to="/" className="block px-3 py-2 text-gray-600 hover:text-purple-600 transition-colors">
                 Início
@@ -88,11 +71,8 @@ const Header = () => {
                 Contato
               </Link>
             </nav>
-          </div>
-        )}
+          </div>}
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Header;
