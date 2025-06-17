@@ -4,7 +4,15 @@ import { ArrowDown } from "lucide-react";
 
 const HeroBanner = () => {
   return (
-    <section className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white">
+    <section className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white overflow-hidden">
+      {/* Background image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+        style={{
+          backgroundImage: "url('/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png')"
+        }}
+      ></div>
+      
       <div className="absolute inset-0 bg-black/20"></div>
       
       <div className="relative max-w-6xl mx-auto px-4 py-20">
