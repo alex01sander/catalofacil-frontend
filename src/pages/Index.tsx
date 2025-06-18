@@ -13,6 +13,34 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
 
+  const categories = [
+    {
+      id: "todos",
+      name: "Todos",
+      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"
+    },
+    {
+      id: "eletrônicos", 
+      name: "Eletrônicos",
+      image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=80&h=80&fit=crop&crop=center"
+    },
+    {
+      id: "roupas",
+      name: "Roupas", 
+      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=80&h=80&fit=crop&crop=center"
+    },
+    {
+      id: "casa",
+      name: "Casa",
+      image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=80&h=80&fit=crop&crop=center"
+    },
+    {
+      id: "beleza",
+      name: "Beleza",
+      image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=80&h=80&fit=crop&crop=center"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -66,47 +94,81 @@ const Index = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <h3 className="font-semibold text-gray-900">Categorias</h3>
-              <div className="flex gap-2 flex-wrap">
-                {["todos", "eletrônicos", "roupas", "casa", "beleza"].map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category)}
-                    className="capitalize text-xs"
+            {/* Visual Category Selector */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-900 text-center">Categorias</h3>
+              <div className="flex justify-center gap-4 overflow-x-auto pb-2">
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex flex-col items-center min-w-[70px] cursor-pointer"
+                    onClick={() => setSelectedCategory(category.id)}
                   >
-                    {category}
-                  </Button>
+                    <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 ${
+                      selectedCategory === category.id 
+                        ? 'border-purple-500 shadow-lg scale-105' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <img 
+                        src={category.image} 
+                        alt={category.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className={`text-xs mt-2 font-medium transition-colors ${
+                      selectedCategory === category.id 
+                        ? 'text-purple-600' 
+                        : 'text-gray-600'
+                    }`}>
+                      {category.name}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
 
           {/* Desktop Layout */}
-          <div className="hidden md:flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Buscar produtos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="hidden md:flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar produtos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
             
-            <div className="flex gap-2 flex-wrap">
-              {["todos", "eletrônicos", "roupas", "casa", "beleza"].map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="capitalize"
+            {/* Desktop Visual Categories */}
+            <div className="flex justify-center gap-8">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex flex-col items-center cursor-pointer group"
+                  onClick={() => setSelectedCategory(category.id)}
                 >
-                  {category}
-                </Button>
+                  <div className={`w-20 h-20 rounded-full overflow-hidden border-3 transition-all duration-200 ${
+                    selectedCategory === category.id 
+                      ? 'border-purple-500 shadow-lg scale-105' 
+                      : 'border-gray-200 group-hover:border-gray-300 group-hover:scale-105'
+                  }`}>
+                    <img 
+                      src={category.image} 
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className={`text-sm mt-3 font-medium transition-colors ${
+                    selectedCategory === category.id 
+                      ? 'text-purple-600' 
+                      : 'text-gray-700 group-hover:text-gray-900'
+                  }`}>
+                    {category.name}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
