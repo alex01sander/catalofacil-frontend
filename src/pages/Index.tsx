@@ -17,18 +17,30 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Header />
       
-      {/* Mobile-first Hero Banner - shorter on mobile */}
+      {/* Mobile-first Hero Banner - formato igual à imagem */}
       <div className="block md:hidden">
-        <section className="bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white py-12 px-4">
+        <section className="bg-white py-8 px-4">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-3">
-              Produtos Incríveis,
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-                Preços Imbatíveis
-              </span>
+            {/* Logo centralizada em um círculo */}
+            <div className="flex justify-center mb-4">
+              <div className="w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center">
+                <img 
+                  src="/lovable-uploads/4e76fa9e-adfb-440b-a373-b991de11248f.png" 
+                  alt="LinkStore Logo" 
+                  className="w-12 h-12"
+                />
+              </div>
+            </div>
+            
+            {/* Nome da loja */}
+            <h1 className="text-xl font-bold text-gray-900 mb-2">
+              LinkStore
             </h1>
-            <p className="text-sm mb-6 text-purple-100">
-              SURPREENDA-SE! Faça seu pedido através do nosso catálogo virtual.
+            
+            {/* Descrição do negócio */}
+            <p className="text-sm text-gray-600 mb-6 px-4">
+              Produtos incríveis com os melhores preços do mercado.<br />
+              Entregas rápidas e atendimento personalizado.
             </p>
           </div>
         </section>
