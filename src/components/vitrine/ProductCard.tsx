@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Plus } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 interface Product {
   id: number;
@@ -20,35 +21,10 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
-  const handleWhatsAppClick = () => {
-    const currentDate = new Date().toLocaleDateString('pt-BR');
-    const orderNumber = Math.floor(Math.random() * 10000);
-    
-    const message = `🛍️ *Novo Pedido*
+  const { addToCart } = useCart();
 
-📋 *Detalhes do Pedido:*
-• Produto: ${product.name}
-• Preço: R$ ${product.price.toFixed(2).replace('.', ',')}
-• Quantidade: 1
-• Categoria: ${product.category}
-
-💰 *Resumo Financeiro:*
-• Subtotal: R$ ${product.price.toFixed(2).replace('.', ',')}
-• Taxa de Entrega: A combinar
-• Total: R$ ${product.price.toFixed(2).replace('.', ',')}
-
-📅 Data do Pedido: ${currentDate}
-📝 Número do Pedido: #${orderNumber}
-
-📍 *Próximos Passos:*
-Por favor, me informe:
-• Endereço para entrega
-• Forma de pagamento preferida
-• Observações especiais
-
-Obrigado pela preferência! 😊`;
-
-    window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
+  const handleAddToCart = () => {
+    addToCart(product);
   };
 
   return (
@@ -96,9 +72,10 @@ Obrigado pela preferência! 😊`;
           </Button>
           <Button
             size="sm"
-            onClick={handleWhatsAppClick}
-            className="w-full md:flex-1 bg-green-600 hover:bg-green-700 text-xs md:text-sm h-8 md:h-9"
+            onClick={handleAddToCart}
+            className="w-full md:flex-1 bg-purple-600 hover:bg-purple-700 text-xs md:text-sm h-8 md:h-9"
           >
+            <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
             Comprar
           </Button>
         </div>
