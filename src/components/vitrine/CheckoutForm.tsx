@@ -71,8 +71,8 @@ Obrigado pela preferência! 😊`;
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="p-4 max-w-2xl mx-auto space-y-4">
+      <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -81,19 +81,22 @@ Obrigado pela preferência! 😊`;
 
       {/* Resumo do Pedido */}
       <Card>
-        <CardHeader>
-          <CardTitle>Resumo do Pedido</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Resumo do Pedido</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="flex justify-between items-center py-2">
-              <span className="text-sm">{item.name} (x{item.quantity})</span>
-              <span className="font-semibold">
+            <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+              <div className="flex-1">
+                <span className="text-sm font-medium">{item.name}</span>
+                <span className="text-xs text-gray-500 ml-2">(x{item.quantity})</span>
+              </div>
+              <span className="font-semibold text-sm">
                 R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
               </span>
             </div>
           ))}
-          <div className="border-t pt-2 mt-2">
+          <div className="pt-3 border-t">
             <div className="flex justify-between items-center font-bold text-lg">
               <span>Total:</span>
               <span className="text-purple-600">
@@ -106,26 +109,28 @@ Obrigado pela preferência! 😊`;
 
       {/* Dados Pessoais */}
       <Card>
-        <CardHeader>
-          <CardTitle>Dados Pessoais</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Dados Pessoais</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nome Completo *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-sm font-medium">Nome Completo *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Seu nome completo"
+              className="h-11"
             />
           </div>
-          <div>
-            <Label htmlFor="phone">Telefone *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-sm font-medium">Telefone *</Label>
             <Input
               id="phone"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="(11) 99999-9999"
+              className="h-11"
             />
           </div>
         </CardContent>
@@ -133,32 +138,34 @@ Obrigado pela preferência! 😊`;
 
       {/* Forma de Entrega */}
       <Card>
-        <CardHeader>
-          <CardTitle>Forma de Entrega</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Forma de Entrega</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <RadioGroup 
             value={formData.deliveryMethod} 
             onValueChange={(value) => handleInputChange('deliveryMethod', value)}
+            className="space-y-3"
           >
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg">
               <RadioGroupItem value="delivery" id="delivery" />
-              <Label htmlFor="delivery">Entrega</Label>
+              <Label htmlFor="delivery" className="font-medium">Entrega</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg">
               <RadioGroupItem value="pickup" id="pickup" />
-              <Label htmlFor="pickup">Retirada no Local</Label>
+              <Label htmlFor="pickup" className="font-medium">Retirada no Local</Label>
             </div>
           </RadioGroup>
           
           {formData.deliveryMethod === 'delivery' && (
-            <div className="mt-4">
-              <Label htmlFor="address">Endereço Completo *</Label>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="address" className="text-sm font-medium">Endereço Completo *</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
                 placeholder="Rua, número, bairro, cidade, CEP"
+                className="h-11"
               />
             </div>
           )}
@@ -167,35 +174,36 @@ Obrigado pela preferência! 😊`;
 
       {/* Forma de Pagamento */}
       <Card>
-        <CardHeader>
-          <CardTitle>Forma de Pagamento</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Forma de Pagamento</CardTitle>
         </CardHeader>
         <CardContent>
           <RadioGroup 
             value={formData.paymentMethod} 
             onValueChange={(value) => handleInputChange('paymentMethod', value)}
+            className="space-y-3"
           >
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg">
               <RadioGroupItem value="pix" id="pix" />
-              <Label htmlFor="pix">PIX</Label>
+              <Label htmlFor="pix" className="font-medium">PIX</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg">
               <RadioGroupItem value="money" id="money" />
-              <Label htmlFor="money">Dinheiro</Label>
+              <Label htmlFor="money" className="font-medium">Dinheiro</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg">
               <RadioGroupItem value="credit" id="credit" />
-              <Label htmlFor="credit">Cartão de Crédito</Label>
+              <Label htmlFor="credit" className="font-medium">Cartão de Crédito</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-3 border rounded-lg">
               <RadioGroupItem value="debit" id="debit" />
-              <Label htmlFor="debit">Cartão de Débito</Label>
+              <Label htmlFor="debit" className="font-medium">Cartão de Débito</Label>
             </div>
           </RadioGroup>
         </CardContent>
       </Card>
 
-      <Button className="w-full" onClick={handleSubmit}>
+      <Button className="w-full h-12 text-base font-semibold" onClick={handleSubmit}>
         Confirmar Pedido
       </Button>
     </div>
