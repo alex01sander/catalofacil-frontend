@@ -94,36 +94,38 @@ const Index = () => {
               />
             </div>
             
-            {/* Visual Category Selector */}
+            {/* Visual Category Selector - Mobile ajustado */}
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-900 text-center">Categorias</h3>
-              <div className="flex justify-center gap-4 overflow-x-auto pb-2">
-                {categories.map((category) => (
-                  <div
-                    key={category.id}
-                    className="flex flex-col items-center min-w-[70px] cursor-pointer"
-                    onClick={() => setSelectedCategory(category.id)}
-                  >
-                    <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 ${
-                      selectedCategory === category.id 
-                        ? 'border-purple-500 shadow-lg scale-105' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}>
-                      <img 
-                        src={category.image} 
-                        alt={category.name}
-                        className="w-full h-full object-cover"
-                      />
+              <div className="overflow-x-auto">
+                <div className="flex gap-3 px-2 pb-2" style={{ minWidth: 'max-content' }}>
+                  {categories.map((category) => (
+                    <div
+                      key={category.id}
+                      className="flex flex-col items-center cursor-pointer flex-shrink-0"
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 ${
+                        selectedCategory === category.id 
+                          ? 'border-purple-500 shadow-lg scale-105' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                        <img 
+                          src={category.image} 
+                          alt={category.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <span className={`text-xs mt-2 font-medium transition-colors text-center whitespace-nowrap ${
+                        selectedCategory === category.id 
+                          ? 'text-purple-600' 
+                          : 'text-gray-600'
+                      }`}>
+                        {category.name}
+                      </span>
                     </div>
-                    <span className={`text-xs mt-2 font-medium transition-colors ${
-                      selectedCategory === category.id 
-                        ? 'text-purple-600' 
-                        : 'text-gray-600'
-                    }`}>
-                      {category.name}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
