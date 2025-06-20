@@ -31,7 +31,7 @@ const AdminSidebar = ({ currentView, onViewChange }: AdminSidebarProps) => {
     view: "financial" as AdminView
   }];
 
-  const SidebarContent = () => (
+  const SidebarContentComponent = () => (
     <>
       <SidebarHeader className="p-6">
         <div className="flex items-center space-x-2">
@@ -96,7 +96,7 @@ const AdminSidebar = ({ currentView, onViewChange }: AdminSidebarProps) => {
             </SheetTrigger>
             <SheetContent side="left" className="w-80 p-0">
               <div className="flex h-full w-full flex-col bg-white">
-                <SidebarContent />
+                <SidebarContentComponent />
               </div>
             </SheetContent>
           </Sheet>
@@ -125,7 +125,7 @@ const AdminSidebar = ({ currentView, onViewChange }: AdminSidebarProps) => {
 
       {/* Desktop Sidebar */}
       <Sidebar className="hidden md:flex border-r border-gray-200">
-        <SidebarContent />
+        <SidebarContentComponent />
       </Sidebar>
     </>
   );
