@@ -247,12 +247,46 @@ const FinancialManagement = () => {
         </Card>
       </div>
 
+      {/* Improved Mobile-First Top Products Section */}
       <Card>
         <CardHeader>
           <CardTitle>Produtos Mais Vendidos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          {/* Mobile Layout */}
+          <div className="block md:hidden space-y-3">
+            {topProducts.map((product, index) => (
+              <div key={index} className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-purple-600">{index + 1}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm leading-tight">{product.name}</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
+                    Top {index + 1}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600 text-xs">Vendas</p>
+                    <p className="font-semibold text-gray-900">{product.sales} unidades</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-600 text-xs">Receita</p>
+                    <p className="font-semibold text-green-600">{product.revenue}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden md:block space-y-4">
             {topProducts.map((product, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
@@ -276,12 +310,56 @@ const FinancialManagement = () => {
         </CardContent>
       </Card>
 
+      {/* Improved Mobile-First Recent Sales Section */}
       <Card>
         <CardHeader>
           <CardTitle>Vendas Recentes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Mobile Layout */}
+          <div className="block md:hidden space-y-4">
+            {sales.map((sale) => (
+              <div key={sale.id} className="bg-gray-50 rounded-lg p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm leading-tight flex-1 mr-2">
+                    {sale.product}
+                  </h3>
+                  <Badge variant="default" className="text-xs flex-shrink-0">Concluída</Badge>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+                  <div>
+                    <p className="text-gray-600 text-xs">Quantidade</p>
+                    <p className="font-medium text-gray-900">{sale.quantity} unidades</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 text-xs">Preço Unitário</p>
+                    <p className="font-medium text-gray-900">
+                      R$ {sale.unitPrice.toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600 text-xs">Data</p>
+                    <p className="font-medium text-gray-900">
+                      {new Date(sale.date).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-600 text-xs">Total</p>
+                    <p className="font-bold text-green-600 text-base">
+                      R$ {sale.total.toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b">
