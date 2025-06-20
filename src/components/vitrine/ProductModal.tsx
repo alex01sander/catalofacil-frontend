@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, ChevronDown, ChevronUp } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 interface Product {
   id: number;
@@ -25,6 +26,15 @@ interface ProductModalProps {
 const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    // Adiciona a quantidade selecionada ao carrinho
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+    onClose();
+  };
 
   const handleWhatsAppClick = () => {
     const currentDate = new Date().toLocaleDateString('pt-BR');
@@ -174,7 +184,7 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
             <div className="space-y-3">
               <Button
                 className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-                onClick={handleWhatsAppClick}
+                onClick={handleAddToCart}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Comprar
