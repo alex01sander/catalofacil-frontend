@@ -71,7 +71,25 @@ const AdminSidebar = ({
       {/* Mobile Navigation */}
       <div className="md:hidden">
         {/* Mobile Header with Menu */}
-        
+        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+          <div>
+            
+            
+          </div>
+          
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0">
+              <div className="flex h-full w-full flex-col bg-white">
+                <SidebarContentComponent />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
 
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-40">
