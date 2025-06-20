@@ -36,7 +36,8 @@ const Index = () => {
     image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=80&h=80&fit=crop&crop=center"
   }];
 
-  return <div className="min-h-screen bg-white">
+  return (
+    <div className="min-h-screen bg-white">
       <Header />
       
       {/* Mobile-first Layout */}
@@ -82,14 +83,16 @@ const Index = () => {
         {/* Categories Section */}
         <section className="px-4 py-6 bg-gray-50">
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group flex-shrink-0" onClick={() => setSelectedCategory(category.id)}>
+            {categories.map(category => (
+              <div key={category.id} className="flex flex-col items-center cursor-pointer group flex-shrink-0" onClick={() => setSelectedCategory(category.id)}>
                 <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 shadow-sm ${selectedCategory === category.id ? 'border-green-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300'}`}>
                   <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
                 </div>
                 <span className={`text-xs mt-2 font-medium transition-colors text-center min-w-[60px] ${selectedCategory === category.id ? 'text-green-600' : 'text-gray-600'}`}>
                   {category.name}
                 </span>
-              </div>)}
+              </div>
+            ))}
           </div>
         </section>
 
@@ -140,22 +143,25 @@ const Index = () => {
             
             {/* Desktop Visual Categories */}
             <div className="flex justify-center gap-8">
-              {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group" onClick={() => setSelectedCategory(category.id)}>
+              {categories.map(category => (
+                <div key={category.id} className="flex flex-col items-center cursor-pointer group" onClick={() => setSelectedCategory(category.id)}>
                   <div className={`w-20 h-20 rounded-full overflow-hidden border-3 transition-all duration-200 ${selectedCategory === category.id ? 'border-purple-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}`}>
                     <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
                   </div>
                   <span className={`text-sm mt-3 font-medium transition-colors ${selectedCategory === category.id ? 'text-purple-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                     {category.name}
                   </span>
-                </div>)}
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
       <Footer />
-    </div>;
+    </div>
+  );
 };
 
 export default Index;
