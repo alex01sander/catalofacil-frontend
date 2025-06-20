@@ -55,12 +55,12 @@ const AdminDashboard = () => {
     },
   ];
 
-  // Estado para simulação de preço
+  // Estado para simulação de preço - todos os campos zerados
   const [priceSimulation, setPriceSimulation] = useState({
     cost: 0,
-    margin: 30,
-    taxes: 10,
-    expenses: 5,
+    margin: 0,
+    taxes: 0, // Agora é valor absoluto em R$
+    expenses: 0, // Agora é valor absoluto em R$
     currentPrice: 0
   });
 
@@ -70,14 +70,20 @@ const AdminDashboard = () => {
   const calculatePrice = () => {
     const { cost, margin, taxes, expenses } = priceSimulation;
     
+    if (cost === 0) {
+      setSuggestedPrice(0);
+      setProfitAmount(0);
+      return;
+    }
+    
     // Calcula o preço base com margem
     const basePrice = cost / (1 - (margin / 100));
     
-    // Adiciona impostos e despesas
-    const finalPrice = basePrice * (1 + (taxes / 100) + (expenses / 100));
+    // Adiciona impostos e despesas como valores absolutos
+    const finalPrice = basePrice + taxes + expenses;
     
     // Calcula o lucro líquido
-    const profit = finalPrice - cost - (finalPrice * (taxes / 100)) - (finalPrice * (expenses / 100));
+    const profit = finalPrice - cost - taxes - expenses;
     
     setSuggestedPrice(finalPrice);
     setProfitAmount(profit);
@@ -137,7 +143,7 @@ const AdminDashboard = () => {
                     type="number"
                     step="0.01"
                     placeholder="0,00"
-                    value={priceSimulation.cost}
+                    value={priceSimulation.cost || ''}
                     onChange={(e) => handleSimulationChange('cost', parseFloat(e.target.value) || 0)}
                   />
                 </div>
@@ -146,8 +152,8 @@ const AdminDashboard = () => {
                   <Input
                     id="margin"
                     type="number"
-                    placeholder="30"
-                    value={priceSimulation.margin}
+                    placeholder="0"
+                    value={priceSimulation.margin || ''}
                     onChange={(e) => handleSimulationChange('margin', parseFloat(e.target.value) || 0)}
                   />
                 </div>
@@ -155,22 +161,24 @@ const AdminDashboard = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="taxes">Impostos (%)</Label>
+                  <Label htmlFor="taxes">Impostos (R$)</Label>
                   <Input
                     id="taxes"
                     type="number"
-                    placeholder="10"
-                    value={priceSimulation.taxes}
+                    step="0.01"
+                    placeholder="0,00"
+                    value={priceSimulation.taxes || ''}
                     onChange={(e) => handleSimulationChange('taxes', parseFloat(e.target.value) || 0)}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="expenses">Despesas Operacionais (%)</Label>
+                  <Label htmlFor="expenses">Despesas Operacionais (R$)</Label>
                   <Input
                     id="expenses"
                     type="number"
-                    placeholder="5"
-                    value={priceSimulation.expenses}
+                    step="0.01"
+                    placeholder="0,00"
+                    value={priceSimulation.expenses || ''}
                     onChange={(e) => handleSimulationChange('expenses', parseFloat(e.target.value) || 0)}
                   />
                 </div>
@@ -183,7 +191,7 @@ const AdminDashboard = () => {
                   type="number"
                   step="0.01"
                   placeholder="0,00"
-                  value={priceSimulation.currentPrice}
+                  value={priceSimulation.currentPrice || ''}
                   onChange={(e) => handleSimulationChange('currentPrice', parseFloat(e.target.value) || 0)}
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -262,17 +270,17 @@ const AdminDashboard = () => {
                       <span>R$ {priceSimulation.cost.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Impostos ({priceSimulation.taxes}%):</span>
-                      <span>R$ {(suggestedPrice * (priceSimulation.taxes / 100)).toFixed(2)}</span>
+                      <span>Impostos:</span>
+                      <span>R$ {priceSimulation.taxes.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Despesas ({priceSimulation.expenses}%):</span>
-                      <span>R$ {(suggestedPrice * (priceSimulation.expenses / 100)).toFixed(2)}</span>
+                      <span>Despesas:</span>
+                      <span>R$ {priceSimulation.expenses.toFixed(2)}</span>
                     </div>
                     <div className="border-t pt-1 flex justify-between font-medium">
                       <span>Margem de lucro:</span>
                       <span className="text-green-600">
-                        {((profitAmount / suggestedPrice) * 100).toFixed(1)}%
+                        {suggestedPrice > 0 ? ((profitAmount / suggestedPrice) * 100).toFixed(1) : '0.0'}%
                       </span>
                     </div>
                   </div>
