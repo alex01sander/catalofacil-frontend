@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,8 @@ import Header from "@/components/vitrine/Header";
 import HeroBanner from "@/components/vitrine/HeroBanner";
 import ProductGrid from "@/components/vitrine/ProductGrid";
 import Footer from "@/components/vitrine/Footer";
+import Cart from "@/components/vitrine/Cart";
+
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
@@ -31,10 +34,11 @@ const Index = () => {
     name: "Beleza",
     image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=80&h=80&fit=crop&crop=center"
   }];
+
   return <div className="min-h-screen bg-white">
       <Header />
       
-      {/* Mobile-first Layout - Similar to reference image */}
+      {/* Mobile-first Layout */}
       <div className="block md:hidden">
         {/* Hero Section with Logo and Brand */}
         <section className="bg-gradient-to-br from-green-400 via-green-500 to-green-600 text-white px-4 py-8 rounded-b-3xl relative overflow-hidden">
@@ -60,31 +64,42 @@ const Index = () => {
               que você sempre desejou encontrar
             </p>
             
-            {/* Search Bar */}
-            <div className="relative max-w-sm mx-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input placeholder="O que você está procurando?" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-12 bg-white/95 backdrop-blur-sm border-0 shadow-lg text-gray-700 placeholder:text-gray-500" />
+            {/* Search Bar with Cart */}
+            <div className="flex items-center gap-2 max-w-sm mx-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input 
+                  placeholder="O que você está procurando?" 
+                  value={searchTerm} 
+                  onChange={e => setSearchTerm(e.target.value)} 
+                  className="pl-10 h-12 bg-white/95 backdrop-blur-sm border-0 shadow-lg text-gray-700 placeholder:text-gray-500" 
+                />
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                <Cart />
+              </div>
             </div>
           </div>
         </section>
 
         {/* Categories Section */}
         <section className="px-4 py-6 bg-gray-50">
-          <div className="grid grid-cols-5 gap-3">
-            {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group" onClick={() => setSelectedCategory(category.id)}>
-                <div className={`w-14 h-14 rounded-full overflow-hidden border-3 transition-all duration-200 shadow-sm ${selectedCategory === category.id ? 'border-green-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300'}`}>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {categories.map(category => (
+              <div 
+                key={category.id} 
+                className="flex flex-col items-center cursor-pointer group flex-shrink-0" 
+                onClick={() => setSelectedCategory(category.id)}
+              >
+                <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 shadow-sm ${selectedCategory === category.id ? 'border-green-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300'}`}>
                   <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
                 </div>
-                <span className={`text-xs mt-2 font-medium transition-colors text-center ${selectedCategory === category.id ? 'text-green-600' : 'text-gray-600'}`}>
+                <span className={`text-xs mt-2 font-medium transition-colors text-center min-w-[60px] ${selectedCategory === category.id ? 'text-green-600' : 'text-gray-600'}`}>
                   {category.name}
                 </span>
-              </div>)}
+              </div>
+            ))}
           </div>
-        </section>
-
-        {/* Promotional Banner */}
-        <section className="mx-4 mb-6">
-          
         </section>
 
         {/* Service Features */}
@@ -121,23 +136,38 @@ const Index = () => {
       <section className="hidden md:block py-4 md:py-8 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col gap-6">
+            {/* Search Bar with Cart */}
             <div className="flex items-center justify-between">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input placeholder="Buscar produtos..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+              <div className="flex items-center gap-4 flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input 
+                    placeholder="Buscar produtos..." 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)} 
+                    className="pl-10" 
+                  />
+                </div>
+                <Cart />
               </div>
             </div>
             
             {/* Desktop Visual Categories */}
             <div className="flex justify-center gap-8">
-              {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group" onClick={() => setSelectedCategory(category.id)}>
+              {categories.map(category => (
+                <div 
+                  key={category.id} 
+                  className="flex flex-col items-center cursor-pointer group" 
+                  onClick={() => setSelectedCategory(category.id)}
+                >
                   <div className={`w-20 h-20 rounded-full overflow-hidden border-3 transition-all duration-200 ${selectedCategory === category.id ? 'border-purple-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}`}>
                     <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
                   </div>
                   <span className={`text-sm mt-3 font-medium transition-colors ${selectedCategory === category.id ? 'text-purple-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                     {category.name}
                   </span>
-                </div>)}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -147,4 +177,5 @@ const Index = () => {
       <Footer />
     </div>;
 };
+
 export default Index;
