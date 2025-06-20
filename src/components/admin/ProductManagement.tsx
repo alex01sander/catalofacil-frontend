@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,49 +185,140 @@ const ProductManagement = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{products.length}</p>
-              <p className="text-sm text-gray-600">Total de Produtos</p>
+              <p className="text-xl md:text-2xl font-bold text-gray-900">{products.length}</p>
+              <p className="text-xs md:text-sm text-gray-600">Total de Produtos</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-xl md:text-2xl font-bold text-green-600">
                 {products.filter(p => p.isActive).length}
               </p>
-              <p className="text-sm text-gray-600">Ativos</p>
+              <p className="text-xs md:text-sm text-gray-600">Ativos</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">
+              <p className="text-xl md:text-2xl font-bold text-orange-600">
                 {products.filter(p => p.stock < 10).length}
               </p>
-              <p className="text-sm text-gray-600">Estoque Baixo</p>
+              <p className="text-xs md:text-sm text-gray-600">Estoque Baixo</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-xl md:text-2xl font-bold text-red-600">
                 {products.filter(p => !p.isActive).length}
               </p>
-              <p className="text-sm text-gray-600">Inativos</p>
+              <p className="text-xs md:text-sm text-gray-600">Inativos</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Products Table */}
-      <Card>
+      {/* Mobile Product Cards */}
+      <div className="block md:hidden">
+        <div className="space-y-4">
+          {filteredProducts.map((product) => (
+            <Card key={product.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
+                      <Badge variant={product.isActive ? "default" : "secondary"} className="ml-2 flex-shrink-0">
+                        {product.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mb-2">
+                      <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                      <span className="font-bold text-green-600">
+                        R$ {product.price.toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mb-3">
+                      <span className={`text-sm ${product.stock < 10 ? 'text-orange-600' : 'text-gray-600'}`}>
+                        {product.stock} unidades
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2">
+                      {showDeleteConfirm === product.id ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteProduct(product.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={cancelDelete}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleProductStatus(product.id)}
+                          >
+                            {product.isActive ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => confirmDelete(product.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop Table - Hidden on Mobile */}
+      <Card className="hidden md:block">
         <CardHeader>
           <CardTitle>Lista de Produtos</CardTitle>
         </CardHeader>
