@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { X, Upload, ImageIcon, Trash2 } from "lucide-react";
+import { X, Upload, ImageIcon, Trash2, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 interface Product {
   id?: number;
@@ -37,10 +38,10 @@ const ProductForm = ({
 }: ProductFormProps) => {
   const [formData, setFormData] = useState<Omit<Product, 'id'>>({
     name: product?.name || "",
-    price: 0,
+    price: product?.price || 0,
     description: product?.description || "",
     category: product?.category || "",
-    stock: 0,
+    stock: product?.stock || 0,
     isActive: product?.isActive ?? true,
     image: product?.image || "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=400&h=400&fit=crop",
     images: product?.images || []
@@ -94,6 +95,16 @@ const ProductForm = ({
       ...prev,
       image: imageUrl
     }));
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(images);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setImages(items);
   };
 
   return (
@@ -164,38 +175,69 @@ const ProductForm = ({
               </div>
             </div>
 
-            {/* Gallery de imagens */}
+            {/* Gallery de imagens com drag and drop */}
             {images.length > 0 && (
               <div className="space-y-2">
-                <Label>Galeria de Imagens ({images.length})</Label>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {images.map((img, index) => (
-                    <div key={index} className="relative group">
-                      <img 
-                        src={img} 
-                        alt={`Imagem ${index + 1}`} 
-                        className="w-full h-20 rounded-lg object-cover border cursor-pointer hover:opacity-75 transition-opacity"
-                        onClick={() => setMainImage(img)}
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(index)}
+                <Label>Galeria de Imagens ({images.length}) - Arraste para reordenar</Label>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="images" direction="horizontal">
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="grid grid-cols-3 md:grid-cols-4 gap-3"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                      {formData.image === img && (
-                        <Badge className="absolute bottom-1 left-1 text-xs py-0 px-1">
-                          Principal
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                        {images.map((img, index) => (
+                          <Draggable key={`image-${index}`} draggableId={`image-${index}`} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`relative group ${snapshot.isDragging ? 'z-50' : ''}`}
+                              >
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="absolute top-1 left-1 z-10 bg-gray-800 bg-opacity-70 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                                >
+                                  <GripVertical className="h-3 w-3 text-white" />
+                                </div>
+                                <img 
+                                  src={img} 
+                                  alt={`Imagem ${index + 1}`} 
+                                  className="w-full h-20 rounded-lg object-cover border cursor-pointer hover:opacity-75 transition-opacity"
+                                  onClick={() => setMainImage(img)}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => removeImage(index)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                                {formData.image === img && (
+                                  <Badge className="absolute bottom-1 left-1 text-xs py-0 px-1">
+                                    Principal
+                                  </Badge>
+                                )}
+                                <Badge 
+                                  variant="secondary" 
+                                  className="absolute bottom-1 right-1 text-xs py-0 px-1 bg-black bg-opacity-70 text-white"
+                                >
+                                  {index + 1}
+                                </Badge>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
                 <p className="text-xs text-gray-500">
-                  Clique em uma imagem para defini-la como principal
+                  Clique em uma imagem para defini-la como principal • Arraste para reordenar • Os números mostram a ordem de exibição
                 </p>
               </div>
             )}
@@ -235,7 +277,7 @@ const ProductForm = ({
                 step="0.01" 
                 min="0" 
                 placeholder="0,00" 
-                value={formData.price || ""} 
+                value={formData.price} 
                 onChange={e => handleInputChange('price', parseFloat(e.target.value) || 0)} 
                 required 
               />
@@ -248,7 +290,7 @@ const ProductForm = ({
                 type="number" 
                 min="0" 
                 placeholder="0" 
-                value={formData.stock || ""} 
+                value={formData.stock} 
                 onChange={e => handleInputChange('stock', parseInt(e.target.value) || 0)} 
                 required 
               />
