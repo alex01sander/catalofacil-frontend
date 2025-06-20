@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,7 +95,7 @@ const CategoryManagement = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 lg:pb-0">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Categorias</h1>
         <p className="text-gray-600">Organize seus produtos por categorias</p>
@@ -109,7 +110,7 @@ const CategoryManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Input
               placeholder="Nome da categoria"
               value={newCategory}
@@ -117,7 +118,7 @@ const CategoryManagement = () => {
               onKeyPress={(e) => e.key === 'Enter' && addCategory()}
               className="flex-1"
             />
-            <Button onClick={addCategory} className="bg-purple-600 hover:bg-purple-700">
+            <Button onClick={addCategory} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar
             </Button>
@@ -126,7 +127,7 @@ const CategoryManagement = () => {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
@@ -145,7 +146,7 @@ const CategoryManagement = () => {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="sm:col-span-2 lg:col-span-1">
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600">
@@ -157,8 +158,119 @@ const CategoryManagement = () => {
         </Card>
       </div>
 
-      {/* Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Mobile Categories Cards - Visible only on mobile */}
+      <div className="block lg:hidden space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900">Lista de Categorias</h2>
+        {categories.map((category) => (
+          <Card key={category.id} className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div 
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: category.color }}
+                    ></div>
+                    {editingCategory === category.id ? (
+                      <Input
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && saveEdit()}
+                        className="text-lg font-semibold"
+                        autoFocus
+                      />
+                    ) : (
+                      <h3 className="text-lg font-semibold truncate">{category.name}</h3>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Produtos:</span>
+                    <Badge variant="secondary">
+                      {category.productCount} itens
+                    </Badge>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-xs text-gray-500">Cor:</span>
+                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                      {category.color}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full"
+                    style={{
+                      width: `${Math.min((category.productCount / 30) * 100, 100)}%`,
+                      backgroundColor: category.color
+                    }}
+                  ></div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-2">
+                  <p className="text-xs text-gray-500">
+                    {category.productCount === 0 
+                      ? "Nenhum produto"
+                      : `${Math.round((category.productCount / 67) * 100)}% do catálogo`
+                    }
+                  </p>
+                  
+                  <div className="flex space-x-2">
+                    {editingCategory === category.id ? (
+                      <>
+                        <Button variant="outline" size="sm" onClick={saveEdit}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={cancelEdit}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : deleteConfirm === category.id ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteCategory(category.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={cancelDelete}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => startEditing(category)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => confirmDelete(category.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Categories Grid - Hidden on mobile */}
+      <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {categories.map((category) => (
           <Card key={category.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
@@ -256,8 +368,8 @@ const CategoryManagement = () => {
         ))}
       </div>
 
-      {/* Categories Table */}
-      <Card>
+      {/* Categories Table - Hidden on mobile */}
+      <Card className="hidden lg:block">
         <CardHeader>
           <CardTitle>Lista de Categorias</CardTitle>
         </CardHeader>
