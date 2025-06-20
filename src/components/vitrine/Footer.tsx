@@ -1,12 +1,9 @@
-
 import { MapPin, Phone, Mail, Clock, Facebook, Instagram } from "lucide-react";
-
 const Footer = () => {
-  return (
-    <footer className="bg-gray-900 text-white">
+  return <footer className="bg-gray-900 text-white">
       {/* Mobile Footer - Simplified */}
       <div className="block md:hidden py-4 px-4 text-center text-gray-400 text-sm">
-        <p>&copy; 2024 LinkStore. Todos os direitos reservados.</p>
+        <p>© 2025 LinkStore. Todos os direitos reservados.</p>
       </div>
 
       {/* Desktop Footer - Full version */}
@@ -88,8 +85,6 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
