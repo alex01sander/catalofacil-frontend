@@ -1,10 +1,35 @@
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowDown } from "lucide-react";
+
 const HeroBanner = () => {
+  const [storeSettings, setStoreSettings] = useState({
+    storeName: localStorage.getItem('storeName') || 'LinkStore',
+    storeDescription: localStorage.getItem('storeDescription') || 'Catálogo de todos os seus produtos\nque você sempre desejou encontrar',
+    desktopBanner: localStorage.getItem('desktopBanner') || '/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png',
+  });
+
+  // Escuta mudanças nas configurações da loja
+  useEffect(() => {
+    const handleStoreSettingsUpdate = (event: CustomEvent) => {
+      setStoreSettings(prev => ({
+        ...prev,
+        ...event.detail
+      }));
+    };
+
+    window.addEventListener('storeSettingsUpdated', handleStoreSettingsUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storeSettingsUpdated', handleStoreSettingsUpdate as EventListener);
+    };
+  }, []);
+
   return <section className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30" style={{
-      backgroundImage: "url('/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png')"
+      backgroundImage: `url('${storeSettings.desktopBanner}')`
     }}></div>
       
       <div className="absolute inset-0 bg-black/20"></div>
@@ -18,8 +43,8 @@ const HeroBanner = () => {
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl mb-8 text-purple-100 max-w-2xl mx-auto">
-            Descubra nossa coleção exclusiva de produtos selecionados especialmente para você.
+          <p className="text-xl md:text-2xl mb-8 text-purple-100 max-w-2xl mx-auto whitespace-pre-line">
+            {storeSettings.storeDescription}
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

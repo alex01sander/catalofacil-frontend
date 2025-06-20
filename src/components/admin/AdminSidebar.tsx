@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 
-type AdminView = "dashboard" | "products" | "categories" | "financial";
+type AdminView = "dashboard" | "products" | "categories" | "financial" | "settings";
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -35,6 +35,10 @@ const AdminSidebar = ({
     title: "Financeiro",
     icon: TrendingUp,
     view: "financial" as AdminView
+  }, {
+    title: "Configurações",
+    icon: Settings,
+    view: "settings" as AdminView
   }];
 
   const handleViewChange = (view: AdminView) => {

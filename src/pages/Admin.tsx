@@ -6,8 +6,9 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 import ProductManagement from "@/components/admin/ProductManagement";
 import CategoryManagement from "@/components/admin/CategoryManagement";
 import FinancialManagement from "@/components/admin/FinancialManagement";
+import StoreSettings from "@/components/admin/StoreSettings";
 
-type AdminView = "dashboard" | "products" | "categories" | "financial";
+type AdminView = "dashboard" | "products" | "categories" | "financial" | "settings";
 
 const Admin = () => {
   const [currentView, setCurrentView] = useState<AdminView>("dashboard");
@@ -22,6 +23,8 @@ const Admin = () => {
         return <CategoryManagement />;
       case "financial":
         return <FinancialManagement />;
+      case "settings":
+        return <StoreSettings />;
       default:
         return <AdminDashboard />;
     }

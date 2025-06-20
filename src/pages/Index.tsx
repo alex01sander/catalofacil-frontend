@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ShoppingCart, User, Menu } from "lucide-react";
@@ -12,6 +13,29 @@ import Cart from "@/components/vitrine/Cart";
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
+  
+  // Estado para as configurações da loja
+  const [storeSettings, setStoreSettings] = useState({
+    storeName: localStorage.getItem('storeName') || 'LinkStore',
+    storeDescription: localStorage.getItem('storeDescription') || 'Catálogo de todos os seus produtos\nque você sempre desejou encontrar',
+    mobileLogo: localStorage.getItem('mobileLogo') || '/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png',
+    desktopBanner: localStorage.getItem('desktopBanner') || '/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png',
+    mobileBannerColor: localStorage.getItem('mobileBannerColor') || 'from-green-400 via-green-500 to-green-600'
+  });
+
+  // Escuta mudanças nas configurações da loja
+  useEffect(() => {
+    const handleStoreSettingsUpdate = (event: CustomEvent) => {
+      setStoreSettings(event.detail);
+    };
+
+    window.addEventListener('storeSettingsUpdated', handleStoreSettingsUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('storeSettingsUpdated', handleStoreSettingsUpdate as EventListener);
+    };
+  }, []);
+
   const categories = [{
     id: "todos",
     name: "Todos",
@@ -39,8 +63,8 @@ const Index = () => {
       
       {/* Mobile-first Layout */}
       <div className="block md:hidden">
-        {/* Hero Section with Logo and Brand */}
-        <section className="bg-gradient-to-br from-green-400 via-green-500 to-green-600 text-white px-4 py-8 rounded-b-3xl relative overflow-hidden">
+        {/* Hero Section with Logo and Brand - Agora usando configurações dinâmicas */}
+        <section className={`bg-gradient-to-br ${storeSettings.mobileBannerColor} text-white px-4 py-8 rounded-b-3xl relative overflow-hidden`}>
           {/* Background decoration */}
           <div className="absolute inset-0 bg-violet-600"></div>
           
@@ -48,19 +72,18 @@ const Index = () => {
             {/* Logo Circle - Imagem preenchendo todo o círculo */}
             <div className="flex justify-center mb-4">
               <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30">
-                <img alt="LinkStore Logo" className="w-full h-full object-cover" src="/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png" />
+                <img alt={`${storeSettings.storeName} Logo`} className="w-full h-full object-cover" src={storeSettings.mobileLogo} />
               </div>
             </div>
             
             {/* Store Name */}
             <h1 className="text-xl font-bold mb-2">
-              LinkStore
+              {storeSettings.storeName}
             </h1>
             
             {/* Store Description */}
-            <p className="text-sm text-white/90 mb-6 px-4 leading-relaxed">
-              Catálogo de todos os seus produtos<br />
-              que você sempre desejou encontrar
+            <p className="text-sm text-white/90 mb-6 px-4 leading-relaxed whitespace-pre-line">
+              {storeSettings.storeDescription}
             </p>
             
             {/* Search Bar with Cart */}
