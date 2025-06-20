@@ -177,7 +177,7 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
                 onClick={handleWhatsAppClick}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                Fazer Pedido pelo WhatsApp
+                Comprar
               </Button>
               
               <Button

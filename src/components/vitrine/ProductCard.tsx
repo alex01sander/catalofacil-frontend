@@ -29,7 +29,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
 
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden cursor-pointer" onClick={onViewDetails}>
         <img
           src={product.image}
           alt={product.name}
