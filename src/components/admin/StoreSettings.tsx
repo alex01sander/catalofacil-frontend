@@ -82,81 +82,85 @@ const StoreSettings = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Configurações da Loja</h2>
-        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+    <div className="space-y-4 lg:space-y-6 p-4 lg:p-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Configurações da Loja</h2>
+        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
           <Save className="h-4 w-4 mr-2" />
           Salvar Alterações
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Informações Básicas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Eye className="h-5 w-5 mr-2" />
+        <Card className="order-1 lg:order-1">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-lg">
+              <Eye className="h-4 w-4 mr-2" />
               Informações da Loja
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="storeName">Nome da Loja</Label>
+              <Label htmlFor="storeName" className="text-sm font-medium">Nome da Loja</Label>
               <Input
                 id="storeName"
                 value={settings.storeName}
                 onChange={(e) => setSettings(prev => ({ ...prev, storeName: e.target.value }))}
                 placeholder="Nome da sua loja"
+                className="mt-1"
               />
             </div>
             
             <div>
-              <Label htmlFor="storeDescription">Descrição da Loja</Label>
+              <Label htmlFor="storeDescription" className="text-sm font-medium">Descrição da Loja</Label>
               <Textarea
                 id="storeDescription"
                 value={settings.storeDescription}
                 onChange={(e) => setSettings(prev => ({ ...prev, storeDescription: e.target.value }))}
                 placeholder="Descrição que aparece na loja"
                 rows={3}
+                className="mt-1 resize-none"
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Logo Mobile */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Upload className="h-5 w-5 mr-2" />
+        <Card className="order-2 lg:order-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-lg">
+              <Upload className="h-4 w-4 mr-2" />
               Logo Mobile
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="mobileLogoUrl">URL da Logo</Label>
+              <Label htmlFor="mobileLogoUrl" className="text-sm font-medium">URL da Logo</Label>
               <Input
                 id="mobileLogoUrl"
                 value={settings.mobileLogo}
                 onChange={(e) => handleUrlInput('mobileLogo', e.target.value)}
                 placeholder="https://exemplo.com/logo.png"
+                className="mt-1 text-sm"
               />
             </div>
             
             <div>
-              <Label htmlFor="mobileLogoFile">Ou faça upload</Label>
+              <Label htmlFor="mobileLogoFile" className="text-sm font-medium">Ou faça upload</Label>
               <Input
                 id="mobileLogoFile"
                 type="file"
                 accept="image/*"
                 onChange={(e) => handleFileUpload('mobileLogo', e)}
+                className="mt-1"
               />
             </div>
             
             {(previewFiles.mobileLogo || settings.mobileLogo) && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                <div className="w-24 h-24 bg-white/20 rounded-full overflow-hidden border border-gray-200">
+              <div className="mt-3">
+                <p className="text-sm text-gray-600 mb-2 font-medium">Preview:</p>
+                <div className="w-20 h-20 bg-white/20 rounded-full overflow-hidden border border-gray-200 mx-auto lg:mx-0">
                   <img 
                     src={previewFiles.mobileLogo || settings.mobileLogo} 
                     alt="Logo preview" 
@@ -169,38 +173,40 @@ const StoreSettings = () => {
         </Card>
 
         {/* Banner Desktop */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Upload className="h-5 w-5 mr-2" />
+        <Card className="order-3 lg:order-3">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-lg">
+              <Upload className="h-4 w-4 mr-2" />
               Banner Desktop
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="desktopBannerUrl">URL do Banner</Label>
+              <Label htmlFor="desktopBannerUrl" className="text-sm font-medium">URL do Banner</Label>
               <Input
                 id="desktopBannerUrl"
                 value={settings.desktopBanner}
                 onChange={(e) => handleUrlInput('desktopBanner', e.target.value)}
                 placeholder="https://exemplo.com/banner.png"
+                className="mt-1 text-sm"
               />
             </div>
             
             <div>
-              <Label htmlFor="desktopBannerFile">Ou faça upload</Label>
+              <Label htmlFor="desktopBannerFile" className="text-sm font-medium">Ou faça upload</Label>
               <Input
                 id="desktopBannerFile"
                 type="file"
                 accept="image/*"
                 onChange={(e) => handleFileUpload('desktopBanner', e)}
+                className="mt-1"
               />
             </div>
             
             {(previewFiles.desktopBanner || settings.desktopBanner) && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+              <div className="mt-3">
+                <p className="text-sm text-gray-600 mb-2 font-medium">Preview:</p>
+                <div className="w-full h-24 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
                   <img 
                     src={previewFiles.desktopBanner || settings.desktopBanner} 
                     alt="Banner preview" 
@@ -213,16 +219,16 @@ const StoreSettings = () => {
         </Card>
 
         {/* Cor do Banner Mobile */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cor do Banner Mobile</CardTitle>
+        <Card className="order-4 lg:order-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Cor do Banner Mobile</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 lg:gap-3">
               {gradientOptions.map((option) => (
                 <div
                   key={option.value}
-                  className={`h-16 bg-gradient-to-br ${option.value} rounded-lg cursor-pointer border-2 transition-all ${
+                  className={`h-12 lg:h-16 bg-gradient-to-br ${option.value} rounded-lg cursor-pointer border-2 transition-all ${
                     settings.mobileBannerColor === option.value 
                       ? 'border-white shadow-lg scale-105' 
                       : 'border-transparent hover:border-gray-300'
@@ -230,7 +236,7 @@ const StoreSettings = () => {
                   onClick={() => setSettings(prev => ({ ...prev, mobileBannerColor: option.value }))}
                 >
                   <div className="h-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">{option.name}</span>
+                    <span className="text-white font-medium text-xs lg:text-sm">{option.name}</span>
                   </div>
                 </div>
               ))}
@@ -240,8 +246,8 @@ const StoreSettings = () => {
       </div>
 
       {/* Botão de ação no final */}
-      <div className="flex justify-center pt-6">
-        <Button onClick={handleSave} size="lg" className="bg-green-600 hover:bg-green-700">
+      <div className="flex justify-center pt-4 lg:pt-6">
+        <Button onClick={handleSave} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
           <Save className="h-5 w-5 mr-2" />
           Salvar e Aplicar Configurações
         </Button>
