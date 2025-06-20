@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +9,11 @@ import HeroBanner from "@/components/vitrine/HeroBanner";
 import ProductGrid from "@/components/vitrine/ProductGrid";
 import Footer from "@/components/vitrine/Footer";
 import Cart from "@/components/vitrine/Cart";
+
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
+
   const categories = [{
     id: "todos",
     name: "Todos",
@@ -32,6 +35,7 @@ const Index = () => {
     name: "Beleza",
     image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=80&h=80&fit=crop&crop=center"
   }];
+
   return <div className="min-h-screen bg-white">
       <Header />
       
@@ -43,10 +47,10 @@ const Index = () => {
           <div className="absolute inset-0 bg-violet-600"></div>
           
           <div className="relative text-center">
-            {/* Logo Circle */}
+            {/* Logo Circle - Aumentado de w-16 h-16 para w-24 h-24 */}
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center border border-white/30">
-                <img src="/lovable-uploads/4e76fa9e-adfb-440b-a373-b991de11248f.png" alt="LinkStore Logo" className="w-10 h-10" />
+              <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center border border-white/30">
+                <img src="/lovable-uploads/4e76fa9e-adfb-440b-a373-b991de11248f.png" alt="LinkStore Logo" className="w-16 h-16" />
               </div>
             </div>
             
@@ -147,10 +151,11 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
       <Footer />
     </div>;
 };
+
 export default Index;
