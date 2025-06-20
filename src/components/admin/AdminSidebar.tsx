@@ -97,29 +97,26 @@ const AdminSidebar = ({
 
   return (
     <>
-      {/* Mobile Navigation */}
-      <div className="lg:hidden">
-        {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 py-2 z-40 shadow-lg">
-          <div className="flex justify-around items-center max-w-md mx-auto">
-            {menuItems.map(item => (
-              <button
-                key={item.view}
-                onClick={() => onViewChange(item.view)}
-                className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 ${
-                  currentView === item.view 
-                    ? "bg-gradient-to-t from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 transform scale-105" 
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <item.icon className={`h-5 w-5 mb-1 ${currentView === item.view ? 'animate-pulse' : ''}`} />
-                <span className="text-xs font-medium truncate">{item.title}</span>
-                {currentView === item.view && (
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
-                )}
-              </button>
-            ))}
-          </div>
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 z-50 shadow-lg">
+        <div className="flex justify-around items-center max-w-md mx-auto">
+          {menuItems.map(item => (
+            <button
+              key={item.view}
+              onClick={() => onViewChange(item.view)}
+              className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 ${
+                currentView === item.view 
+                  ? "bg-gradient-to-t from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 transform scale-105" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <item.icon className={`h-5 w-5 mb-1 ${currentView === item.view ? 'animate-pulse' : ''}`} />
+              <span className="text-xs font-medium truncate">{item.title}</span>
+              {currentView === item.view && (
+                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
