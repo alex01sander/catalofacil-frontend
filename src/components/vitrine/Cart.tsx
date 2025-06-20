@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +7,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ShoppingCart, Plus, Minus, Trash2, User, MapPin, CreditCard } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-
 const Cart = () => {
   const {
     items,
@@ -27,30 +25,25 @@ const Cart = () => {
     paymentMethod: 'pix',
     deliveryMethod: 'delivery'
   });
-
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
   const handleSubmit = () => {
-    if (!formData.name || !formData.phone || (formData.deliveryMethod === 'delivery' && !formData.address)) {
+    if (!formData.name || !formData.phone || formData.deliveryMethod === 'delivery' && !formData.address) {
       alert('Por favor, preencha todos os campos obrigatórios');
       return;
     }
-
-    const orderSummary = items.map(item => 
-      `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`
-    ).join('\n');
-
+    const orderSummary = items.map(item => `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
     const paymentMethodText = {
       pix: 'PIX',
       money: 'Dinheiro',
       credit: 'Cartão de Crédito',
       debit: 'Cartão de Débito'
     }[formData.paymentMethod];
-
     const deliveryMethodText = formData.deliveryMethod === 'delivery' ? 'Entrega' : 'Retirada no Local';
-
     const message = `🛍️ *Novo Pedido*
 
 👤 *Dados do Cliente:*
@@ -67,10 +60,12 @@ ${orderSummary}
 • Forma de Entrega: ${deliveryMethodText}
 
 📅 Data: ${new Date().toLocaleDateString('pt-BR')}
-⏰ Horário: ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+⏰ Horário: ${new Date().toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })}
 
 Obrigado pela preferência! 😊`;
-
     window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
     clearCart();
     setShowCheckoutForm(false);
@@ -83,17 +78,13 @@ Obrigado pela preferência! 😊`;
       deliveryMethod: 'delivery'
     });
   };
-
-  return (
-    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+  return <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative p-2 text-zinc-100 bg-transparent">
+        <Button variant="ghost" size="sm" className="relative p-2 bg-transparent text-violet-950">
           <ShoppingCart className="h-5 w-5" />
-          {totalItems > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white border-2 border-white">
+          {totalItems > 0 && <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white border-2 border-white">
               {totalItems}
-            </Badge>
-          )}
+            </Badge>}
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg flex flex-col h-full">
@@ -103,20 +94,16 @@ Obrigado pela preferência! 😊`;
           </SheetTitle>
         </SheetHeader>
         
-        {items.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center py-12">
+        {items.length === 0 ? <div className="flex-1 flex flex-col items-center justify-center py-12">
             <ShoppingCart className="h-16 w-16 text-gray-300 mb-4" />
             <p className="text-gray-500 text-lg">Seu carrinho está vazio</p>
             <p className="text-gray-400 text-sm mt-2">Adicione produtos para continuar</p>
-          </div>
-        ) : (
-          <>
-            {!showCheckoutForm ? (
-              // Visualização do Carrinho
-              <>
+          </div> : <>
+            {!showCheckoutForm ?
+        // Visualização do Carrinho
+        <>
                 <div className="flex-1 overflow-y-auto py-4 space-y-4">
-                  {items.map(item => (
-                    <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
+                  {items.map(item => <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border">
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
@@ -128,35 +115,19 @@ Obrigado pela preferência! 😊`;
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <div className="flex items-center gap-2 bg-white rounded-lg border p-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
                             <Minus className="h-3 w-3" />
                           </Button>
                           <span className="w-8 text-center font-medium">{item.quantity}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0" 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeFromCart(item.id)} 
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
                 
                 <div className="border-t pt-4 space-y-4 bg-white flex-shrink-0">
@@ -166,17 +137,13 @@ Obrigado pela preferência! 😊`;
                       R$ {totalPrice.toFixed(2).replace('.', ',')}
                     </span>
                   </div>
-                  <Button 
-                    className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
-                    onClick={() => setShowCheckoutForm(true)}
-                  >
+                  <Button className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" onClick={() => setShowCheckoutForm(true)}>
                     Finalizar Compra
                   </Button>
                 </div>
-              </>
-            ) : (
-              // Formulário de Checkout
-              <div className="flex flex-col h-full">
+              </> :
+        // Formulário de Checkout
+        <div className="flex flex-col h-full">
                 <div className="flex-1 overflow-y-auto py-4 space-y-4">
                   {/* Resumo do Pedido */}
                   <div className="bg-white rounded-lg border p-4 shadow-sm">
@@ -185,8 +152,7 @@ Obrigado pela preferência! 😊`;
                       Resumo do Pedido
                     </h3>
                     <div className="space-y-2 mb-4">
-                      {items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                      {items.map(item => <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
                           <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border shrink-0">
                             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                           </div>
@@ -199,8 +165,7 @@ Obrigado pela preferência! 😊`;
                               R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
                             </p>
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                     <div className="pt-3 border-t">
                       <div className="flex justify-between items-center p-3 bg-violet-50 rounded-lg">
@@ -223,25 +188,13 @@ Obrigado pela preferência! 😊`;
                         <Label htmlFor="name" className="text-sm font-medium text-gray-700">
                           Nome Completo <span className="text-red-500">*</span>
                         </Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => handleInputChange('name', e.target.value)}
-                          placeholder="Seu nome completo"
-                          className="h-11"
-                        />
+                        <Input id="name" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} placeholder="Seu nome completo" className="h-11" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
                           Telefone <span className="text-red-500">*</span>
                         </Label>
-                        <Input
-                          id="phone"
-                          value={formData.phone}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
-                          placeholder="(11) 99999-9999"
-                          className="h-11"
-                        />
+                        <Input id="phone" value={formData.phone} onChange={e => handleInputChange('phone', e.target.value)} placeholder="(11) 99999-9999" className="h-11" />
                       </div>
                     </div>
                   </div>
@@ -252,11 +205,7 @@ Obrigado pela preferência! 😊`;
                       <MapPin className="h-5 w-5 text-violet-600" />
                       Forma de Entrega
                     </h3>
-                    <RadioGroup 
-                      value={formData.deliveryMethod} 
-                      onValueChange={(value) => handleInputChange('deliveryMethod', value)}
-                      className="space-y-3"
-                    >
+                    <RadioGroup value={formData.deliveryMethod} onValueChange={value => handleInputChange('deliveryMethod', value)} className="space-y-3">
                       <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
                         <RadioGroupItem value="delivery" id="delivery" />
                         <Label htmlFor="delivery" className="font-medium cursor-pointer">
@@ -271,20 +220,12 @@ Obrigado pela preferência! 😊`;
                       </div>
                     </RadioGroup>
                     
-                    {formData.deliveryMethod === 'delivery' && (
-                      <div className="space-y-2 mt-4">
+                    {formData.deliveryMethod === 'delivery' && <div className="space-y-2 mt-4">
                         <Label htmlFor="address" className="text-sm font-medium text-gray-700">
                           Endereço Completo <span className="text-red-500">*</span>
                         </Label>
-                        <Input
-                          id="address"
-                          value={formData.address}
-                          onChange={(e) => handleInputChange('address', e.target.value)}
-                          placeholder="Rua, número, bairro, cidade, CEP"
-                          className="h-11"
-                        />
-                      </div>
-                    )}
+                        <Input id="address" value={formData.address} onChange={e => handleInputChange('address', e.target.value)} placeholder="Rua, número, bairro, cidade, CEP" className="h-11" />
+                      </div>}
                   </div>
 
                   {/* Forma de Pagamento */}
@@ -293,11 +234,7 @@ Obrigado pela preferência! 😊`;
                       <CreditCard className="h-5 w-5 text-violet-600" />
                       Forma de Pagamento
                     </h3>
-                    <RadioGroup 
-                      value={formData.paymentMethod} 
-                      onValueChange={(value) => handleInputChange('paymentMethod', value)}
-                      className="grid grid-cols-1 gap-3"
-                    >
+                    <RadioGroup value={formData.paymentMethod} onValueChange={value => handleInputChange('paymentMethod', value)} className="grid grid-cols-1 gap-3">
                       <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
                         <RadioGroupItem value="pix" id="pix" />
                         <Label htmlFor="pix" className="font-medium cursor-pointer">
@@ -328,27 +265,16 @@ Obrigado pela preferência! 😊`;
 
                 {/* Botões de Ação - Fixos no final */}
                 <div className="border-t pt-4 pb-4 space-y-3 bg-white flex-shrink-0">
-                  <Button 
-                    variant="outline" 
-                    className="w-full h-12 text-base font-semibold" 
-                    onClick={() => setShowCheckoutForm(false)}
-                  >
+                  <Button variant="outline" className="w-full h-12 text-base font-semibold" onClick={() => setShowCheckoutForm(false)}>
                     Voltar ao Carrinho
                   </Button>
-                  <Button 
-                    className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
-                    onClick={handleSubmit}
-                  >
+                  <Button className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" onClick={handleSubmit}>
                     Confirmar Pedido
                   </Button>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              </div>}
+          </>}
       </SheetContent>
-    </Sheet>
-  );
+    </Sheet>;
 };
-
 export default Cart;
