@@ -96,258 +96,256 @@ Obrigado pela preferência! 😊`;
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
-        <SheetHeader className="pb-4 border-b">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col h-full">
+        <SheetHeader className="pb-4 border-b flex-shrink-0">
           <SheetTitle className="text-xl font-bold">
             {showCheckoutForm ? 'Finalizar Compra' : 'Carrinho de Compras'}
           </SheetTitle>
         </SheetHeader>
         
-        <div className="flex flex-col h-full">
-          {items.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-12">
-              <ShoppingCart className="h-16 w-16 text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">Seu carrinho está vazio</p>
-              <p className="text-gray-400 text-sm mt-2">Adicione produtos para continuar</p>
-            </div>
-          ) : (
-            <>
-              {!showCheckoutForm ? (
-                // Visualização do Carrinho
-                <>
-                  <div className="flex-1 overflow-y-auto py-4 space-y-4">
-                    {items.map(item => (
-                      <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
-                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-sm text-gray-900 truncate">{item.name}</h3>
-                          <p className="text-violet-600 font-bold text-lg">
-                            R$ {item.price.toFixed(2).replace('.', ',')}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="flex items-center gap-2 bg-white rounded-lg border p-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0" 
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center font-medium">{item.quantity}</span>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0" 
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
+        {items.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-12">
+            <ShoppingCart className="h-16 w-16 text-gray-300 mb-4" />
+            <p className="text-gray-500 text-lg">Seu carrinho está vazio</p>
+            <p className="text-gray-400 text-sm mt-2">Adicione produtos para continuar</p>
+          </div>
+        ) : (
+          <>
+            {!showCheckoutForm ? (
+              // Visualização do Carrinho
+              <>
+                <div className="flex-1 overflow-y-auto py-4 space-y-4">
+                  {items.map(item => (
+                    <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border">
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-gray-900 truncate">{item.name}</h3>
+                        <p className="text-violet-600 font-bold text-lg">
+                          R$ {item.price.toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2 bg-white rounded-lg border p-1">
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => removeFromCart(item.id)} 
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                            className="h-8 w-8 p-0" 
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
                           </Button>
                         </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => removeFromCart(item.id)} 
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="border-t pt-4 space-y-4 bg-white">
-                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                      <span className="text-lg font-semibold">Total:</span>
-                      <span className="text-xl font-bold text-violet-600">
-                        R$ {totalPrice.toFixed(2).replace('.', ',')}
-                      </span>
                     </div>
-                    <Button 
-                      className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
-                      onClick={() => setShowCheckoutForm(true)}
-                    >
-                      Finalizar Compra
-                    </Button>
+                  ))}
+                </div>
+                
+                <div className="border-t pt-4 space-y-4 bg-white flex-shrink-0">
+                  <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <span className="text-lg font-semibold">Total:</span>
+                    <span className="text-xl font-bold text-violet-600">
+                      R$ {totalPrice.toFixed(2).replace('.', ',')}
+                    </span>
                   </div>
-                </>
-              ) : (
-                // Formulário de Checkout
-                <>
-                  <div className="flex-1 overflow-y-auto py-4 space-y-6">
-                    {/* Resumo do Pedido */}
-                    <div className="bg-white rounded-lg border p-4 shadow-sm">
-                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <ShoppingCart className="h-5 w-5 text-violet-600" />
-                        Resumo do Pedido
-                      </h3>
-                      <div className="space-y-2 mb-4">
-                        {items.map((item) => (
-                          <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border shrink-0">
-                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
-                              <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-sm text-violet-600">
-                                R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                              </p>
-                            </div>
+                  <Button 
+                    className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
+                    onClick={() => setShowCheckoutForm(true)}
+                  >
+                    Finalizar Compra
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // Formulário de Checkout
+              <div className="flex flex-col h-full">
+                <div className="flex-1 overflow-y-auto py-4 space-y-4">
+                  {/* Resumo do Pedido */}
+                  <div className="bg-white rounded-lg border p-4 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5 text-violet-600" />
+                      Resumo do Pedido
+                    </h3>
+                    <div className="space-y-2 mb-4">
+                      {items.map((item) => (
+                        <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border shrink-0">
+                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                           </div>
-                        ))}
-                      </div>
-                      <div className="pt-3 border-t">
-                        <div className="flex justify-between items-center p-3 bg-violet-50 rounded-lg">
-                          <span className="font-bold text-lg text-gray-900">Total:</span>
-                          <span className="font-bold text-xl text-violet-600">
-                            R$ {totalPrice.toFixed(2).replace('.', ',')}
-                          </span>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
+                            <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-sm text-violet-600">
+                              R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-
-                    {/* Dados Pessoais */}
-                    <div className="bg-white rounded-lg border p-4 shadow-sm">
-                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <User className="h-5 w-5 text-violet-600" />
-                        Dados Pessoais
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                            Nome Completo <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
-                            placeholder="Seu nome completo"
-                            className="h-11"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                            Telefone <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="phone"
-                            value={formData.phone}
-                            onChange={(e) => handleInputChange('phone', e.target.value)}
-                            placeholder="(11) 99999-9999"
-                            className="h-11"
-                          />
-                        </div>
+                    <div className="pt-3 border-t">
+                      <div className="flex justify-between items-center p-3 bg-violet-50 rounded-lg">
+                        <span className="font-bold text-lg text-gray-900">Total:</span>
+                        <span className="font-bold text-xl text-violet-600">
+                          R$ {totalPrice.toFixed(2).replace('.', ',')}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Forma de Entrega */}
-                    <div className="bg-white rounded-lg border p-4 shadow-sm">
-                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <MapPin className="h-5 w-5 text-violet-600" />
-                        Forma de Entrega
-                      </h3>
-                      <RadioGroup 
-                        value={formData.deliveryMethod} 
-                        onValueChange={(value) => handleInputChange('deliveryMethod', value)}
-                        className="space-y-3"
-                      >
-                        <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                          <RadioGroupItem value="delivery" id="delivery" />
-                          <Label htmlFor="delivery" className="font-medium cursor-pointer">
-                            🚚 Entrega no endereço
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                          <RadioGroupItem value="pickup" id="pickup" />
-                          <Label htmlFor="pickup" className="font-medium cursor-pointer">
-                            🏪 Retirada no Local
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                      
-                      {formData.deliveryMethod === 'delivery' && (
-                        <div className="space-y-2 mt-4">
-                          <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-                            Endereço Completo <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="address"
-                            value={formData.address}
-                            onChange={(e) => handleInputChange('address', e.target.value)}
-                            placeholder="Rua, número, bairro, cidade, CEP"
-                            className="h-11"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Forma de Pagamento */}
-                    <div className="bg-white rounded-lg border p-4 shadow-sm">
-                      <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <CreditCard className="h-5 w-5 text-violet-600" />
-                        Forma de Pagamento
-                      </h3>
-                      <RadioGroup 
-                        value={formData.paymentMethod} 
-                        onValueChange={(value) => handleInputChange('paymentMethod', value)}
-                        className="grid grid-cols-1 gap-3"
-                      >
-                        <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                          <RadioGroupItem value="pix" id="pix" />
-                          <Label htmlFor="pix" className="font-medium cursor-pointer">
-                            📱 PIX
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                          <RadioGroupItem value="money" id="money" />
-                          <Label htmlFor="money" className="font-medium cursor-pointer">
-                            💵 Dinheiro
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                          <RadioGroupItem value="credit" id="credit" />
-                          <Label htmlFor="credit" className="font-medium cursor-pointer">
-                            💳 Cartão de Crédito
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                          <RadioGroupItem value="debit" id="debit" />
-                          <Label htmlFor="debit" className="font-medium cursor-pointer">
-                            💳 Cartão de Débito
-                          </Label>
-                        </div>
-                      </RadioGroup>
                     </div>
                   </div>
 
-                  {/* Botões de Ação */}
-                  <div className="border-t pt-4 space-y-3 bg-white">
-                    <Button 
-                      variant="outline" 
-                      className="w-full h-12 text-base font-semibold" 
-                      onClick={() => setShowCheckoutForm(false)}
-                    >
-                      Voltar ao Carrinho
-                    </Button>
-                    <Button 
-                      className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
-                      onClick={handleSubmit}
-                    >
-                      Confirmar Pedido
-                    </Button>
+                  {/* Dados Pessoais */}
+                  <div className="bg-white rounded-lg border p-4 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <User className="h-5 w-5 text-violet-600" />
+                      Dados Pessoais
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                          Nome Completo <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => handleInputChange('name', e.target.value)}
+                          placeholder="Seu nome completo"
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                          Telefone <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          placeholder="(11) 99999-9999"
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
+
+                  {/* Forma de Entrega */}
+                  <div className="bg-white rounded-lg border p-4 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-violet-600" />
+                      Forma de Entrega
+                    </h3>
+                    <RadioGroup 
+                      value={formData.deliveryMethod} 
+                      onValueChange={(value) => handleInputChange('deliveryMethod', value)}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                        <RadioGroupItem value="delivery" id="delivery" />
+                        <Label htmlFor="delivery" className="font-medium cursor-pointer">
+                          🚚 Entrega no endereço
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                        <RadioGroupItem value="pickup" id="pickup" />
+                        <Label htmlFor="pickup" className="font-medium cursor-pointer">
+                          🏪 Retirada no Local
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                    
+                    {formData.deliveryMethod === 'delivery' && (
+                      <div className="space-y-2 mt-4">
+                        <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                          Endereço Completo <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="address"
+                          value={formData.address}
+                          onChange={(e) => handleInputChange('address', e.target.value)}
+                          placeholder="Rua, número, bairro, cidade, CEP"
+                          className="h-11"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Forma de Pagamento */}
+                  <div className="bg-white rounded-lg border p-4 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-violet-600" />
+                      Forma de Pagamento
+                    </h3>
+                    <RadioGroup 
+                      value={formData.paymentMethod} 
+                      onValueChange={(value) => handleInputChange('paymentMethod', value)}
+                      className="grid grid-cols-1 gap-3"
+                    >
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                        <RadioGroupItem value="pix" id="pix" />
+                        <Label htmlFor="pix" className="font-medium cursor-pointer">
+                          📱 PIX
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                        <RadioGroupItem value="money" id="money" />
+                        <Label htmlFor="money" className="font-medium cursor-pointer">
+                          💵 Dinheiro
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                        <RadioGroupItem value="credit" id="credit" />
+                        <Label htmlFor="credit" className="font-medium cursor-pointer">
+                          💳 Cartão de Crédito
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                        <RadioGroupItem value="debit" id="debit" />
+                        <Label htmlFor="debit" className="font-medium cursor-pointer">
+                          💳 Cartão de Débito
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+
+                {/* Botões de Ação - Fixos no final */}
+                <div className="border-t pt-4 pb-4 space-y-3 bg-white flex-shrink-0">
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-12 text-base font-semibold" 
+                    onClick={() => setShowCheckoutForm(false)}
+                  >
+                    Voltar ao Carrinho
+                  </Button>
+                  <Button 
+                    className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
+                    onClick={handleSubmit}
+                  >
+                    Confirmar Pedido
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );
