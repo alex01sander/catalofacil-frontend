@@ -71,9 +71,9 @@ Obrigado pela preferência! 😊`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[9999] bg-white overflow-hidden flex flex-col">
       {/* Header fixo */}
-      <div className="bg-violet-600 text-white p-4 flex items-center gap-4 shrink-0">
+      <div className="bg-violet-600 text-white p-4 flex items-center gap-4 shrink-0 shadow-lg">
         <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-violet-700 p-2">
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -93,8 +93,8 @@ Obrigado pela preferência! 😊`;
       </div>
 
       {/* Conteúdo scrollável */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="p-4 space-y-4 pb-24">
           
           {/* Resumo do Pedido */}
           <Card className="shadow-sm">
@@ -107,7 +107,7 @@ Obrigado pela preferência! 😊`;
             <CardContent className="space-y-3">
               <div className="space-y-2">
                 {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={item.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border">
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border shrink-0">
                       <img 
                         src={item.image} 
@@ -190,13 +190,13 @@ Obrigado pela preferência! 😊`;
                 onValueChange={(value) => handleInputChange('deliveryMethod', value)}
                 className="space-y-3"
               >
-                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg bg-white">
                   <RadioGroupItem value="delivery" id="delivery" />
                   <Label htmlFor="delivery" className="font-medium cursor-pointer">
                     🚚 Entrega no endereço
                   </Label>
                 </div>
-                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg bg-white">
                   <RadioGroupItem value="pickup" id="pickup" />
                   <Label htmlFor="pickup" className="font-medium cursor-pointer">
                     🏪 Retirada no Local
@@ -235,25 +235,25 @@ Obrigado pela preferência! 😊`;
                 onValueChange={(value) => handleInputChange('paymentMethod', value)}
                 className="grid grid-cols-1 gap-3"
               >
-                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg bg-white">
                   <RadioGroupItem value="pix" id="pix" />
                   <Label htmlFor="pix" className="font-medium cursor-pointer">
                     📱 PIX
                   </Label>
                 </div>
-                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg bg-white">
                   <RadioGroupItem value="money" id="money" />
                   <Label htmlFor="money" className="font-medium cursor-pointer">
                     💵 Dinheiro
                   </Label>
                 </div>
-                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg bg-white">
                   <RadioGroupItem value="credit" id="credit" />
                   <Label htmlFor="credit" className="font-medium cursor-pointer">
                     💳 Cartão de Crédito
                   </Label>
                 </div>
-                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg bg-white">
                   <RadioGroupItem value="debit" id="debit" />
                   <Label htmlFor="debit" className="font-medium cursor-pointer">
                     💳 Cartão de Débito
@@ -262,14 +262,11 @@ Obrigado pela preferência! 😊`;
               </RadioGroup>
             </CardContent>
           </Card>
-
-          {/* Espaço extra para o botão fixo */}
-          <div className="h-20"></div>
         </div>
       </div>
 
       {/* Botão fixo na parte inferior */}
-      <div className="bg-white border-t p-4 shrink-0">
+      <div className="bg-white border-t p-4 shrink-0 shadow-lg">
         <Button 
           className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
           onClick={handleSubmit}
