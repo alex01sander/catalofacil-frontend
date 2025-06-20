@@ -71,7 +71,7 @@ Obrigado pela preferência! 😊`;
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[10000] bg-white animate-in slide-in-from-bottom-4 duration-300 flex flex-col h-screen w-screen overflow-hidden">
       {/* Header fixo */}
       <div className="bg-violet-600 text-white p-4 flex items-center gap-4 shrink-0 shadow-lg">
         <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-violet-700 p-2">
@@ -93,7 +93,7 @@ Obrigado pela preferência! 😊`;
       </div>
 
       {/* Conteúdo scrollável */}
-      <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="flex-1 overflow-y-auto bg-gray-50" style={{ height: 'calc(100vh - 180px)' }}>
         <div className="p-4 space-y-4 pb-24">
           
           {/* Resumo do Pedido */}
