@@ -71,9 +71,9 @@ Obrigado pela preferência! 😊`;
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-white animate-in slide-in-from-bottom-4 duration-300 flex flex-col h-screen w-screen overflow-hidden">
+    <div className="bg-white rounded-lg shadow-2xl animate-in slide-in-from-bottom-4 duration-300 flex flex-col max-h-full overflow-hidden">
       {/* Header fixo */}
-      <div className="bg-violet-600 text-white p-4 flex items-center gap-4 shrink-0 shadow-lg">
+      <div className="bg-violet-600 text-white p-4 flex items-center gap-4 shrink-0 shadow-lg rounded-t-lg">
         <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-violet-700 p-2">
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -93,7 +93,7 @@ Obrigado pela preferência! 😊`;
       </div>
 
       {/* Conteúdo scrollável */}
-      <div className="flex-1 overflow-y-auto bg-gray-50" style={{ height: 'calc(100vh - 180px)' }}>
+      <div className="flex-1 overflow-y-auto bg-gray-50">
         <div className="p-4 space-y-4 pb-24">
           
           {/* Resumo do Pedido */}
@@ -266,7 +266,7 @@ Obrigado pela preferência! 😊`;
       </div>
 
       {/* Botão fixo na parte inferior */}
-      <div className="bg-white border-t p-4 shrink-0 shadow-lg">
+      <div className="bg-white border-t p-4 shrink-0 shadow-lg rounded-b-lg">
         <Button 
           className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
           onClick={handleSubmit}

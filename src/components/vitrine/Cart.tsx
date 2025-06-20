@@ -16,10 +16,17 @@ const Cart = () => {
     totalPrice
   } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const handleFinalizePurchase = () => {
+    console.log("Finalizar compra clicked, showCheckout:", showCheckout);
+    setShowCheckout(true);
+    setIsSheetOpen(false); // Fechar o sheet do carrinho
+  };
 
   return (
     <>
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="sm" className="relative p-2 text-zinc-100 bg-transparent">
             <ShoppingCart className="h-5 w-5" />
@@ -98,7 +105,7 @@ const Cart = () => {
                   </div>
                   <Button 
                     className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
-                    onClick={() => setShowCheckout(true)}
+                    onClick={handleFinalizePurchase}
                   >
                     Finalizar Compra
                   </Button>
@@ -109,10 +116,15 @@ const Cart = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Checkout Modal Overlay */}
+      {/* Checkout Modal - Renderizado fora do Sheet com z-index muito alto */}
       {showCheckout && (
-        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm">
-          <CheckoutForm onBack={() => setShowCheckout(false)} />
+        <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <CheckoutForm onBack={() => {
+              console.log("Checkout onBack called");
+              setShowCheckout(false);
+            }} />
+          </div>
         </div>
       )}
     </>
