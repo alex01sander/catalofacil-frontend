@@ -31,7 +31,7 @@ const Admin = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
           {renderContent()}
         </main>
       </div>
