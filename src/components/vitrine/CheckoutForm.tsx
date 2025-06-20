@@ -71,194 +71,211 @@ Obrigado pela preferência! 😊`;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 md:bg-white">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="flex items-center gap-4 p-4 max-w-4xl mx-auto">
-          <Button variant="ghost" size="sm" onClick={onBack} className="shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-xl font-bold text-gray-900">Finalizar Compra</h1>
+    <div className="fixed inset-0 z-50 bg-white overflow-hidden flex flex-col">
+      {/* Header fixo */}
+      <div className="bg-violet-600 text-white p-4 flex items-center gap-4 shrink-0">
+        <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-violet-700 p-2">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+            <img src="/lovable-uploads/4e76fa9e-adfb-440b-a373-b991de11248f.png" alt="LinkStore" className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold">LinkStore</h1>
+            <p className="text-xs text-white/80">Catálogo de todos os seus produtos que você sempre desejou encontrar</p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-4 space-y-6">
-        {/* Resumo do Pedido */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ShoppingBag className="h-5 w-5 text-violet-600" />
-              Resumo do Pedido
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border shrink-0">
-                    <img 
-                      src={item.image} 
-                      alt={item.name} 
-                      className="w-full h-full object-cover" 
-                    />
+      <div className="bg-white p-4 border-b shrink-0">
+        <h2 className="text-xl font-bold text-center">Finalizar Compra</h2>
+      </div>
+
+      {/* Conteúdo scrollável */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-4">
+          
+          {/* Resumo do Pedido */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ShoppingBag className="h-5 w-5 text-violet-600" />
+                Resumo do Pedido
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border shrink-0">
+                      <img 
+                        src={item.image} 
+                        alt={item.name} 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm text-gray-900 truncate">{item.name}</h3>
+                      <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-sm text-violet-600">
+                        R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-gray-900 truncate">{item.name}</h3>
-                    <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-sm text-violet-600">
-                      R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
+                ))}
+              </div>
+              <div className="pt-3 border-t">
+                <div className="flex justify-between items-center p-3 bg-violet-50 rounded-lg">
+                  <span className="font-bold text-lg text-gray-900">Total:</span>
+                  <span className="font-bold text-xl text-violet-600">
+                    R$ {totalPrice.toFixed(2).replace('.', ',')}
+                  </span>
                 </div>
-              ))}
-            </div>
-            <div className="pt-4 border-t">
-              <div className="flex justify-between items-center p-4 bg-violet-50 rounded-lg">
-                <span className="font-bold text-lg text-gray-900">Total:</span>
-                <span className="font-bold text-xl text-violet-600">
-                  R$ {totalPrice.toFixed(2).replace('.', ',')}
-                </span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Dados Pessoais */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <User className="h-5 w-5 text-violet-600" />
-              Dados Pessoais
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                  Nome Completo <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Seu nome completo"
-                  className="h-11"
-                />
+          {/* Dados Pessoais */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <User className="h-5 w-5 text-violet-600" />
+                Dados Pessoais
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    Nome Completo <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Seu nome completo"
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                    Telefone <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    placeholder="(11) 99999-9999"
+                    className="h-11"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                  Telefone <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="(11) 99999-9999"
-                  className="h-11"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Forma de Entrega */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MapPin className="h-5 w-5 text-violet-600" />
-              Forma de Entrega
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <RadioGroup 
-              value={formData.deliveryMethod} 
-              onValueChange={(value) => handleInputChange('deliveryMethod', value)}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="delivery" id="delivery" />
-                <Label htmlFor="delivery" className="font-medium cursor-pointer">
-                  🚚 Entrega no endereço
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="pickup" id="pickup" />
-                <Label htmlFor="pickup" className="font-medium cursor-pointer">
-                  🏪 Retirada no Local
-                </Label>
-              </div>
-            </RadioGroup>
-            
-            {formData.deliveryMethod === 'delivery' && (
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-                  Endereço Completo <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="Rua, número, bairro, cidade, CEP"
-                  className="h-11"
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {/* Forma de Entrega */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <MapPin className="h-5 w-5 text-violet-600" />
+                Forma de Entrega
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <RadioGroup 
+                value={formData.deliveryMethod} 
+                onValueChange={(value) => handleInputChange('deliveryMethod', value)}
+                className="space-y-3"
+              >
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <RadioGroupItem value="delivery" id="delivery" />
+                  <Label htmlFor="delivery" className="font-medium cursor-pointer">
+                    🚚 Entrega no endereço
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <RadioGroupItem value="pickup" id="pickup" />
+                  <Label htmlFor="pickup" className="font-medium cursor-pointer">
+                    🏪 Retirada no Local
+                  </Label>
+                </div>
+              </RadioGroup>
+              
+              {formData.deliveryMethod === 'delivery' && (
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                    Endereço Completo <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Rua, número, bairro, cidade, CEP"
+                    className="h-11"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Forma de Pagamento */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CreditCard className="h-5 w-5 text-violet-600" />
-              Forma de Pagamento
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RadioGroup 
-              value={formData.paymentMethod} 
-              onValueChange={(value) => handleInputChange('paymentMethod', value)}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="pix" id="pix" />
-                <Label htmlFor="pix" className="font-medium cursor-pointer">
-                  📱 PIX
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="money" id="money" />
-                <Label htmlFor="money" className="font-medium cursor-pointer">
-                  💵 Dinheiro
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="credit" id="credit" />
-                <Label htmlFor="credit" className="font-medium cursor-pointer">
-                  💳 Cartão de Crédito
-                </Label>
-              </div>
-              <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <RadioGroupItem value="debit" id="debit" />
-                <Label htmlFor="debit" className="font-medium cursor-pointer">
-                  💳 Cartão de Débito
-                </Label>
-              </div>
-            </RadioGroup>
-          </CardContent>
-        </Card>
+          {/* Forma de Pagamento */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CreditCard className="h-5 w-5 text-violet-600" />
+                Forma de Pagamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup 
+                value={formData.paymentMethod} 
+                onValueChange={(value) => handleInputChange('paymentMethod', value)}
+                className="grid grid-cols-1 gap-3"
+              >
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <RadioGroupItem value="pix" id="pix" />
+                  <Label htmlFor="pix" className="font-medium cursor-pointer">
+                    📱 PIX
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <RadioGroupItem value="money" id="money" />
+                  <Label htmlFor="money" className="font-medium cursor-pointer">
+                    💵 Dinheiro
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <RadioGroupItem value="credit" id="credit" />
+                  <Label htmlFor="credit" className="font-medium cursor-pointer">
+                    💳 Cartão de Crédito
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <RadioGroupItem value="debit" id="debit" />
+                  <Label htmlFor="debit" className="font-medium cursor-pointer">
+                    💳 Cartão de Débito
+                  </Label>
+                </div>
+              </RadioGroup>
+            </CardContent>
+          </Card>
 
-        {/* Botão de Finalizar */}
-        <div className="sticky bottom-0 bg-white border-t p-4 -mx-4">
-          <Button 
-            className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
-            onClick={handleSubmit}
-          >
-            Confirmar Pedido
-          </Button>
+          {/* Espaço extra para o botão fixo */}
+          <div className="h-20"></div>
         </div>
+      </div>
+
+      {/* Botão fixo na parte inferior */}
+      <div className="bg-white border-t p-4 shrink-0">
+        <Button 
+          className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" 
+          onClick={handleSubmit}
+        >
+          Confirmar Pedido
+        </Button>
       </div>
     </div>
   );
