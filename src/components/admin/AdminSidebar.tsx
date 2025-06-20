@@ -1,9 +1,10 @@
 
-import { LayoutDashboard, Package, Tag, TrendingUp, Settings, LogOut, Store, Menu } from "lucide-react";
+import { LayoutDashboard, Package, Tag, TrendingUp, Settings, LogOut, Store, Menu, X } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useState } from "react";
 
 type AdminView = "dashboard" | "products" | "categories" | "financial";
 
@@ -16,6 +17,8 @@ const AdminSidebar = ({
   currentView,
   onViewChange
 }: AdminSidebarProps) => {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
   const menuItems = [{
     title: "Dashboard",
     icon: LayoutDashboard,
@@ -34,10 +37,18 @@ const AdminSidebar = ({
     view: "financial" as AdminView
   }];
 
+  const handleViewChange = (view: AdminView) => {
+    onViewChange(view);
+    setIsSheetOpen(false);
+  };
+
   const SidebarContentComponent = () => (
     <>
-      <SidebarHeader className="p-6">
-        <div className="flex items-center space-x-2">
+      <SidebarHeader className="p-6 border-b border-gray-100">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+            <Store className="h-5 w-5 text-white" />
+          </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
             <p className="text-sm text-gray-500">LinkStore</p>
@@ -45,18 +56,22 @@ const AdminSidebar = ({
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-4 py-6">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-2">
               {menuItems.map(item => (
                 <SidebarMenuItem key={item.view}>
                   <SidebarMenuButton 
-                    onClick={() => onViewChange(item.view)} 
-                    className={`w-full ${currentView === item.view ? "bg-purple-100 text-purple-700 border-r-2 border-purple-600" : "text-gray-600 hover:bg-gray-100"}`}
+                    onClick={() => handleViewChange(item.view)} 
+                    className={`w-full h-12 rounded-xl transition-all duration-200 ${
+                      currentView === item.view 
+                        ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25" 
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
                   >
                     <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
+                    <span className="font-medium">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -65,14 +80,14 @@ const AdminSidebar = ({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-6 space-y-2">
-        <Button variant="outline" size="sm" asChild className="w-full">
+      <SidebarFooter className="p-6 border-t border-gray-100 space-y-3">
+        <Button variant="outline" size="sm" asChild className="w-full h-11 rounded-xl border-gray-200 hover:bg-gray-50">
           <Link to="/">
             <Store className="h-4 w-4 mr-2" />
             Ver Loja
           </Link>
         </Button>
-        <Button variant="ghost" size="sm" className="w-full text-gray-500">
+        <Button variant="ghost" size="sm" className="w-full h-11 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600">
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -83,22 +98,27 @@ const AdminSidebar = ({
   return (
     <>
       {/* Mobile Navigation */}
-      <div className="md:hidden">
-        {/* Mobile Header with Menu */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
-            <p className="text-xs text-gray-500">LinkStore</p>
+      <div className="lg:hidden">
+        {/* Mobile Header */}
+        <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center">
+              <Store className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
+              <p className="text-xs text-gray-500">LinkStore</p>
+            </div>
           </div>
           
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl">
+                <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80 p-0">
-              <div className="flex h-full w-full flex-col bg-white">
+            <SheetContent side="left" className="w-80 p-0 bg-white">
+              <div className="flex h-full w-full flex-col">
                 <SidebarContentComponent />
               </div>
             </SheetContent>
@@ -106,20 +126,23 @@ const AdminSidebar = ({
         </div>
 
         {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-40">
-          <div className="flex justify-around">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 py-2 z-40 shadow-lg">
+          <div className="flex justify-around items-center max-w-md mx-auto">
             {menuItems.map(item => (
               <button
                 key={item.view}
                 onClick={() => onViewChange(item.view)}
-                className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+                className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 ${
                   currentView === item.view 
-                    ? "text-purple-600 bg-purple-50" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "bg-gradient-to-t from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 transform scale-105" 
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <item.icon className="h-5 w-5 mb-1" />
-                <span className="text-xs font-medium">{item.title}</span>
+                <item.icon className={`h-5 w-5 mb-1 ${currentView === item.view ? 'animate-pulse' : ''}`} />
+                <span className="text-xs font-medium truncate">{item.title}</span>
+                {currentView === item.view && (
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                )}
               </button>
             ))}
           </div>
@@ -127,7 +150,7 @@ const AdminSidebar = ({
       </div>
 
       {/* Desktop Sidebar */}
-      <Sidebar className="hidden md:flex border-r border-gray-200">
+      <Sidebar className="hidden lg:flex border-r border-gray-100 bg-white">
         <SidebarContentComponent />
       </Sidebar>
     </>
