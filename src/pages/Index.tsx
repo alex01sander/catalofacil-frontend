@@ -8,6 +8,7 @@ import HeroBanner from "@/components/vitrine/HeroBanner";
 import ProductGrid from "@/components/vitrine/ProductGrid";
 import Footer from "@/components/vitrine/Footer";
 import Cart from "@/components/vitrine/Cart";
+
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
@@ -32,7 +33,8 @@ const Index = () => {
     name: "Beleza",
     image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=80&h=80&fit=crop&crop=center"
   }];
-  return <div className="min-h-screen bg-white">
+  return (
+    <div className="min-h-screen bg-white">
       <Header />
       
       {/* Mobile-first Layout */}
@@ -43,10 +45,10 @@ const Index = () => {
           <div className="absolute inset-0 bg-violet-600"></div>
           
           <div className="relative text-center">
-            {/* Logo Circle - Aumentado de w-16 h-16 para w-24 h-24 */}
+            {/* Logo Circle - Imagem preenchendo todo o círculo */}
             <div className="flex justify-center mb-4">
-              <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center border border-white/30">
-                <img alt="LinkStore Logo" className="w-16 h-16" src="/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png" />
+              <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30">
+                <img alt="LinkStore Logo" className="w-full h-full object-cover" src="/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png" />
               </div>
             </div>
             
@@ -151,6 +153,8 @@ const Index = () => {
 
       <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
