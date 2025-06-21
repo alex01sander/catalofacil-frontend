@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,8 @@ const Index = () => {
     storeDescription: localStorage.getItem('storeDescription') || 'Catálogo de todos os seus produtos\nque você sempre desejou encontrar',
     mobileLogo: localStorage.getItem('mobileLogo') || '/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png',
     desktopBanner: localStorage.getItem('desktopBanner') || '/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png',
-    mobileBannerColor: localStorage.getItem('mobileBannerColor') || 'from-green-400 via-green-500 to-green-600'
+    mobileBannerColor: localStorage.getItem('mobileBannerColor') || 'from-green-400 via-green-500 to-green-600',
+    mobileBannerImage: localStorage.getItem('mobileBannerImage') || ''
   });
 
   // Escuta mudanças nas configurações da loja
@@ -64,9 +64,28 @@ const Index = () => {
       {/* Mobile-first Layout */}
       <div className="block md:hidden">
         {/* Hero Section with Logo and Brand - Agora usando configurações dinâmicas */}
-        <section className={`bg-gradient-to-br ${storeSettings.mobileBannerColor} text-white px-4 py-8 rounded-b-3xl relative overflow-hidden`}>
-          {/* Background decoration */}
-          <div className="absolute inset-0 bg-violet-600"></div>
+        <section 
+          className={`text-white px-4 py-8 rounded-b-3xl relative overflow-hidden ${
+            storeSettings.mobileBannerImage 
+              ? 'bg-white' 
+              : `bg-gradient-to-br ${storeSettings.mobileBannerColor}`
+          }`}
+          style={storeSettings.mobileBannerImage ? {
+            backgroundImage: `url('${storeSettings.mobileBannerImage}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          } : {}}
+        >
+          {/* Background overlay when using image */}
+          {storeSettings.mobileBannerImage && (
+            <div className="absolute inset-0 bg-black/40"></div>
+          )}
+          
+          {/* Background decoration for gradient */}
+          {!storeSettings.mobileBannerImage && (
+            <div className="absolute inset-0 bg-violet-600"></div>
+          )}
           
           <div className="relative text-center">
             {/* Logo Circle - Imagem preenchendo todo o círculo */}

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Save, Eye } from "lucide-react";
+import { Upload, Save, Eye, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const StoreSettings = () => {
@@ -17,15 +17,17 @@ const StoreSettings = () => {
     storeDescription: localStorage.getItem('storeDescription') || 'Catálogo de todos os seus produtos\nque você sempre desejou encontrar',
     mobileLogo: localStorage.getItem('mobileLogo') || '/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png',
     desktopBanner: localStorage.getItem('desktopBanner') || '/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png',
-    mobileBannerColor: localStorage.getItem('mobileBannerColor') || 'from-green-400 via-green-500 to-green-600'
+    mobileBannerColor: localStorage.getItem('mobileBannerColor') || 'from-green-400 via-green-500 to-green-600',
+    mobileBannerImage: localStorage.getItem('mobileBannerImage') || ''
   });
 
   const [previewFiles, setPreviewFiles] = useState({
     mobileLogo: null as string | null,
-    desktopBanner: null as string | null
+    desktopBanner: null as string | null,
+    mobileBannerImage: null as string | null
   });
 
-  const handleFileUpload = (type: 'mobileLogo' | 'desktopBanner', event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (type: 'mobileLogo' | 'desktopBanner' | 'mobileBannerImage', event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -44,7 +46,7 @@ const StoreSettings = () => {
     }
   };
 
-  const handleUrlInput = (type: 'mobileLogo' | 'desktopBanner', url: string) => {
+  const handleUrlInput = (type: 'mobileLogo' | 'desktopBanner' | 'mobileBannerImage', url: string) => {
     setSettings(prev => ({
       ...prev,
       [type]: url
@@ -52,6 +54,17 @@ const StoreSettings = () => {
     setPreviewFiles(prev => ({
       ...prev,
       [type]: url
+    }));
+  };
+
+  const handleRemoveImage = (type: 'mobileBannerImage') => {
+    setSettings(prev => ({
+      ...prev,
+      [type]: ''
+    }));
+    setPreviewFiles(prev => ({
+      ...prev,
+      [type]: null
     }));
   };
 
@@ -218,28 +231,91 @@ const StoreSettings = () => {
           </CardContent>
         </Card>
 
-        {/* Cor do Banner Mobile */}
+        {/* Banner Mobile - Imagem ou Cor */}
         <Card className="order-4 lg:order-4">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Cor do Banner Mobile</CardTitle>
+            <CardTitle className="text-lg">Banner Mobile</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2 lg:gap-3">
-              {gradientOptions.map((option) => (
-                <div
-                  key={option.value}
-                  className={`h-12 lg:h-16 bg-gradient-to-br ${option.value} rounded-lg cursor-pointer border-2 transition-all ${
-                    settings.mobileBannerColor === option.value 
-                      ? 'border-white shadow-lg scale-105' 
-                      : 'border-transparent hover:border-gray-300'
-                  }`}
-                  onClick={() => setSettings(prev => ({ ...prev, mobileBannerColor: option.value }))}
-                >
-                  <div className="h-full flex items-center justify-center">
-                    <span className="text-white font-medium text-xs lg:text-sm">{option.name}</span>
+            {/* Upload de Imagem */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Imagem do Banner</Label>
+              <div>
+                <Label htmlFor="mobileBannerUrl" className="text-xs text-gray-600">URL da Imagem</Label>
+                <Input
+                  id="mobileBannerUrl"
+                  value={settings.mobileBannerImage}
+                  onChange={(e) => handleUrlInput('mobileBannerImage', e.target.value)}
+                  placeholder="https://exemplo.com/banner.png"
+                  className="mt-1 text-sm"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="mobileBannerFile" className="text-xs text-gray-600">Ou faça upload</Label>
+                <Input
+                  id="mobileBannerFile"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload('mobileBannerImage', e)}
+                  className="mt-1"
+                />
+              </div>
+
+              {(previewFiles.mobileBannerImage || settings.mobileBannerImage) && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-gray-600 font-medium">Preview da Imagem:</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveImage('mobileBannerImage')}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remover
+                    </Button>
+                  </div>
+                  <div className="w-full h-24 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                    <img 
+                      src={previewFiles.mobileBannerImage || settings.mobileBannerImage} 
+                      alt="Banner mobile preview" 
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
-              ))}
+              )}
+            </div>
+
+            {/* Separador */}
+            <div className="flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <span className="px-3 text-xs text-gray-500 bg-white">ou escolha uma cor</span>
+              <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+
+            {/* Cores do Gradiente */}
+            <div>
+              <Label className="text-sm font-medium mb-3 block">Cor de Fundo</Label>
+              <div className="grid grid-cols-2 gap-2 lg:gap-3">
+                {gradientOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    className={`h-12 lg:h-16 bg-gradient-to-br ${option.value} rounded-lg cursor-pointer border-2 transition-all ${
+                      settings.mobileBannerColor === option.value && !settings.mobileBannerImage
+                        ? 'border-white shadow-lg scale-105' 
+                        : 'border-transparent hover:border-gray-300'
+                    }`}
+                    onClick={() => {
+                      setSettings(prev => ({ ...prev, mobileBannerColor: option.value }));
+                    }}
+                  >
+                    <div className="h-full flex items-center justify-center">
+                      <span className="text-white font-medium text-xs lg:text-sm">{option.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
