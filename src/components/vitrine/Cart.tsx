@@ -179,7 +179,7 @@ Obrigado pela preferência! 😊`;
             ) : (
               // Formulário de Checkout
               <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4">
+                <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4 pb-24">
                   {/* Resumo do Pedido */}
                   <div className="bg-white rounded-lg border p-4 shadow-sm">
                     <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -325,25 +325,25 @@ Obrigado pela preferência! 😊`;
                         </Label>
                       </div>
                     </RadioGroup>
+                  </div>
+                </div>
 
-                    {/* Botões de Ação - Movidos para aqui */}
-                    <div className="pt-6 space-y-3">
-                      <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          className="flex-1 h-12 text-base font-semibold"
-                          onClick={() => setShowCheckoutForm(false)}
-                        >
-                          Voltar
-                        </Button>
-                        <Button
-                          className="flex-1 h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700"
-                          onClick={handleSubmit}
-                        >
-                          Confirmar Pedido
-                        </Button>
-                      </div>
-                    </div>
+                {/* Botões de Ação - Fixos na parte inferior */}
+                <div className="border-t bg-white p-6 flex-shrink-0">
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-12 text-base font-semibold"
+                      onClick={() => setShowCheckoutForm(false)}
+                    >
+                      Voltar
+                    </Button>
+                    <Button
+                      className="flex-1 h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700"
+                      onClick={handleSubmit}
+                    >
+                      Confirmar Pedido
+                    </Button>
                   </div>
                 </div>
               </div>
