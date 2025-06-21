@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -177,159 +176,157 @@ Obrigado pela preferência! 😊`;
                 </div>
               </>
             ) : (
-              // Formulário de Checkout
-              <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4 pb-24">
-                  {/* Resumo do Pedido */}
-                  <div className="bg-white rounded-lg border p-4 shadow-sm">
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <ShoppingCart className="h-5 w-5 text-violet-600" />
-                      Resumo do Pedido
-                    </h3>
-                    <div className="space-y-2 mb-4">
-                      {items.map(item => (
-                        <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border shrink-0">
-                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
-                            <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-sm text-violet-600">
-                              R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                            </p>
-                          </div>
+              // Formulário de Checkout - Agora com scroll único
+              <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4">
+                {/* Resumo do Pedido */}
+                <div className="bg-white rounded-lg border p-4 shadow-sm">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-violet-600" />
+                    Resumo do Pedido
+                  </h3>
+                  <div className="space-y-2 mb-4">
+                    {items.map(item => (
+                      <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border shrink-0">
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                         </div>
-                      ))}
-                    </div>
-                    <div className="pt-3 border-t">
-                      <div className="flex justify-between items-center p-3 bg-violet-50 rounded-lg">
-                        <span className="font-bold text-lg text-gray-900">Total:</span>
-                        <span className="font-bold text-xl text-violet-600">
-                          R$ {totalPrice.toFixed(2).replace('.', ',')}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
+                          <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-sm text-violet-600">
+                            R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-
-                  {/* Dados Pessoais */}
-                  <div className="bg-white rounded-lg border p-4 shadow-sm">
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <User className="h-5 w-5 text-violet-600" />
-                      Dados Pessoais
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                          Nome Completo <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={e => handleInputChange('name', e.target.value)}
-                          placeholder="Seu nome completo"
-                          className="h-11"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                          Telefone <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="phone"
-                          value={formData.phone}
-                          onChange={e => handleInputChange('phone', e.target.value)}
-                          placeholder="(11) 99999-9999"
-                          className="h-11"
-                        />
-                      </div>
+                  <div className="pt-3 border-t">
+                    <div className="flex justify-between items-center p-3 bg-violet-50 rounded-lg">
+                      <span className="font-bold text-lg text-gray-900">Total:</span>
+                      <span className="font-bold text-xl text-violet-600">
+                        R$ {totalPrice.toFixed(2).replace('.', ',')}
+                      </span>
                     </div>
-                  </div>
-
-                  {/* Forma de Entrega */}
-                  <div className="bg-white rounded-lg border p-4 shadow-sm">
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-violet-600" />
-                      Forma de Entrega
-                    </h3>
-                    <RadioGroup
-                      value={formData.deliveryMethod}
-                      onValueChange={value => handleInputChange('deliveryMethod', value)}
-                      className="space-y-3"
-                    >
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                        <RadioGroupItem value="delivery" id="delivery" />
-                        <Label htmlFor="delivery" className="font-medium cursor-pointer">
-                          🚚 Entrega no endereço
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                        <RadioGroupItem value="pickup" id="pickup" />
-                        <Label htmlFor="pickup" className="font-medium cursor-pointer">
-                          🏪 Retirada no Local
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    
-                    {formData.deliveryMethod === 'delivery' && (
-                      <div className="space-y-2 mt-4">
-                        <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-                          Endereço Completo <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="address"
-                          value={formData.address}
-                          onChange={e => handleInputChange('address', e.target.value)}
-                          placeholder="Rua, número, bairro, cidade, CEP"
-                          className="h-11"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Forma de Pagamento */}
-                  <div className="bg-white rounded-lg border p-4 shadow-sm">
-                    <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-violet-600" />
-                      Forma de Pagamento
-                    </h3>
-                    <RadioGroup
-                      value={formData.paymentMethod}
-                      onValueChange={value => handleInputChange('paymentMethod', value)}
-                      className="grid grid-cols-1 gap-3"
-                    >
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                        <RadioGroupItem value="pix" id="pix" />
-                        <Label htmlFor="pix" className="font-medium cursor-pointer">
-                          📱 PIX
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                        <RadioGroupItem value="money" id="money" />
-                        <Label htmlFor="money" className="font-medium cursor-pointer">
-                          💵 Dinheiro
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                        <RadioGroupItem value="credit" id="credit" />
-                        <Label htmlFor="credit" className="font-medium cursor-pointer">
-                          💳 Cartão de Crédito
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
-                        <RadioGroupItem value="debit" id="debit" />
-                        <Label htmlFor="debit" className="font-medium cursor-pointer">
-                          💳 Cartão de Débito
-                        </Label>
-                      </div>
-                    </RadioGroup>
                   </div>
                 </div>
 
-                {/* Botões de Ação - Fixos na parte inferior */}
-                <div className="border-t bg-white p-6 flex-shrink-0">
+                {/* Dados Pessoais */}
+                <div className="bg-white rounded-lg border p-4 shadow-sm">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <User className="h-5 w-5 text-violet-600" />
+                    Dados Pessoais
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                        Nome Completo <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={e => handleInputChange('name', e.target.value)}
+                        placeholder="Seu nome completo"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                        Telefone <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={e => handleInputChange('phone', e.target.value)}
+                        placeholder="(11) 99999-9999"
+                        className="h-11"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Forma de Entrega */}
+                <div className="bg-white rounded-lg border p-4 shadow-sm">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-violet-600" />
+                    Forma de Entrega
+                  </h3>
+                  <RadioGroup
+                    value={formData.deliveryMethod}
+                    onValueChange={value => handleInputChange('deliveryMethod', value)}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                      <RadioGroupItem value="delivery" id="delivery" />
+                      <Label htmlFor="delivery" className="font-medium cursor-pointer">
+                        🚚 Entrega no endereço
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                      <RadioGroupItem value="pickup" id="pickup" />
+                      <Label htmlFor="pickup" className="font-medium cursor-pointer">
+                        🏪 Retirada no Local
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  
+                  {formData.deliveryMethod === 'delivery' && (
+                    <div className="space-y-2 mt-4">
+                      <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                        Endereço Completo <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="address"
+                        value={formData.address}
+                        onChange={e => handleInputChange('address', e.target.value)}
+                        placeholder="Rua, número, bairro, cidade, CEP"
+                        className="h-11"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Forma de Pagamento */}
+                <div className="bg-white rounded-lg border p-4 shadow-sm">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-violet-600" />
+                    Forma de Pagamento
+                  </h3>
+                  <RadioGroup
+                    value={formData.paymentMethod}
+                    onValueChange={value => handleInputChange('paymentMethod', value)}
+                    className="grid grid-cols-1 gap-3"
+                  >
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                      <RadioGroupItem value="pix" id="pix" />
+                      <Label htmlFor="pix" className="font-medium cursor-pointer">
+                        📱 PIX
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                      <RadioGroupItem value="money" id="money" />
+                      <Label htmlFor="money" className="font-medium cursor-pointer">
+                        💵 Dinheiro
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                      <RadioGroupItem value="credit" id="credit" />
+                      <Label htmlFor="credit" className="font-medium cursor-pointer">
+                        💳 Cartão de Crédito
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                      <RadioGroupItem value="debit" id="debit" />
+                      <Label htmlFor="debit" className="font-medium cursor-pointer">
+                        💳 Cartão de Débito
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Botões de Ação - Agora dentro do scroll, após forma de pagamento */}
+                <div className="pt-6 pb-6 space-y-3">
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
