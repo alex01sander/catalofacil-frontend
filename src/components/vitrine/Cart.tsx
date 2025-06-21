@@ -325,24 +325,24 @@ Obrigado pela preferência! 😊`;
                         </Label>
                       </div>
                     </RadioGroup>
-                  </div>
 
-                  {/* Botões de Ação */}
-                  <div className="pt-4 space-y-3">
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        className="flex-1 h-12 text-base font-semibold"
-                        onClick={() => setShowCheckoutForm(false)}
-                      >
-                        Voltar
-                      </Button>
-                      <Button
-                        className="flex-1 h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700"
-                        onClick={handleSubmit}
-                      >
-                        Confirmar
-                      </Button>
+                    {/* Botões de Ação - Movidos para aqui */}
+                    <div className="pt-6 space-y-3">
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          className="flex-1 h-12 text-base font-semibold"
+                          onClick={() => setShowCheckoutForm(false)}
+                        >
+                          Voltar
+                        </Button>
+                        <Button
+                          className="flex-1 h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700"
+                          onClick={handleSubmit}
+                        >
+                          Confirmar Pedido
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
