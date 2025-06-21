@@ -97,15 +97,15 @@ Obrigado pela preferência! 😊`;
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col h-full">
-        <SheetHeader className="pb-4 border-b flex-shrink-0">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col h-full p-0">
+        <SheetHeader className="p-6 pb-4 border-b flex-shrink-0">
           <SheetTitle className="text-xl font-bold">
             {showCheckoutForm ? 'Finalizar Compra' : 'Carrinho de Compras'}
           </SheetTitle>
         </SheetHeader>
         
         {items.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center py-12">
+          <div className="flex-1 flex flex-col items-center justify-center py-12 px-6">
             <ShoppingCart className="h-16 w-16 text-gray-300 mb-4" />
             <p className="text-gray-500 text-lg">Seu carrinho está vazio</p>
             <p className="text-gray-400 text-sm mt-2">Adicione produtos para continuar</p>
@@ -115,7 +115,7 @@ Obrigado pela preferência! 😊`;
             {!showCheckoutForm ? (
               // Visualização do Carrinho
               <>
-                <div className="flex-1 overflow-y-auto py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4">
                   {items.map(item => (
                     <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border">
@@ -160,7 +160,7 @@ Obrigado pela preferência! 😊`;
                   ))}
                 </div>
                 
-                <div className="border-t pt-4 space-y-4 bg-white flex-shrink-0">
+                <div className="border-t pt-4 pb-6 px-6 space-y-4 bg-white flex-shrink-0">
                   <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                     <span className="text-lg font-semibold">Total:</span>
                     <span className="text-xl font-bold text-violet-600">
@@ -178,7 +178,7 @@ Obrigado pela preferência! 😊`;
             ) : (
               // Formulário de Checkout
               <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4 pb-24">
                   {/* Resumo do Pedido */}
                   <div className="bg-white rounded-lg border p-4 shadow-sm">
                     <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -328,20 +328,20 @@ Obrigado pela preferência! 😊`;
                 </div>
 
                 {/* Botões de Ação - Fixos no final */}
-                <div className="border-t pt-4 pb-4 space-y-3 bg-white flex-shrink-0">
-                  <div className="flex gap-3">
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 space-y-3 z-10">
+                  <div className="flex gap-3 max-w-lg mx-auto">
                     <Button
                       variant="outline"
                       className="flex-1 h-12 text-base font-semibold"
                       onClick={() => setShowCheckoutForm(false)}
                     >
-                      Voltar ao Carrinho
+                      Voltar
                     </Button>
                     <Button
                       className="flex-1 h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700"
                       onClick={handleSubmit}
                     >
-                      Confirmar Pedido
+                      Confirmar
                     </Button>
                   </div>
                 </div>
