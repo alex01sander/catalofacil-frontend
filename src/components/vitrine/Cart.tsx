@@ -178,7 +178,7 @@ Obrigado pela preferência! 😊`;
             ) : (
               // Formulário de Checkout
               <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4 pb-24">
+                <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4 pb-32">
                   {/* Resumo do Pedido */}
                   <div className="bg-white rounded-lg border p-4 shadow-sm">
                     <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
