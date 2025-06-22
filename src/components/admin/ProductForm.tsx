@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,11 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { X, Upload, ImageIcon, Trash2, GripVertical } from "lucide-react";
+import { X, Upload, Trash2, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Product {
-  id?: number;
+  id?: string;
   name: string;
   price: number;
   description: string;
@@ -23,19 +26,23 @@ interface Product {
   images?: string[];
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface ProductFormProps {
   product?: Product;
   onSubmit: (product: Omit<Product, 'id'>) => void;
   onCancel: () => void;
 }
 
-const categories = ["Eletrônicos", "Roupas", "Casa", "Beleza", "Esportes", "Livros", "Brinquedos"];
-
-const ProductForm = ({
-  product,
-  onSubmit,
-  onCancel
-}: ProductFormProps) => {
+const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  
   const [formData, setFormData] = useState<Omit<Product, 'id'>>({
     name: product?.name || "",
     price: product?.price || 0,
@@ -49,6 +56,48 @@ const ProductForm = ({
 
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>(product?.images || []);
+
+  // Fetch categories from database
+  const fetchCategories = async () => {
+    if (!user) {
+      setLoadingCategories(false);
+      return;
+    }
+    
+    try {
+      setLoadingCategories(true);
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        toast({
+          title: "Erro ao carregar categorias",
+          description: "Não foi possível carregar as categorias.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Erro inesperado ao carregar categorias.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, [user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,143 +254,5 @@ const ProductForm = ({
                                   src={img} 
                                   alt={`Imagem ${index + 1}`} 
                                   className="w-full h-20 rounded-lg object-cover border cursor-pointer hover:opacity-75 transition-opacity"
-                                  onClick={() => setMainImage(img)}
-                                />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="sm"
-                                  className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => removeImage(index)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                                {formData.image === img && (
-                                  <Badge className="absolute bottom-1 left-1 text-xs py-0 px-1">
-                                    Principal
-                                  </Badge>
-                                )}
-                                <Badge 
-                                  variant="secondary" 
-                                  className="absolute bottom-1 right-1 text-xs py-0 px-1 bg-black bg-opacity-70 text-white"
-                                >
-                                  {index + 1}
-                                </Badge>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-                <p className="text-xs text-gray-500">
-                  Clique em uma imagem para defini-la como principal • Arraste para reordenar • Os números mostram a ordem de exibição
-                </p>
-              </div>
-            )}
-          </div>
+                                  onClick={() => setMain
 
-          {/* Nome do produto */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome do Produto *</Label>
-            <Input 
-              id="name" 
-              placeholder="Digite o nome do produto" 
-              value={formData.name} 
-              onChange={e => handleInputChange('name', e.target.value)} 
-              required 
-            />
-          </div>
-
-          {/* Descrição */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea 
-              id="description" 
-              placeholder="Descreva o produto..." 
-              value={formData.description} 
-              onChange={e => handleInputChange('description', e.target.value)} 
-              rows={3} 
-            />
-          </div>
-
-          {/* Preço e Estoque */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Preço (R$) *</Label>
-              <Input 
-                id="price" 
-                type="number" 
-                step="0.01" 
-                min="0" 
-                placeholder="0,00" 
-                value={formData.price} 
-                onChange={e => handleInputChange('price', parseFloat(e.target.value) || 0)} 
-                required 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="stock">Estoque *</Label>
-              <Input 
-                id="stock" 
-                type="number" 
-                min="0" 
-                placeholder="0" 
-                value={formData.stock} 
-                onChange={e => handleInputChange('stock', parseInt(e.target.value) || 0)} 
-                required 
-              />
-            </div>
-          </div>
-
-          {/* Categoria */}
-          <div className="space-y-2">
-            <Label>Categoria *</Label>
-            <Select value={formData.category} onValueChange={value => handleInputChange('category', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status */}
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="isActive" 
-              checked={formData.isActive} 
-              onCheckedChange={checked => handleInputChange('isActive', checked)} 
-            />
-            <Label htmlFor="isActive">
-              Produto ativo na vitrine
-            </Label>
-            <Badge variant={formData.isActive ? "default" : "secondary"}>
-              {formData.isActive ? "Ativo" : "Inativo"}
-            </Badge>
-          </div>
-
-          {/* Botões */}
-          <div className="flex space-x-3 pt-4">
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700">
-              {product ? 'Salvar Alterações' : 'Criar Produto'}
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default ProductForm;
