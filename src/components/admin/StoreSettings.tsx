@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +78,8 @@ const StoreSettings = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const fileError = validateFileUpload(file);
+    // Handle async file validation properly
+    const fileError = await validateFileUpload(file);
     if (fileError) {
       toast({
         title: "Erro no arquivo",
