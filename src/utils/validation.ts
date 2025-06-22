@@ -202,7 +202,7 @@ export const checkRateLimit = (identifier: string, maxAttempts: number = 5, wind
 // Clean up old rate limit entries periodically
 setInterval(() => {
   const now = Date.now();
-  const windowMs = 15 * 60 * 000;
+  const windowMs = 15 * 60 * 1000;
   
   Object.keys(authAttempts).forEach(key => {
     if (now - authAttempts[key].lastAttempt > windowMs) {
