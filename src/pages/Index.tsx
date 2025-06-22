@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,83 +11,63 @@ import ProductGrid from "@/components/vitrine/ProductGrid";
 import Footer from "@/components/vitrine/Footer";
 import Cart from "@/components/vitrine/Cart";
 import WhatsAppFloat from "@/components/vitrine/WhatsAppFloat";
-
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
-  const { user } = useAuth();
-  const { settings: storeSettings, loading } = useStoreSettings();
-  
+  const {
+    user
+  } = useAuth();
+  const {
+    settings: storeSettings,
+    loading
+  } = useStoreSettings();
+
   // Categoria padrão - usuários irão criar suas próprias categorias
   const categories = [{
     id: "todos",
     name: "Todos",
     image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"
   }];
-
   const handleWhatsAppClick = () => {
     const phoneNumber = "5511999999999";
     const message = "Olá! Gostaria de saber mais sobre os produtos da loja.";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
-
   const handleInstagramClick = () => {
     window.open('https://instagram.com/', '_blank');
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">Carregando loja...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-white">
+  return <div className="min-h-screen bg-white">
       <Header />
       
       {/* Mobile-first Layout */}
       <div className="block md:hidden">
         {/* Hero Section with Logo and Brand */}
-        <section 
-          className={`text-white px-4 py-8 rounded-b-3xl relative overflow-hidden ${
-            storeSettings.mobile_banner_image 
-              ? 'bg-white' 
-              : `bg-gradient-to-br ${storeSettings.mobile_banner_color}`
-          }`}
-          style={storeSettings.mobile_banner_image ? {
-            backgroundImage: `url('${storeSettings.mobile_banner_image}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          } : {}}
-        >
+        <section className={`text-white px-4 py-8 rounded-b-3xl relative overflow-hidden ${storeSettings.mobile_banner_image ? 'bg-white' : `bg-gradient-to-br ${storeSettings.mobile_banner_color}`}`} style={storeSettings.mobile_banner_image ? {
+        backgroundImage: `url('${storeSettings.mobile_banner_image}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      } : {}}>
           {/* Background overlay when using image */}
-          {storeSettings.mobile_banner_image && (
-            <div className="absolute inset-0 bg-black/40"></div>
-          )}
+          {storeSettings.mobile_banner_image && <div className="absolute inset-0 bg-black/40"></div>}
           
           {/* Background decoration for gradient */}
-          {!storeSettings.mobile_banner_image && (
-            <div className="absolute inset-0 bg-green-600"></div>
-          )}
+          {!storeSettings.mobile_banner_image && <div className="absolute inset-0 bg-green-600"></div>}
           
           <div className="relative text-center">
             {/* Logo Circle */}
             <div className="flex justify-center mb-4">
               <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30">
-                {storeSettings.mobile_logo && (
-                  <img 
-                    alt={`${storeSettings.store_name} Logo`} 
-                    className="w-full h-full object-cover" 
-                    src={storeSettings.mobile_logo} 
-                  />
-                )}
+                {storeSettings.mobile_logo && <img alt={`${storeSettings.store_name} Logo`} className="w-full h-full object-cover" src={storeSettings.mobile_logo} />}
               </div>
             </div>
             
@@ -104,19 +83,11 @@ const Index = () => {
             
             {/* Instagram and WhatsApp Icons */}
             <div className="flex justify-center gap-4 mb-6">
-              <button
-                onClick={handleInstagramClick}
-                className="bg-white text-black p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-100"
-                aria-label="Seguir no Instagram"
-              >
+              <button onClick={handleInstagramClick} className="bg-white text-black p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-100" aria-label="Seguir no Instagram">
                 <Instagram className="h-5 w-5" />
               </button>
               
-              <button
-                onClick={handleWhatsAppClick}
-                className="bg-black text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-800"
-                aria-label="Contato via WhatsApp"
-              >
+              <button onClick={handleWhatsAppClick} aria-label="Contato via WhatsApp" className="p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 bg-zinc-50 text-zinc-950">
                 <MessageCircle className="h-5 w-5" />
               </button>
             </div>
@@ -125,12 +96,7 @@ const Index = () => {
             <div className="flex items-center gap-2 max-w-sm mx-auto">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input 
-                  placeholder="O que você está procurando?" 
-                  value={searchTerm} 
-                  onChange={e => setSearchTerm(e.target.value)} 
-                  className="pl-10 h-12 bg-white/95 backdrop-blur-sm border-0 shadow-lg text-gray-700 placeholder:text-gray-500" 
-                />
+                <Input placeholder="O que você está procurando?" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-12 bg-white/95 backdrop-blur-sm border-0 shadow-lg text-gray-700 placeholder:text-gray-500" />
               </div>
               <div className="backdrop-blur-sm rounded-lg p-2 bg-transparent">
                 <Cart />
@@ -142,26 +108,14 @@ const Index = () => {
         {/* Categories Section */}
         <section className="px-4 py-6 bg-gray-50">
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map(category => (
-              <div 
-                key={category.id} 
-                className="flex flex-col items-center cursor-pointer group flex-shrink-0" 
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 shadow-sm ${
-                  selectedCategory === category.id 
-                    ? 'border-green-500 shadow-lg scale-105' 
-                    : 'border-gray-200 group-hover:border-gray-300'
-                }`}>
+            {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group flex-shrink-0" onClick={() => setSelectedCategory(category.id)}>
+                <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 shadow-sm ${selectedCategory === category.id ? 'border-green-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300'}`}>
                   <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
                 </div>
-                <span className={`text-xs mt-2 font-medium transition-colors text-center min-w-[60px] ${
-                  selectedCategory === category.id ? 'text-green-600' : 'text-gray-600'
-                }`}>
+                <span className={`text-xs mt-2 font-medium transition-colors text-center min-w-[60px] ${selectedCategory === category.id ? 'text-green-600' : 'text-gray-600'}`}>
                   {category.name}
                 </span>
-              </div>
-            ))}
+              </div>)}
           </div>
         </section>
 
@@ -230,8 +184,6 @@ const Index = () => {
       
       {/* WhatsApp Float Button */}
       <WhatsAppFloat />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
