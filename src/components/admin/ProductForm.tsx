@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,7 +136,17 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
         reader.onload = event => {
           const imageUrl = event.target?.result as string;
           console.log('Image loaded:', imageUrl.substring(0, 50) + '...');
-          setImages(prev => [...prev, imageUrl]);
+          setImages(prev => {
+            const newImages = [...prev, imageUrl];
+            // Se for a primeira imagem, definir como principal
+            if (prev.length === 0) {
+              setFormData(prevForm => ({
+                ...prevForm,
+                image: imageUrl
+              }));
+            }
+            return newImages;
+          });
         };
         reader.readAsDataURL(file);
       });
@@ -145,14 +156,41 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const addImageFromUrl = () => {
     console.log('Adding image from URL:', imageUrl);
     if (imageUrl.trim()) {
-      setImages(prev => [...prev, imageUrl.trim()]);
+      setImages(prev => {
+        const newImages = [...prev, imageUrl.trim()];
+        // Se for a primeira imagem, definir como principal
+        if (prev.length === 0) {
+          setFormData(prevForm => ({
+            ...prevForm,
+            image: imageUrl.trim()
+          }));
+        }
+        return newImages;
+      });
       setImageUrl("");
     }
   };
 
   const removeImage = (index: number) => {
     console.log('Removing image at index:', index);
+    const imageToRemove = images[index];
     setImages(prev => prev.filter((_, i) => i !== index));
+    
+    // Se a imagem removida era a principal, definir a primeira restante como principal
+    if (formData.image === imageToRemove) {
+      const remainingImages = images.filter((_, i) => i !== index);
+      if (remainingImages.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          image: remainingImages[0]
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          image: "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=400&h=400&fit=crop"
+        }));
+      }
+    }
   };
 
   const setMainImage = (imageUrl: string) => {
@@ -321,7 +359,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price}
+                  value={formData.price || ""}
                   onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
                   placeholder="0,00"
                   required
@@ -359,7 +397,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
                   id="stock"
                   type="number"
                   min="0"
-                  value={formData.stock}
+                  value={formData.stock || ""}
                   onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
                   placeholder="0"
                   required
