@@ -13,7 +13,8 @@ interface Product {
   description: string;
   category: string;
   image: string;
-  gallery: string[];
+  gallery?: string[];
+  images?: string[];
   stock: number;
 }
 
@@ -27,6 +28,13 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
+
+  // Combinar images e gallery em uma única array
+  const allImages = product.images && product.images.length > 0 
+    ? product.images 
+    : product.gallery && product.gallery.length > 0 
+    ? product.gallery 
+    : [product.image];
 
   const handleAddToCart = () => {
     // Adiciona a quantidade selecionada ao carrinho
@@ -80,7 +88,7 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{product.name}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold break-words">{product.name}</DialogTitle>
         </DialogHeader>
         
         <div className="grid md:grid-cols-2 gap-8">
@@ -88,29 +96,34 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
           <div className="space-y-4">
             <div className="aspect-square rounded-lg overflow-hidden">
               <img
-                src={product.gallery?.[selectedImage] || product.image}
+                src={allImages[selectedImage] || product.image}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
             </div>
             
-            {product.gallery && product.gallery.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {product.gallery.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === index ? 'border-green-600' : 'border-gray-200'
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+            {allImages.length > 1 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">
+                  Galeria ({allImages.length} imagens)
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {allImages.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                        selectedImage === index ? 'border-green-600' : 'border-gray-200'
+                      }`}
+                    >
+                      <img
+                        src={image}
+                        alt={`${product.name} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -121,9 +134,11 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
               <Badge variant="secondary" className="mb-2">
                 {product.category}
               </Badge>
-              <p className="text-gray-600 leading-relaxed">
-                {product.description}
-              </p>
+              <div className="prose prose-sm max-w-none">
+                <p className="text-gray-600 leading-relaxed whitespace-pre-wrap break-words">
+                  {product.description}
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">
