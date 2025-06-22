@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
-import { validateEmail, validatePassword } from "@/utils/validation";
+import { validateEmail, validatePassword, checkRateLimit } from "@/utils/validation";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -44,6 +44,16 @@ const Auth = () => {
     e.preventDefault();
     
     if (!validateForm()) {
+      return;
+    }
+
+    // Check rate limiting
+    if (!checkRateLimit(email, 5, 15 * 60 * 1000)) {
+      toast({
+        title: "Muitas tentativas",
+        description: "Aguarde 15 minutos antes de tentar novamente.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -103,6 +113,7 @@ const Auth = () => {
                 }}
                 placeholder="seu@email.com"
                 className={errors.email ? "border-red-500" : ""}
+                autoComplete="email"
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
@@ -120,6 +131,7 @@ const Auth = () => {
                   }}
                   placeholder="Sua senha"
                   className={errors.password ? "border-red-500" : ""}
+                  autoComplete="current-password"
                 />
                 <Button
                   type="button"
@@ -127,6 +139,7 @@ const Auth = () => {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3"
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
