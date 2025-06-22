@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductForm from "./ProductForm";
 
+// Database Product interface (matches database schema)
 interface Product {
   id: string;
   name: string;
@@ -25,12 +26,25 @@ interface Product {
   };
 }
 
+// Form Product interface (for ProductForm component)
+interface FormProduct {
+  id?: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+  stock: number;
+  isActive: boolean;
+  image: string;
+  images: string[];
+}
+
 const ProductManagement = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<FormProduct | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +109,7 @@ const ProductManagement = () => {
 
   const handleEditProduct = (product: Product) => {
     // Map database product to form product interface
-    const formProduct = {
+    const formProduct: FormProduct = {
       id: product.id,
       name: product.name,
       price: product.price,
@@ -110,7 +124,7 @@ const ProductManagement = () => {
     setShowForm(true);
   };
 
-  const handleFormSubmit = async (productData: any) => {
+  const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
     if (!user) return;
 
     try {
