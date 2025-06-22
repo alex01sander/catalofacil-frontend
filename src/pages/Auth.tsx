@@ -10,14 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -32,12 +30,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      let result;
-      if (isLogin) {
-        result = await signIn(email, password);
-      } else {
-        result = await signUp(email, password, fullName);
-      }
+      const result = await signIn(email, password);
 
       if (result.error) {
         toast({
@@ -46,18 +39,11 @@ const Auth = () => {
           variant: "destructive",
         });
       } else {
-        if (isLogin) {
-          toast({
-            title: "Sucesso!",
-            description: "Login realizado com sucesso.",
-          });
-          navigate('/');
-        } else {
-          toast({
-            title: "Conta criada!",
-            description: "Verifique seu email para confirmar a conta.",
-          });
-        }
+        toast({
+          title: "Sucesso!",
+          description: "Login realizado com sucesso.",
+        });
+        navigate('/');
       }
     } catch (error: any) {
       toast({
@@ -75,25 +61,11 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
-            {isLogin ? "Entrar na sua loja" : "Criar sua loja"}
+            Entrar na sua loja
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div>
-                <Label htmlFor="fullName">Nome completo</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={!isLogin}
-                  placeholder="Seu nome completo"
-                />
-              </div>
-            )}
-            
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -131,19 +103,9 @@ const Auth = () => {
             </div>
             
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Carregando..." : (isLogin ? "Entrar" : "Criar conta")}
+              {loading ? "Carregando..." : "Entrar"}
             </Button>
           </form>
-          
-          <div className="mt-6 text-center">
-            <Button
-              variant="link"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm"
-            >
-              {isLogin ? "Não tem uma conta? Criar conta" : "Já tem uma conta? Entrar"}
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
