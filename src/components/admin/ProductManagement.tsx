@@ -26,49 +26,8 @@ const ProductManagement = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   
-  // Dados de exemplo dos produtos
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 1,
-      name: "Smartphone Galaxy Pro",
-      price: 1299.99,
-      description: "Smartphone premium com câmera profissional",
-      category: "Eletrônicos",
-      stock: 15,
-      isActive: true,
-      image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=100&h=100&fit=crop"
-    },
-    {
-      id: 2,
-      name: "Camiseta Premium Cotton",
-      price: 89.90,
-      description: "Camiseta 100% algodão premium",
-      category: "Roupas",
-      stock: 25,
-      isActive: true,
-      image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=100&h=100&fit=crop"
-    },
-    {
-      id: 3,
-      name: "Sofá Moderno 3 Lugares",
-      price: 2499.99,
-      description: "Sofá confortável para sala de estar",
-      category: "Casa",
-      stock: 8,
-      isActive: false,
-      image: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=100&h=100&fit=crop"
-    },
-    {
-      id: 4,
-      name: "Kit Skincare Completo",
-      price: 149.90,
-      description: "Kit completo para cuidados com a pele",
-      category: "Beleza",
-      stock: 2,
-      isActive: true,
-      image: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=100&h=100&fit=crop"
-    }
-  ]);
+  // Lista vazia de produtos - usuários irão adicionar seus próprios produtos
+  const [products, setProducts] = useState<Product[]>([]);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,7 +58,7 @@ const ProductManagement = () => {
     } else {
       const newProduct = {
         ...productData,
-        id: Math.max(...products.map(p => p.id)) + 1
+        id: Math.max(0, ...products.map(p => p.id)) + 1
       };
       setProducts(prev => [...prev, newProduct]);
       toast({
@@ -226,201 +185,219 @@ const ProductManagement = () => {
         </Card>
       </div>
 
-      {/* Mobile Product Cards */}
-      <div className="block md:hidden">
-        <div className="space-y-4">
-          {filteredProducts.map((product) => (
-            <Card key={product.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
-                      <Badge variant={product.isActive ? "default" : "secondary"} className="ml-2 flex-shrink-0">
-                        {product.isActive ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mb-2">
-                      <Badge variant="secondary" className="text-xs">{product.category}</Badge>
-                      <span className="font-bold text-green-600">
-                        R$ {product.price.toFixed(2).replace('.', ',')}
-                      </span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mb-3">
-                      <span className={`text-sm ${product.stock < 10 ? 'text-orange-600' : 'text-gray-600'}`}>
-                        {product.stock} unidades
-                      </span>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-2">
-                      {showDeleteConfirm === product.id ? (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteProduct(product.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={cancelDelete}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleProductStatus(product.id)}
-                          >
-                            {product.isActive ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditProduct(product)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => confirmDelete(product.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Desktop Table - Hidden on Mobile */}
-      <Card className="hidden md:block">
-        <CardHeader>
-          <CardTitle>Lista de Produtos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3">Produto</th>
-                  <th className="text-left p-3">Categoria</th>
-                  <th className="text-left p-3">Preço</th>
-                  <th className="text-left p-3">Estoque</th>
-                  <th className="text-left p-3">Status</th>
-                  <th className="text-left p-3">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                        <span className="font-medium">{product.name}</span>
+      {products.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-gray-500">
+              <Plus className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Nenhum produto cadastrado</h3>
+              <p className="text-sm mb-4">Comece adicionando seu primeiro produto à loja</p>
+              <Button onClick={handleAddProduct} className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Primeiro Produto
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Mobile Product Cards */}
+          <div className="block md:hidden">
+            <div className="space-y-4">
+              {filteredProducts.map((product) => (
+                <Card key={product.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
+                          <Badge variant={product.isActive ? "default" : "secondary"} className="ml-2 flex-shrink-0">
+                            {product.isActive ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex justify-between items-center mb-2">
+                          <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                          <span className="font-bold text-green-600">
+                            R$ {product.price.toFixed(2).replace('.', ',')}
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between items-center mb-3">
+                          <span className={`text-sm ${product.stock < 10 ? 'text-orange-600' : 'text-gray-600'}`}>
+                            {product.stock} unidades
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-2">
+                          {showDeleteConfirm === product.id ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteProduct(product.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelDelete}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleProductStatus(product.id)}
+                              >
+                                {product.isActive ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditProduct(product)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => confirmDelete(product.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant="secondary">{product.category}</Badge>
-                    </td>
-                    <td className="p-3 font-semibold">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
-                    </td>
-                    <td className="p-3">
-                      <span className={`${product.stock < 10 ? 'text-orange-600' : 'text-gray-900'}`}>
-                        {product.stock} unidades
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={product.isActive ? "default" : "secondary"}>
-                        {product.isActive ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      {showDeleteConfirm === product.id ? (
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteProduct(product.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={cancelDelete}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleProductStatus(product.id)}
-                          >
-                            {product.isActive ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditProduct(product)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => confirmDelete(product.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Desktop Table - Hidden on Mobile */}
+          <Card className="hidden md:block">
+            <CardHeader>
+              <CardTitle>Lista de Produtos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Produto</th>
+                      <th className="text-left p-3">Categoria</th>
+                      <th className="text-left p-3">Preço</th>
+                      <th className="text-left p-3">Estoque</th>
+                      <th className="text-left p-3">Status</th>
+                      <th className="text-left p-3">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map((product) => (
+                      <tr key={product.id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="flex items-center space-x-3">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                            <span className="font-medium">{product.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant="secondary">{product.category}</Badge>
+                        </td>
+                        <td className="p-3 font-semibold">
+                          R$ {product.price.toFixed(2).replace('.', ',')}
+                        </td>
+                        <td className="p-3">
+                          <span className={`${product.stock < 10 ? 'text-orange-600' : 'text-gray-900'}`}>
+                            {product.stock} unidades
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant={product.isActive ? "default" : "secondary"}>
+                            {product.isActive ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </td>
+                        <td className="p-3">
+                          {showDeleteConfirm === product.id ? (
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteProduct(product.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelDelete}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleProductStatus(product.id)}
+                              >
+                                {product.isActive ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditProduct(product)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => confirmDelete(product.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

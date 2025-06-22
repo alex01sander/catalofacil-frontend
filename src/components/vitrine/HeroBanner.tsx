@@ -2,70 +2,59 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowDown } from "lucide-react";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 const HeroBanner = () => {
-  const [storeSettings, setStoreSettings] = useState({
-    storeName: localStorage.getItem('storeName') || 'LinkStore',
-    storeDescription: localStorage.getItem('storeDescription') || 'Catálogo de todos os seus produtos\nque você sempre desejou encontrar',
-    desktopBanner: localStorage.getItem('desktopBanner') || '/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png',
-  });
+  const { settings } = useStoreSettings();
 
-  // Escuta mudanças nas configurações da loja
-  useEffect(() => {
-    const handleStoreSettingsUpdate = (event: CustomEvent) => {
-      setStoreSettings(prev => ({
-        ...prev,
-        ...event.detail
-      }));
-    };
-
-    window.addEventListener('storeSettingsUpdated', handleStoreSettingsUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('storeSettingsUpdated', handleStoreSettingsUpdate as EventListener);
-    };
-  }, []);
-
-  return <section className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white overflow-hidden">
+  return (
+    <section className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white overflow-hidden">
       {/* Background image */}
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30" style={{
-      backgroundImage: `url('${storeSettings.desktopBanner}')`
-    }}></div>
+      {settings.desktop_banner && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30" 
+          style={{ backgroundImage: `url('${settings.desktop_banner}')` }}
+        />
+      )}
       
       <div className="absolute inset-0 bg-black/20"></div>
       
       <div className="relative max-w-6xl mx-auto px-4 py-20">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
-            Produtos Incríveis,
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-              Preços Imbatíveis
+            {settings.store_name}
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mt-2">
+              Produtos Incríveis
             </span>
           </h1>
           
           <p className="text-xl md:text-2xl mb-8 text-purple-100 max-w-2xl mx-auto whitespace-pre-line">
-            {storeSettings.storeDescription}
+            {settings.store_description}
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="bg-white text-purple-700 hover:bg-purple-50 px-8 py-3 text-lg font-semibold" onClick={() => document.getElementById('produtos')?.scrollIntoView({
-            behavior: 'smooth'
-          })}>
+            <Button 
+              size="lg" 
+              className="bg-white text-purple-700 hover:bg-purple-50 px-8 py-3 text-lg font-semibold" 
+              onClick={() => document.getElementById('produtos')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               Ver Produtos
               <ArrowDown className="ml-2 h-5 w-5" />
             </Button>
             
-            <Button variant="outline" size="lg" onClick={() => window.open('https://wa.me/5511999999999?text=Olá! Gostaria de saber mais sobre os produtos.', '_blank')} className="border-white text-purple-700 hover:bg-white hover:text-purple-700 px-8 py-3 text-lg">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={() => window.open('https://wa.me/5511999999999?text=Olá! Gostaria de saber mais sobre os produtos.', '_blank')} 
+              className="border-white text-white hover:bg-white hover:text-purple-700 px-8 py-3 text-lg"
+            >
               Falar no WhatsApp
             </Button>
           </div>
         </div>
       </div>
-      
-      {/* Decorative elements */}
-      <div className="absolute bottom-0 left-0 w-full">
-        
-      </div>
-    </section>;
+    </section>
+  );
 };
+
 export default HeroBanner;

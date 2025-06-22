@@ -16,10 +16,10 @@ export interface StoreSettings {
 export const useStoreSettings = () => {
   const { user } = useAuth();
   const [settings, setSettings] = useState<StoreSettings>({
-    store_name: 'LinkStore',
-    store_description: 'Catálogo de todos os seus produtos\nque você sempre desejou encontrar',
-    mobile_logo: '/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png',
-    desktop_banner: '/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png',
+    store_name: 'Minha Loja',
+    store_description: 'Bem-vindo à minha loja!\nAqui você encontra os melhores produtos.',
+    mobile_logo: null,
+    desktop_banner: null,
     mobile_banner_color: 'from-green-400 via-green-500 to-green-600',
     mobile_banner_image: null
   });
