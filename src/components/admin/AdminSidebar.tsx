@@ -4,16 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
 type AdminView = "dashboard" | "products" | "categories" | "financial" | "settings";
+
 interface AdminSidebarProps {
   currentView: AdminView;
   onViewChange: (view: AdminView) => void;
 }
+
 const AdminSidebar = ({
   currentView,
   onViewChange
 }: AdminSidebarProps) => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
   const menuItems = [{
     title: "Dashboard",
     icon: LayoutDashboard,
@@ -35,10 +42,21 @@ const AdminSidebar = ({
     icon: Settings,
     view: "settings" as AdminView
   }];
+
   const handleViewChange = (view: AdminView) => {
     onViewChange(view);
     setIsSheetOpen(false);
   };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Desconectado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao sair");
+    }
+  };
+
   const SidebarContentComponent = () => <>
       <SidebarHeader className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
@@ -47,7 +65,7 @@ const AdminSidebar = ({
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
-            <p className="text-sm text-gray-500">LinkStore</p>
+            <p className="text-sm text-gray-500">{user?.email}</p>
           </div>
         </div>
       </SidebarHeader>
@@ -74,7 +92,12 @@ const AdminSidebar = ({
             Ver Loja
           </Link>
         </Button>
-        <Button variant="ghost" size="sm" className="w-full h-11 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleSignOut}
+          className="w-full h-11 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600"
+        >
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -98,4 +121,5 @@ const AdminSidebar = ({
       </Sidebar>
     </>;
 };
+
 export default AdminSidebar;
