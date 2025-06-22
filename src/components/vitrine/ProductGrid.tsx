@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import ProductModal from "./ProductModal";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProductGridProps {
   searchTerm: string;
@@ -10,17 +12,77 @@ interface ProductGridProps {
 
 const ProductGrid = ({ searchTerm, selectedCategory }: ProductGridProps) => {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  
-  // Lista vazia de produtos - cada usuário irá cadastrar seus próprios produtos
-  const sampleProducts: any[] = [];
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  const filteredProducts = sampleProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "todos" || product.category === selectedCategory;
+  // Fetch products from database
+  const fetchProducts = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     
-    return matchesSearch && matchesCategory && product.isActive;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        return;
+      }
+
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [user]);
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === "todos" || product.category_id === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
   });
+
+  if (loading) {
+    return (
+      <section id="produtos" className="py-8 md:py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
+              PRODUTOS EM DESTAQUE
+            </h2>
+            <p className="text-gray-600 text-sm md:text-lg max-w-2xl mx-auto">
+              Descubra nossa seleção cuidadosa de produtos de alta qualidade
+            </p>
+          </div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Carregando produtos...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>

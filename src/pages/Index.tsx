@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,15 +6,25 @@ import { Search, ShoppingCart, User, Menu, Instagram, MessageCircle } from "luci
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/vitrine/Header";
 import HeroBanner from "@/components/vitrine/HeroBanner";
 import ProductGrid from "@/components/vitrine/ProductGrid";
 import Footer from "@/components/vitrine/Footer";
 import Cart from "@/components/vitrine/Cart";
 import WhatsAppFloat from "@/components/vitrine/WhatsAppFloat";
+
+interface Category {
+  id: string;
+  name: string;
+  image?: string;
+}
+
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const {
     user
   } = useAuth();
@@ -22,22 +33,60 @@ const Index = () => {
     loading
   } = useStoreSettings();
 
-  // Categoria padrão - usuários irão criar suas próprias categorias
-  const categories = [{
-    id: "todos",
-    name: "Todos",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"
-  }];
+  // Fetch categories from database
+  const fetchCategories = async () => {
+    if (!user) {
+      setLoadingCategories(false);
+      return;
+    }
+    
+    try {
+      setLoadingCategories(true);
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, image')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+
+      // Add "Todos" category at the beginning
+      const allCategories = [
+        {
+          id: "todos",
+          name: "Todos",
+          image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"
+        },
+        ...(data || [])
+      ];
+
+      setCategories(allCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, [user]);
+
   const handleWhatsAppClick = () => {
     const phoneNumber = "5511999999999";
     const message = "Olá! Gostaria de saber mais sobre os produtos da loja.";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
+  
   const handleInstagramClick = () => {
     window.open('https://instagram.com/', '_blank');
   };
-  if (loading) {
+  
+  if (loading || loadingCategories) {
     return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
@@ -45,6 +94,7 @@ const Index = () => {
         </div>
       </div>;
   }
+  
   return <div className="min-h-screen bg-white">
       <Header />
       
@@ -108,14 +158,16 @@ const Index = () => {
         {/* Categories Section */}
         <section className="px-4 py-6 bg-gray-50">
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group flex-shrink-0" onClick={() => setSelectedCategory(category.id)}>
+            {categories.map(category => (
+              <div key={category.id} className="flex flex-col items-center cursor-pointer group flex-shrink-0" onClick={() => setSelectedCategory(category.id)}>
                 <div className={`w-16 h-16 rounded-full overflow-hidden border-3 transition-all duration-200 shadow-sm ${selectedCategory === category.id ? 'border-green-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300'}`}>
-                  <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+                  <img src={category.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"} alt={category.name} className="w-full h-full object-cover" />
                 </div>
                 <span className={`text-xs mt-2 font-medium transition-colors text-center min-w-[60px] ${selectedCategory === category.id ? 'text-green-600' : 'text-gray-600'}`}>
                   {category.name}
                 </span>
-              </div>)}
+              </div>
+            ))}
           </div>
         </section>
 
@@ -166,14 +218,16 @@ const Index = () => {
             
             {/* Desktop Visual Categories */}
             <div className="flex justify-center gap-8">
-              {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group" onClick={() => setSelectedCategory(category.id)}>
+              {categories.map(category => (
+                <div key={category.id} className="flex flex-col items-center cursor-pointer group" onClick={() => setSelectedCategory(category.id)}>
                   <div className={`w-20 h-20 rounded-full overflow-hidden border-3 transition-all duration-200 ${selectedCategory === category.id ? 'border-green-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}`}>
-                    <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+                    <img src={category.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"} alt={category.name} className="w-full h-full object-cover" />
                   </div>
                   <span className={`text-sm mt-3 font-medium transition-colors ${selectedCategory === category.id ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                     {category.name}
                   </span>
-                </div>)}
+                </div>
+              ))}
             </div>
           </div>
         </div>
