@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -343,7 +342,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
                   <SelectContent>
                     <SelectItem value="todos">Todos os produtos</SelectItem>
                     {loadingCategories ? (
-                      <SelectItem value="" disabled>Carregando...</SelectItem>
+                      <SelectItem value="loading" disabled>Carregando...</SelectItem>
                     ) : (
                       categories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
