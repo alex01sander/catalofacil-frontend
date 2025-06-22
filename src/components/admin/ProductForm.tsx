@@ -254,5 +254,130 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
                                   src={img} 
                                   alt={`Imagem ${index + 1}`} 
                                   className="w-full h-20 rounded-lg object-cover border cursor-pointer hover:opacity-75 transition-opacity"
-                                  onClick={() => setMain
+                                  onClick={() => setMainImage(img)}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(index)}
+                                  className="absolute top-1 right-1 z-10 bg-red-600 text-white rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                                {formData.image === img && (
+                                  <Badge className="absolute bottom-1 left-1 text-xs bg-green-600">
+                                    Principal
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              </div>
+            )}
+          </div>
 
+          {/* Informações básicas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Nome do Produto *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Ex: Produto incrível"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="price">Preço (R$) *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                placeholder="0,00"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="category">Categoria</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => handleInputChange('category', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os produtos</SelectItem>
+                  {loadingCategories ? (
+                    <SelectItem value="" disabled>Carregando...</SelectItem>
+                  ) : (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="stock">Estoque *</Label>
+              <Input
+                id="stock"
+                type="number"
+                min="0"
+                value={formData.stock}
+                onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
+                placeholder="0"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Descreva o produto..."
+              rows={4}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="isActive"
+              checked={formData.isActive}
+              onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+            />
+            <Label htmlFor="isActive">Produto ativo</Label>
+          </div>
+
+          <div className="flex space-x-3 pt-4">
+            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700">
+              {product ? 'Atualizar Produto' : 'Criar Produto'}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default ProductForm;
