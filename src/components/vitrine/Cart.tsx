@@ -80,7 +80,7 @@ Obrigado pela preferência! 😊`;
   };
   return <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative p-2 bg-transparent text-neutral-950">
+        <Button variant="ghost" size="sm" className="relative p-2 text-neutral-950 bg-zinc-50">
           <ShoppingCart className="h-5 w-5" />
           {totalItems > 0 && <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white border-2 border-white">
               {totalItems}
