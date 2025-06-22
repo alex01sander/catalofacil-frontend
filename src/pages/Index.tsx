@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShoppingCart, User, Menu } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, Instagram, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
@@ -24,6 +25,17 @@ const Index = () => {
     name: "Todos",
     image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"
   }];
+
+  const handleWhatsAppClick = () => {
+    const phoneNumber = "5511999999999";
+    const message = "Olá! Gostaria de saber mais sobre os produtos da loja.";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleInstagramClick = () => {
+    window.open('https://instagram.com/', '_blank');
+  };
 
   if (loading) {
     return (
@@ -90,21 +102,23 @@ const Index = () => {
               {storeSettings.store_description}
             </p>
             
-            {/* Auth/Admin Links */}
-            <div className="flex justify-center gap-2 mb-4">
-              {user ? (
-                <Link to="/admin">
-                  <Button variant="outline" size="sm" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-                    Admin
-                  </Button>
-                </Link>
-              ) : (
-                <Link to="/auth">
-                  <Button variant="outline" size="sm" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-                    Entrar
-                  </Button>
-                </Link>
-              )}
+            {/* Instagram and WhatsApp Icons */}
+            <div className="flex justify-center gap-4 mb-6">
+              <button
+                onClick={handleInstagramClick}
+                className="bg-white text-black p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-100"
+                aria-label="Seguir no Instagram"
+              >
+                <Instagram className="h-5 w-5" />
+              </button>
+              
+              <button
+                onClick={handleWhatsAppClick}
+                className="bg-black text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-800"
+                aria-label="Contato via WhatsApp"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </button>
             </div>
             
             {/* Search Bar with Cart */}

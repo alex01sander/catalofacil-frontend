@@ -49,7 +49,7 @@ const HeroBanner = () => {
           <div className="flex justify-center items-center gap-6">
             <button
               onClick={handleInstagramClick}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+              className="bg-white text-black p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-100"
               aria-label="Seguir no Instagram"
             >
               <Instagram className="h-6 w-6" />
@@ -57,7 +57,7 @@ const HeroBanner = () => {
             
             <button
               onClick={handleWhatsAppClick}
-              className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+              className="bg-black text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-800"
               aria-label="Contato via WhatsApp"
             >
               <MessageCircle className="h-6 w-6" />
