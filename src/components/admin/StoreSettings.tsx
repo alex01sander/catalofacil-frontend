@@ -10,6 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { 
+  validateStoreName, 
+  validateStoreDescription, 
+  validateImageUrl, 
+  validateFileUpload,
+  sanitizeText 
+} from "@/utils/validation";
 
 const StoreSettings = () => {
   const { toast } = useToast();
@@ -22,6 +29,7 @@ const StoreSettings = () => {
     desktop_banner: null as string | null,
     mobile_banner_image: null as string | null
   });
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -45,9 +53,41 @@ const StoreSettings = () => {
     return publicUrl;
   };
 
+  const validateForm = (): boolean => {
+    const newErrors: {[key: string]: string} = {};
+    
+    const storeNameError = validateStoreName(formSettings.store_name);
+    if (storeNameError) newErrors.store_name = storeNameError;
+    
+    const storeDescriptionError = validateStoreDescription(formSettings.store_description);
+    if (storeDescriptionError) newErrors.store_description = storeDescriptionError;
+    
+    const mobileLogoError = validateImageUrl(formSettings.mobile_logo || '');
+    if (mobileLogoError) newErrors.mobile_logo = mobileLogoError;
+    
+    const desktopBannerError = validateImageUrl(formSettings.desktop_banner || '');
+    if (desktopBannerError) newErrors.desktop_banner = desktopBannerError;
+    
+    const mobileBannerError = validateImageUrl(formSettings.mobile_banner_image || '');
+    if (mobileBannerError) newErrors.mobile_banner_image = mobileBannerError;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleFileUpload = async (type: 'mobile_logo' | 'desktop_banner' | 'mobile_banner_image', event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    const fileError = validateFileUpload(file);
+    if (fileError) {
+      toast({
+        title: "Erro no arquivo",
+        description: fileError,
+        variant: "destructive",
+      });
+      return;
+    }
 
     setUploading(true);
     try {
@@ -66,6 +106,9 @@ const StoreSettings = () => {
         [type]: publicUrl
       }));
 
+      // Clear any previous errors for this field
+      setErrors(prev => ({...prev, [type]: undefined}));
+
       toast({
         title: "Upload realizado!",
         description: "Arquivo enviado com sucesso.",
@@ -73,7 +116,7 @@ const StoreSettings = () => {
     } catch (error: any) {
       toast({
         title: "Erro no upload",
-        description: error.message,
+        description: "Erro ao enviar arquivo. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -82,14 +125,33 @@ const StoreSettings = () => {
   };
 
   const handleUrlInput = (type: 'mobile_logo' | 'desktop_banner' | 'mobile_banner_image', url: string) => {
+    const sanitizedUrl = sanitizeText(url);
     setFormSettings(prev => ({
       ...prev,
-      [type]: url
+      [type]: sanitizedUrl
     }));
     setPreviewFiles(prev => ({
       ...prev,
-      [type]: url
+      [type]: sanitizedUrl
     }));
+    
+    // Clear error when user starts typing
+    if (errors[type]) {
+      setErrors(prev => ({...prev, [type]: undefined}));
+    }
+  };
+
+  const handleTextInput = (field: 'store_name' | 'store_description', value: string) => {
+    const sanitizedValue = sanitizeText(value);
+    setFormSettings(prev => ({
+      ...prev,
+      [field]: sanitizedValue
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({...prev, [field]: undefined}));
+    }
   };
 
   const handleRemoveImage = (type: 'mobile_banner_image') => {
@@ -104,6 +166,15 @@ const StoreSettings = () => {
   };
 
   const handleSave = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Erro de validação",
+        description: "Corrija os erros antes de salvar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await updateStoreSettings(formSettings);
       
@@ -114,7 +185,7 @@ const StoreSettings = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao salvar",
-        description: error.message,
+        description: "Erro ao salvar configurações. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -165,10 +236,12 @@ const StoreSettings = () => {
               <Input
                 id="storeName"
                 value={formSettings.store_name}
-                onChange={(e) => setFormSettings(prev => ({ ...prev, store_name: e.target.value }))}
+                onChange={(e) => handleTextInput('store_name', e.target.value)}
                 placeholder="Nome da sua loja"
-                className="mt-1"
+                className={`mt-1 ${errors.store_name ? 'border-red-500' : ''}`}
+                maxLength={100}
               />
+              {errors.store_name && <p className="text-red-500 text-sm mt-1">{errors.store_name}</p>}
             </div>
             
             <div>
@@ -176,11 +249,13 @@ const StoreSettings = () => {
               <Textarea
                 id="storeDescription"
                 value={formSettings.store_description}
-                onChange={(e) => setFormSettings(prev => ({ ...prev, store_description: e.target.value }))}
+                onChange={(e) => handleTextInput('store_description', e.target.value)}
                 placeholder="Descrição que aparece na loja"
                 rows={3}
-                className="mt-1 resize-none"
+                className={`mt-1 resize-none ${errors.store_description ? 'border-red-500' : ''}`}
+                maxLength={1000}
               />
+              {errors.store_description && <p className="text-red-500 text-sm mt-1">{errors.store_description}</p>}
             </div>
           </CardContent>
         </Card>
@@ -201,8 +276,9 @@ const StoreSettings = () => {
                 value={formSettings.mobile_logo || ''}
                 onChange={(e) => handleUrlInput('mobile_logo', e.target.value)}
                 placeholder="https://exemplo.com/logo.png"
-                className="mt-1 text-sm"
+                className={`mt-1 text-sm ${errors.mobile_logo ? 'border-red-500' : ''}`}
               />
+              {errors.mobile_logo && <p className="text-red-500 text-sm mt-1">{errors.mobile_logo}</p>}
             </div>
             
             <div>

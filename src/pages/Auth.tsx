@@ -8,12 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { validateEmail, validatePassword } from "@/utils/validation";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   
   const { signIn, user } = useAuth();
   const { toast } = useToast();
@@ -25,17 +27,40 @@ const Auth = () => {
     return null;
   }
 
+  const validateForm = (): boolean => {
+    const newErrors: {email?: string; password?: string} = {};
+    
+    const emailError = validateEmail(email);
+    if (emailError) newErrors.email = emailError;
+    
+    const passwordError = validatePassword(password);
+    if (passwordError) newErrors.password = passwordError;
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const result = await signIn(email, password);
 
       if (result.error) {
+        // Don't expose internal error details
+        const errorMessage = result.error.message?.includes('Invalid login credentials') 
+          ? 'Email ou senha incorretos'
+          : 'Erro ao fazer login. Tente novamente.';
+          
         toast({
           title: "Erro",
-          description: result.error.message,
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
@@ -48,7 +73,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Erro",
-        description: error.message || "Ocorreu um erro inesperado.",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -72,10 +97,14 @@ const Auth = () => {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors(prev => ({...prev, email: undefined}));
+                }}
                 placeholder="seu@email.com"
+                className={errors.email ? "border-red-500" : ""}
               />
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
             
             <div>
@@ -85,10 +114,12 @@ const Auth = () => {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors(prev => ({...prev, password: undefined}));
+                  }}
                   placeholder="Sua senha"
-                  minLength={6}
+                  className={errors.password ? "border-red-500" : ""}
                 />
                 <Button
                   type="button"
@@ -100,6 +131,7 @@ const Auth = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
             
             <Button type="submit" className="w-full" disabled={loading}>
