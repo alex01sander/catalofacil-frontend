@@ -38,6 +38,8 @@ interface ProductFormProps {
 }
 
 const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
+  console.log('ProductForm render with product:', product);
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -57,9 +59,14 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>(product?.images || []);
 
+  console.log('ProductForm state:', { formData, images, loadingCategories });
+
   // Fetch categories from database
   const fetchCategories = async () => {
+    console.log('Fetching categories for user:', user?.id);
+    
     if (!user) {
+      console.log('No user found, setting loading to false');
       setLoadingCategories(false);
       return;
     }
@@ -82,6 +89,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
         return;
       }
 
+      console.log('Categories fetched:', data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -96,11 +104,14 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   useEffect(() => {
+    console.log('useEffect triggered for fetchCategories');
     fetchCategories();
   }, [user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', { ...formData, images });
+    
     onSubmit({
       ...formData,
       images: images
@@ -108,6 +119,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   const handleInputChange = (field: keyof typeof formData, value: any) => {
+    console.log(`Field ${field} changed to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -116,11 +128,14 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
+    console.log('Files selected for upload:', files?.length);
+    
     if (files) {
       Array.from(files).forEach(file => {
         const reader = new FileReader();
         reader.onload = event => {
           const imageUrl = event.target?.result as string;
+          console.log('Image loaded:', imageUrl.substring(0, 50) + '...');
           setImages(prev => [...prev, imageUrl]);
         };
         reader.readAsDataURL(file);
@@ -129,6 +144,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   const addImageFromUrl = () => {
+    console.log('Adding image from URL:', imageUrl);
     if (imageUrl.trim()) {
       setImages(prev => [...prev, imageUrl.trim()]);
       setImageUrl("");
@@ -136,10 +152,12 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   const removeImage = (index: number) => {
+    console.log('Removing image at index:', index);
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const setMainImage = (imageUrl: string) => {
+    console.log('Setting main image:', imageUrl.substring(0, 50) + '...');
     setFormData(prev => ({
       ...prev,
       image: imageUrl
@@ -149,6 +167,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
+    console.log('Drag ended:', result);
     const items = Array.from(images);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
@@ -156,228 +175,243 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
     setImages(items);
   };
 
-  return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>
-          {product ? 'Editar Produto' : 'Novo Produto'}
-        </CardTitle>
-        <Button variant="ghost" size="sm" onClick={onCancel}>
-          <X className="h-4 w-4" />
-        </Button>
-      </CardHeader>
-      
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Imagens do produto */}
-          <div className="space-y-4">
-            <Label>Imagens do Produto</Label>
-            
-            {/* Preview da imagem principal */}
-            <div className="flex items-center space-x-4">
-              <img src={formData.image} alt="Preview principal" className="w-20 h-20 rounded-lg object-cover border" />
-              <div className="flex-1 space-y-3">
-                {/* Input para URL */}
-                <div>
-                  <div className="flex space-x-2">
-                    <Input 
-                      placeholder="Cole o link de uma imagem" 
-                      value={imageUrl} 
-                      onChange={e => setImageUrl(e.target.value)} 
-                    />
-                    <Button type="button" onClick={addImageFromUrl} size="sm">
-                      Adicionar
-                    </Button>
+  console.log('About to render ProductForm UI');
+
+  try {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>
+            {product ? 'Editar Produto' : 'Novo Produto'}
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Imagens do produto */}
+            <div className="space-y-4">
+              <Label>Imagens do Produto</Label>
+              
+              {/* Preview da imagem principal */}
+              <div className="flex items-center space-x-4">
+                <img src={formData.image} alt="Preview principal" className="w-20 h-20 rounded-lg object-cover border" />
+                <div className="flex-1 space-y-3">
+                  {/* Input para URL */}
+                  <div>
+                    <div className="flex space-x-2">
+                      <Input 
+                        placeholder="Cole o link de uma imagem" 
+                        value={imageUrl} 
+                        onChange={e => setImageUrl(e.target.value)} 
+                      />
+                      <Button type="button" onClick={addImageFromUrl} size="sm">
+                        Adicionar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Cole o link de uma imagem da internet
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Cole o link de uma imagem da internet
-                  </p>
-                </div>
-                
-                {/* Divisor */}
-                <div className="flex items-center space-x-2">
-                  <div className="flex-1 border-t border-gray-300"></div>
-                  <span className="text-xs text-gray-500 px-2">OU</span>
-                  <div className="flex-1 border-t border-gray-300"></div>
-                </div>
-                
-                {/* Input para arquivos múltiplos */}
-                <div>
+                  
+                  {/* Divisor */}
                   <div className="flex items-center space-x-2">
-                    <Input 
-                      type="file" 
-                      accept="image/*" 
-                      multiple
-                      onChange={handleImageUpload} 
-                      className="hidden" 
-                      id="image-upload" 
-                    />
-                    <Label htmlFor="image-upload" className="flex items-center space-x-2 cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md transition-colors">
-                      <Upload className="h-4 w-4" />
-                      <span>Anexar imagens</span>
-                    </Label>
+                    <div className="flex-1 border-t border-gray-300"></div>
+                    <span className="text-xs text-gray-500 px-2">OU</span>
+                    <div className="flex-1 border-t border-gray-300"></div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Selecione múltiplas imagens do seu computador (JPG, PNG, etc.)
-                  </p>
+                  
+                  {/* Input para arquivos múltiplos */}
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <Input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple
+                        onChange={handleImageUpload} 
+                        className="hidden" 
+                        id="image-upload" 
+                      />
+                      <Label htmlFor="image-upload" className="flex items-center space-x-2 cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md transition-colors">
+                        <Upload className="h-4 w-4" />
+                        <span>Anexar imagens</span>
+                      </Label>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Selecione múltiplas imagens do seu computador (JPG, PNG, etc.)
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Gallery de imagens com drag and drop */}
-            {images.length > 0 && (
-              <div className="space-y-2">
-                <Label>Galeria de Imagens ({images.length}) - Arraste para reordenar</Label>
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="images" direction="horizontal">
-                    {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="grid grid-cols-3 md:grid-cols-4 gap-3"
-                      >
-                        {images.map((img, index) => (
-                          <Draggable key={`image-${index}`} draggableId={`image-${index}`} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={`relative group ${snapshot.isDragging ? 'z-50' : ''}`}
-                              >
+              {/* Gallery de imagens com drag and drop */}
+              {images.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Galeria de Imagens ({images.length}) - Arraste para reordenar</Label>
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="images" direction="horizontal">
+                      {(provided) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="grid grid-cols-3 md:grid-cols-4 gap-3"
+                        >
+                          {images.map((img, index) => (
+                            <Draggable key={`image-${index}`} draggableId={`image-${index}`} index={index}>
+                              {(provided, snapshot) => (
                                 <div
-                                  {...provided.dragHandleProps}
-                                  className="absolute top-1 left-1 z-10 bg-gray-800 bg-opacity-70 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`relative group ${snapshot.isDragging ? 'z-50' : ''}`}
                                 >
-                                  <GripVertical className="h-3 w-3 text-white" />
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="absolute top-1 left-1 z-10 bg-gray-800 bg-opacity-70 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+                                  >
+                                    <GripVertical className="h-3 w-3 text-white" />
+                                  </div>
+                                  <img 
+                                    src={img} 
+                                    alt={`Imagem ${index + 1}`} 
+                                    className="w-full h-20 rounded-lg object-cover border cursor-pointer hover:opacity-75 transition-opacity"
+                                    onClick={() => setMainImage(img)}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-1 right-1 z-10 bg-red-600 text-white rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                  {formData.image === img && (
+                                    <Badge className="absolute bottom-1 left-1 text-xs bg-green-600">
+                                      Principal
+                                    </Badge>
+                                  )}
                                 </div>
-                                <img 
-                                  src={img} 
-                                  alt={`Imagem ${index + 1}`} 
-                                  className="w-full h-20 rounded-lg object-cover border cursor-pointer hover:opacity-75 transition-opacity"
-                                  onClick={() => setMainImage(img)}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(index)}
-                                  className="absolute top-1 right-1 z-10 bg-red-600 text-white rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                                {formData.image === img && (
-                                  <Badge className="absolute bottom-1 left-1 text-xs bg-green-600">
-                                    Principal
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                </div>
+              )}
+            </div>
+
+            {/* Informações básicas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Nome do Produto *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Ex: Produto incrível"
+                  required
+                />
               </div>
-            )}
-          </div>
+              <div>
+                <Label htmlFor="price">Preço (R$) *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.price}
+                  onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                  placeholder="0,00"
+                  required
+                />
+              </div>
+            </div>
 
-          {/* Informações básicas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="category">Categoria</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => handleInputChange('category', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os produtos</SelectItem>
+                    {loadingCategories ? (
+                      <SelectItem value="" disabled>Carregando...</SelectItem>
+                    ) : (
+                      categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="stock">Estoque *</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  min="0"
+                  value={formData.stock}
+                  onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
+                  placeholder="0"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="name">Nome do Produto *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Ex: Produto incrível"
-                required
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Descreva o produto..."
+                rows={4}
               />
             </div>
-            <div>
-              <Label htmlFor="price">Preço (R$) *</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.price}
-                onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                placeholder="0,00"
-                required
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => handleInputChange('isActive', checked)}
               />
+              <Label htmlFor="isActive">Produto ativo</Label>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="category">Categoria</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => handleInputChange('category', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os produtos</SelectItem>
-                  {loadingCategories ? (
-                    <SelectItem value="" disabled>Carregando...</SelectItem>
-                  ) : (
-                    categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+            <div className="flex space-x-3 pt-4">
+              <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700">
+                {product ? 'Atualizar Produto' : 'Criar Produto'}
+              </Button>
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancelar
+              </Button>
             </div>
-            <div>
-              <Label htmlFor="stock">Estoque *</Label>
-              <Input
-                id="stock"
-                type="number"
-                min="0"
-                value={formData.stock}
-                onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
-                placeholder="0"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Descreva o produto..."
-              rows={4}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="isActive"
-              checked={formData.isActive}
-              onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-            />
-            <Label htmlFor="isActive">Produto ativo</Label>
-          </div>
-
-          <div className="flex space-x-3 pt-4">
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700">
-              {product ? 'Atualizar Produto' : 'Criar Produto'}
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-  );
+          </form>
+        </CardContent>
+      </Card>
+    );
+  } catch (error) {
+    console.error('Error rendering ProductForm:', error);
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <h3 className="text-red-800 font-semibold">Erro ao carregar formulário</h3>
+        <p className="text-red-600">Ocorreu um erro ao carregar o formulário de produto.</p>
+        <Button onClick={onCancel} className="mt-2">
+          Voltar
+        </Button>
+      </div>
+    );
+  }
 };
 
 export default ProductForm;

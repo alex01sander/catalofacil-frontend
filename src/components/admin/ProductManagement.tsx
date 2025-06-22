@@ -103,11 +103,13 @@ const ProductManagement = () => {
   );
 
   const handleAddProduct = () => {
+    console.log('Adding new product...');
     setEditingProduct(null);
     setShowForm(true);
   };
 
   const handleEditProduct = (product: Product) => {
+    console.log('Editing product:', product);
     // Map database product to form product interface
     const formProduct: FormProduct = {
       id: product.id,
@@ -125,6 +127,7 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
+    console.log('Form submit data:', productData);
     if (!user) return;
 
     try {
@@ -205,6 +208,7 @@ const ProductManagement = () => {
   };
 
   const handleFormCancel = () => {
+    console.log('Form cancelled');
     setShowForm(false);
     setEditingProduct(null);
   };
@@ -293,7 +297,10 @@ const ProductManagement = () => {
     setShowDeleteConfirm(null);
   };
 
+  console.log('ProductManagement render - showForm:', showForm, 'editingProduct:', editingProduct);
+
   if (showForm) {
+    console.log('Rendering ProductForm with:', { editingProduct });
     return (
       <div className="space-y-6">
         <ProductForm
