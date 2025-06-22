@@ -10,6 +10,7 @@ import HeroBanner from "@/components/vitrine/HeroBanner";
 import ProductGrid from "@/components/vitrine/ProductGrid";
 import Footer from "@/components/vitrine/Footer";
 import Cart from "@/components/vitrine/Cart";
+import WhatsAppFloat from "@/components/vitrine/WhatsAppFloat";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -212,6 +213,9 @@ const Index = () => {
 
       <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
       <Footer />
+      
+      {/* WhatsApp Float Button */}
+      <WhatsAppFloat />
     </div>
   );
 };
