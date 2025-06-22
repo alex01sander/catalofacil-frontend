@@ -106,7 +106,7 @@ export const validateImageUrl = (url: string): string | null => {
   }
 };
 
-export const validateFileUpload = (file: File): string | null => {
+export const validateFileUpload = async (file: File): Promise<string | null> => {
   const maxSize = 5 * 1024 * 1024; // 5MB
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   
@@ -119,7 +119,7 @@ export const validateFileUpload = (file: File): string | null => {
   }
   
   // Enhanced security: Check file signature (magic numbers)
-  return validateFileSignature(file);
+  return await validateFileSignature(file);
 };
 
 const validateFileSignature = (file: File): Promise<string | null> => {
@@ -202,7 +202,7 @@ export const checkRateLimit = (identifier: string, maxAttempts: number = 5, wind
 // Clean up old rate limit entries periodically
 setInterval(() => {
   const now = Date.now();
-  const windowMs = 15 * 60 * 1000;
+  const windowMs = 15 * 60 * 000;
   
   Object.keys(authAttempts).forEach(key => {
     if (now - authAttempts[key].lastAttempt > windowMs) {
