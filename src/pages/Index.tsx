@@ -18,26 +18,11 @@ const Index = () => {
   const { user } = useAuth();
   const { settings: storeSettings, loading } = useStoreSettings();
   
+  // Lista vazia de categorias - cada usuário irá criar suas próprias categorias
   const categories = [{
     id: "todos",
     name: "Todos",
     image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"
-  }, {
-    id: "eletrônicos",
-    name: "Eletrônicos",
-    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=80&h=80&fit=crop&crop=center"
-  }, {
-    id: "roupas",
-    name: "Roupas",
-    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=80&h=80&fit=crop&crop=center"
-  }, {
-    id: "casa",
-    name: "Casa",
-    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=80&h=80&fit=crop&crop=center"
-  }, {
-    id: "beleza",
-    name: "Beleza",
-    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=80&h=80&fit=crop&crop=center"
   }];
 
   if (loading) {
