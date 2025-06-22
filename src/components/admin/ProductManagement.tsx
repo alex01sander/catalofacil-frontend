@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,7 +94,19 @@ const ProductManagement = () => {
   };
 
   const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
+    // Map database product to form product interface
+    const formProduct = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      description: product.description,
+      category: product.category_id || "",
+      stock: product.stock,
+      isActive: product.is_active,
+      image: product.image,
+      images: product.images || []
+    };
+    setEditingProduct(formProduct);
     setShowForm(true);
   };
 
