@@ -18,7 +18,7 @@ const Index = () => {
   const { user } = useAuth();
   const { settings: storeSettings, loading } = useStoreSettings();
   
-  // Lista vazia de categorias - cada usuário irá criar suas próprias categorias
+  // Categoria padrão - usuários irão criar suas próprias categorias
   const categories = [{
     id: "todos",
     name: "Todos",
@@ -63,7 +63,7 @@ const Index = () => {
           
           {/* Background decoration for gradient */}
           {!storeSettings.mobile_banner_image && (
-            <div className="absolute inset-0 bg-violet-600"></div>
+            <div className="absolute inset-0 bg-green-600"></div>
           )}
           
           <div className="relative text-center">
@@ -167,8 +167,8 @@ const Index = () => {
               <p className="text-xs text-gray-600 font-medium">Desconto no PIX</p>
             </div>
             <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-purple-600 text-sm">🎁</span>
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-green-600 text-sm">🎁</span>
               </div>
               <p className="text-xs text-gray-600 font-medium">Suporte 24h</p>
             </div>
@@ -199,10 +199,10 @@ const Index = () => {
             {/* Desktop Visual Categories */}
             <div className="flex justify-center gap-8">
               {categories.map(category => <div key={category.id} className="flex flex-col items-center cursor-pointer group" onClick={() => setSelectedCategory(category.id)}>
-                  <div className={`w-20 h-20 rounded-full overflow-hidden border-3 transition-all duration-200 ${selectedCategory === category.id ? 'border-purple-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}`}>
+                  <div className={`w-20 h-20 rounded-full overflow-hidden border-3 transition-all duration-200 ${selectedCategory === category.id ? 'border-green-500 shadow-lg scale-105' : 'border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}`}>
                     <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
                   </div>
-                  <span className={`text-sm mt-3 font-medium transition-colors ${selectedCategory === category.id ? 'text-purple-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                  <span className={`text-sm mt-3 font-medium transition-colors ${selectedCategory === category.id ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                     {category.name}
                   </span>
                 </div>)}

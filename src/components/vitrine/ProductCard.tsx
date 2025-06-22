@@ -54,7 +54,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
         </div>
 
         <div className="mb-3 md:mb-4">
-          <span className="text-lg md:text-2xl font-bold text-purple-600">
+          <span className="text-lg md:text-2xl font-bold text-green-600">
             R$ {product.price.toFixed(2).replace('.', ',')}
           </span>
         </div>
@@ -73,7 +73,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           <Button
             size="sm"
             onClick={handleAddToCart}
-            className="w-full md:flex-1 bg-purple-600 hover:bg-purple-700 text-xs md:text-sm h-8 md:h-9"
+            className="w-full md:flex-1 bg-green-600 hover:bg-green-700 text-xs md:text-sm h-8 md:h-9"
           >
             <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
             Comprar

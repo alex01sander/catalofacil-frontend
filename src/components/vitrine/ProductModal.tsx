@@ -72,7 +72,8 @@ Por favor, me informe:
 
 Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
 
-    window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
+    // Remove número fictício - cada usuário deve configurar seu próprio número
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   return (
@@ -87,20 +88,20 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
           <div className="space-y-4">
             <div className="aspect-square rounded-lg overflow-hidden">
               <img
-                src={product.gallery[selectedImage]}
+                src={product.gallery?.[selectedImage] || product.image}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
             </div>
             
-            {product.gallery.length > 1 && (
+            {product.gallery && product.gallery.length > 1 && (
               <div className="flex gap-2 overflow-x-auto">
                 {product.gallery.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === index ? 'border-purple-600' : 'border-gray-200'
+                      selectedImage === index ? 'border-green-600' : 'border-gray-200'
                     }`}
                   >
                     <img
@@ -127,7 +128,7 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold text-purple-600">
+                <span className="text-3xl font-bold text-green-600">
                   R$ {product.price.toFixed(2).replace('.', ',')}
                 </span>
                 <span className="text-sm text-gray-500">
@@ -174,7 +175,7 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total:</span>
-                <span className="text-2xl font-bold text-purple-600">
+                <span className="text-2xl font-bold text-green-600">
                   R$ {(product.price * quantity).toFixed(2).replace('.', ',')}
                 </span>
               </div>
@@ -187,7 +188,7 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
                 onClick={handleAddToCart}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                Comprar
+                Adicionar ao Carrinho
               </Button>
               
               <Button

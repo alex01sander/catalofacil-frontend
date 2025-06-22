@@ -46,7 +46,7 @@ const HeroBanner = () => {
             <Button 
               variant="outline" 
               size="lg" 
-              onClick={() => window.open('https://wa.me/5511999999999?text=Olá! Gostaria de saber mais sobre os produtos.', '_blank')} 
+              onClick={() => window.open('https://wa.me/?text=Olá! Gostaria de saber mais sobre os produtos.', '_blank')} 
               className="border-white/70 text-white hover:bg-white/10 hover:border-white px-8 py-3 text-lg backdrop-blur-sm"
             >
               Falar no WhatsApp
