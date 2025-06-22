@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,47 +7,82 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Save, Eye, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const StoreSettings = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { settings, updateStoreSettings, loading } = useStoreSettings();
   
-  // Estado para as configurações da loja
-  const [settings, setSettings] = useState({
-    storeName: localStorage.getItem('storeName') || 'LinkStore',
-    storeDescription: localStorage.getItem('storeDescription') || 'Catálogo de todos os seus produtos\nque você sempre desejou encontrar',
-    mobileLogo: localStorage.getItem('mobileLogo') || '/lovable-uploads/481d6627-3dbb-4c82-8d6f-53e1613133b2.png',
-    desktopBanner: localStorage.getItem('desktopBanner') || '/lovable-uploads/c43cdca8-1978-4d87-a0d8-4241b90270c6.png',
-    mobileBannerColor: localStorage.getItem('mobileBannerColor') || 'from-green-400 via-green-500 to-green-600',
-    mobileBannerImage: localStorage.getItem('mobileBannerImage') || ''
-  });
-
+  const [formSettings, setFormSettings] = useState(settings);
   const [previewFiles, setPreviewFiles] = useState({
-    mobileLogo: null as string | null,
-    desktopBanner: null as string | null,
-    mobileBannerImage: null as string | null
+    mobile_logo: null as string | null,
+    desktop_banner: null as string | null,
+    mobile_banner_image: null as string | null
   });
+  const [uploading, setUploading] = useState(false);
 
-  const handleFileUpload = (type: 'mobileLogo' | 'desktopBanner' | 'mobileBannerImage', event: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    setFormSettings(settings);
+  }, [settings]);
+
+  const uploadFile = async (file: File, bucket: string, folder: string = '') => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user?.id}/${folder}${Date.now()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file);
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
+  const handleFileUpload = async (type: 'mobile_logo' | 'desktop_banner' | 'mobile_banner_image', event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPreviewFiles(prev => ({
-          ...prev,
-          [type]: result
-        }));
-        setSettings(prev => ({
-          ...prev,
-          [type]: result
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const bucket = type === 'mobile_logo' ? 'store-assets' : 
+                    type === 'desktop_banner' ? 'store-assets' : 'store-assets';
+      
+      const publicUrl = await uploadFile(file, bucket, `${type}/`);
+      
+      setPreviewFiles(prev => ({
+        ...prev,
+        [type]: publicUrl
+      }));
+      
+      setFormSettings(prev => ({
+        ...prev,
+        [type]: publicUrl
+      }));
+
+      toast({
+        title: "Upload realizado!",
+        description: "Arquivo enviado com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro no upload",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleUrlInput = (type: 'mobileLogo' | 'desktopBanner' | 'mobileBannerImage', url: string) => {
-    setSettings(prev => ({
+  const handleUrlInput = (type: 'mobile_logo' | 'desktop_banner' | 'mobile_banner_image', url: string) => {
+    setFormSettings(prev => ({
       ...prev,
       [type]: url
     }));
@@ -57,10 +92,10 @@ const StoreSettings = () => {
     }));
   };
 
-  const handleRemoveImage = (type: 'mobileBannerImage') => {
-    setSettings(prev => ({
+  const handleRemoveImage = (type: 'mobile_banner_image') => {
+    setFormSettings(prev => ({
       ...prev,
-      [type]: ''
+      [type]: null
     }));
     setPreviewFiles(prev => ({
       ...prev,
@@ -68,21 +103,21 @@ const StoreSettings = () => {
     }));
   };
 
-  const handleSave = () => {
-    // Salva as configurações no localStorage
-    Object.entries(settings).forEach(([key, value]) => {
-      localStorage.setItem(key, value);
-    });
-
-    // Dispara evento customizado para atualizar a loja
-    window.dispatchEvent(new CustomEvent('storeSettingsUpdated', { 
-      detail: settings 
-    }));
-
-    toast({
-      title: "Configurações salvas!",
-      description: "As alterações foram aplicadas na loja.",
-    });
+  const handleSave = async () => {
+    try {
+      await updateStoreSettings(formSettings);
+      
+      toast({
+        title: "Configurações salvas!",
+        description: "As alterações foram aplicadas na loja.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const gradientOptions = [
@@ -94,13 +129,24 @@ const StoreSettings = () => {
     { name: 'Violeta', value: 'from-violet-600 via-violet-700 to-violet-800' }
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Carregando configurações...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 lg:space-y-6 p-4 lg:p-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Configurações da Loja</h2>
-        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto" disabled={uploading}>
           <Save className="h-4 w-4 mr-2" />
-          Salvar Alterações
+          {uploading ? "Salvando..." : "Salvar Alterações"}
         </Button>
       </div>
 
@@ -118,8 +164,8 @@ const StoreSettings = () => {
               <Label htmlFor="storeName" className="text-sm font-medium">Nome da Loja</Label>
               <Input
                 id="storeName"
-                value={settings.storeName}
-                onChange={(e) => setSettings(prev => ({ ...prev, storeName: e.target.value }))}
+                value={formSettings.store_name}
+                onChange={(e) => setFormSettings(prev => ({ ...prev, store_name: e.target.value }))}
                 placeholder="Nome da sua loja"
                 className="mt-1"
               />
@@ -129,8 +175,8 @@ const StoreSettings = () => {
               <Label htmlFor="storeDescription" className="text-sm font-medium">Descrição da Loja</Label>
               <Textarea
                 id="storeDescription"
-                value={settings.storeDescription}
-                onChange={(e) => setSettings(prev => ({ ...prev, storeDescription: e.target.value }))}
+                value={formSettings.store_description}
+                onChange={(e) => setFormSettings(prev => ({ ...prev, store_description: e.target.value }))}
                 placeholder="Descrição que aparece na loja"
                 rows={3}
                 className="mt-1 resize-none"
@@ -152,8 +198,8 @@ const StoreSettings = () => {
               <Label htmlFor="mobileLogoUrl" className="text-sm font-medium">URL da Logo</Label>
               <Input
                 id="mobileLogoUrl"
-                value={settings.mobileLogo}
-                onChange={(e) => handleUrlInput('mobileLogo', e.target.value)}
+                value={formSettings.mobile_logo || ''}
+                onChange={(e) => handleUrlInput('mobile_logo', e.target.value)}
                 placeholder="https://exemplo.com/logo.png"
                 className="mt-1 text-sm"
               />
@@ -165,17 +211,18 @@ const StoreSettings = () => {
                 id="mobileLogoFile"
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload('mobileLogo', e)}
+                onChange={(e) => handleFileUpload('mobile_logo', e)}
                 className="mt-1"
+                disabled={uploading}
               />
             </div>
             
-            {(previewFiles.mobileLogo || settings.mobileLogo) && (
+            {(previewFiles.mobile_logo || formSettings.mobile_logo) && (
               <div className="mt-3">
                 <p className="text-sm text-gray-600 mb-2 font-medium">Preview:</p>
                 <div className="w-20 h-20 bg-white/20 rounded-full overflow-hidden border border-gray-200 mx-auto lg:mx-0">
                   <img 
-                    src={previewFiles.mobileLogo || settings.mobileLogo} 
+                    src={previewFiles.mobile_logo || formSettings.mobile_logo || ''} 
                     alt="Logo preview" 
                     className="w-full h-full object-cover"
                   />
@@ -198,8 +245,8 @@ const StoreSettings = () => {
               <Label htmlFor="desktopBannerUrl" className="text-sm font-medium">URL do Banner</Label>
               <Input
                 id="desktopBannerUrl"
-                value={settings.desktopBanner}
-                onChange={(e) => handleUrlInput('desktopBanner', e.target.value)}
+                value={formSettings.desktop_banner || ''}
+                onChange={(e) => handleUrlInput('desktop_banner', e.target.value)}
                 placeholder="https://exemplo.com/banner.png"
                 className="mt-1 text-sm"
               />
@@ -211,17 +258,18 @@ const StoreSettings = () => {
                 id="desktopBannerFile"
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload('desktopBanner', e)}
+                onChange={(e) => handleFileUpload('desktop_banner', e)}
                 className="mt-1"
+                disabled={uploading}
               />
             </div>
             
-            {(previewFiles.desktopBanner || settings.desktopBanner) && (
+            {(previewFiles.desktop_banner || formSettings.desktop_banner) && (
               <div className="mt-3">
                 <p className="text-sm text-gray-600 mb-2 font-medium">Preview:</p>
                 <div className="w-full h-24 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
                   <img 
-                    src={previewFiles.desktopBanner || settings.desktopBanner} 
+                    src={previewFiles.desktop_banner || formSettings.desktop_banner || ''} 
                     alt="Banner preview" 
                     className="w-full h-full object-cover"
                   />
@@ -244,8 +292,8 @@ const StoreSettings = () => {
                 <Label htmlFor="mobileBannerUrl" className="text-xs text-gray-600">URL da Imagem</Label>
                 <Input
                   id="mobileBannerUrl"
-                  value={settings.mobileBannerImage}
-                  onChange={(e) => handleUrlInput('mobileBannerImage', e.target.value)}
+                  value={formSettings.mobile_banner_image || ''}
+                  onChange={(e) => handleUrlInput('mobile_banner_image', e.target.value)}
                   placeholder="https://exemplo.com/banner.png"
                   className="mt-1 text-sm"
                 />
@@ -257,19 +305,20 @@ const StoreSettings = () => {
                   id="mobileBannerFile"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleFileUpload('mobileBannerImage', e)}
+                  onChange={(e) => handleFileUpload('mobile_banner_image', e)}
                   className="mt-1"
+                  disabled={uploading}
                 />
               </div>
 
-              {(previewFiles.mobileBannerImage || settings.mobileBannerImage) && (
+              {(previewFiles.mobile_banner_image || formSettings.mobile_banner_image) && (
                 <div className="mt-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-gray-600 font-medium">Preview da Imagem:</p>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleRemoveImage('mobileBannerImage')}
+                      onClick={() => handleRemoveImage('mobile_banner_image')}
                       className="text-red-600 hover:text-red-700"
                     >
                       <X className="h-3 w-3 mr-1" />
@@ -278,7 +327,7 @@ const StoreSettings = () => {
                   </div>
                   <div className="w-full h-24 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
                     <img 
-                      src={previewFiles.mobileBannerImage || settings.mobileBannerImage} 
+                      src={previewFiles.mobile_banner_image || formSettings.mobile_banner_image || ''} 
                       alt="Banner mobile preview" 
                       className="w-full h-full object-cover"
                     />
@@ -302,12 +351,12 @@ const StoreSettings = () => {
                   <div
                     key={option.value}
                     className={`h-12 lg:h-16 bg-gradient-to-br ${option.value} rounded-lg cursor-pointer border-2 transition-all ${
-                      settings.mobileBannerColor === option.value && !settings.mobileBannerImage
+                      formSettings.mobile_banner_color === option.value && !formSettings.mobile_banner_image
                         ? 'border-white shadow-lg scale-105' 
                         : 'border-transparent hover:border-gray-300'
                     }`}
                     onClick={() => {
-                      setSettings(prev => ({ ...prev, mobileBannerColor: option.value }));
+                      setFormSettings(prev => ({ ...prev, mobile_banner_color: option.value }));
                     }}
                   >
                     <div className="h-full flex items-center justify-center">
@@ -323,9 +372,9 @@ const StoreSettings = () => {
 
       {/* Botão de ação no final */}
       <div className="flex justify-center pt-4 lg:pt-6">
-        <Button onClick={handleSave} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+        <Button onClick={handleSave} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto" disabled={uploading}>
           <Save className="h-5 w-5 mr-2" />
-          Salvar e Aplicar Configurações
+          {uploading ? "Salvando..." : "Salvar e Aplicar Configurações"}
         </Button>
       </div>
     </div>
