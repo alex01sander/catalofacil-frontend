@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { 
   validateStoreName, 
   validateStoreDescription, 
@@ -21,6 +22,7 @@ const StoreSettings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { settings, updateStoreSettings, loading } = useStoreSettings();
+  const { setTheme } = useTheme();
   
   const [formSettings, setFormSettings] = useState(settings);
   const [previewFiles, setPreviewFiles] = useState({
@@ -192,13 +194,22 @@ const StoreSettings = () => {
   };
 
   const gradientOptions = [
-    { name: 'Verde', value: 'from-green-400 via-green-500 to-green-600' },
-    { name: 'Roxo', value: 'from-purple-600 via-purple-700 to-purple-800' },
-    { name: 'Azul', value: 'from-blue-500 via-blue-600 to-blue-700' },
-    { name: 'Rosa', value: 'from-pink-500 via-pink-600 to-pink-700' },
-    { name: 'Laranja', value: 'from-orange-500 via-orange-600 to-orange-700' },
-    { name: 'Violeta', value: 'from-violet-600 via-violet-700 to-violet-800' }
+    { name: 'Verde', value: 'verde' },
+    { name: 'Roxo', value: 'roxo' },
+    { name: 'Azul', value: 'azul' },
+    { name: 'Rosa', value: 'rosa' },
+    { name: 'Laranja', value: 'laranja' },
+    { name: 'Violeta', value: 'violeta' }
   ];
+
+  const colorClasses: { [key: string]: string } = {
+    verde: 'from-green-400 via-green-500 to-green-600',
+    roxo: 'from-purple-600 via-purple-700 to-purple-800',
+    azul: 'from-blue-500 via-blue-600 to-blue-700',
+    rosa: 'from-pink-500 via-pink-600 to-pink-700',
+    laranja: 'from-orange-500 via-orange-600 to-orange-700',
+    violeta: 'from-violet-600 via-violet-700 to-violet-800'
+  };
 
   if (loading) {
     return (
@@ -426,13 +437,15 @@ const StoreSettings = () => {
                 {gradientOptions.map((option) => (
                   <div
                     key={option.value}
-                    className={`h-12 lg:h-16 bg-gradient-to-br ${option.value} rounded-lg cursor-pointer border-2 transition-all ${
+                    className={`h-12 lg:h-16 bg-gradient-to-br ${colorClasses[option.value]} rounded-lg cursor-pointer border-2 transition-all ${
                       formSettings.mobile_banner_color === option.value && !formSettings.mobile_banner_image
                         ? 'border-white shadow-lg scale-105' 
                         : 'border-transparent hover:border-gray-300'
                     }`}
                     onClick={() => {
-                      setFormSettings(prev => ({ ...prev, mobile_banner_color: option.value }));
+                      const themeValue = option.value as 'verde' | 'roxo' | 'azul' | 'rosa' | 'laranja' | 'violeta';
+                      setFormSettings(prev => ({ ...prev, mobile_banner_color: themeValue }));
+                      setTheme(themeValue);
                     }}
                   >
                     <div className="h-full flex items-center justify-center">
