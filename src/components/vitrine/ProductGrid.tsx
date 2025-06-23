@@ -1,6 +1,6 @@
-
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import ProductCard from "./ProductCard";
+import ProductModal from "./ProductModal";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 
 interface ProductGridProps {
@@ -13,6 +13,20 @@ const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) =>
     searchTerm,
     selectedCategory
   });
+  
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleViewDetails = (product) => {
+    console.log('Ver detalhes do produto:', product.name);
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   if (loading) {
     return (
@@ -55,21 +69,30 @@ const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) =>
   }
 
   return (
-    <section className="py-8 px-4 bg-gray-50">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onViewDetails={() => {
-                console.log('Ver detalhes do produto:', product.name);
-              }}
-            />
-          ))}
+    <>
+      <section className="py-8 px-4 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onViewDetails={() => handleViewDetails(product)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Modal do Produto */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
+    </>
   );
 });
 

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, ChevronDown, ChevronUp } from "lucide-react";
@@ -9,15 +9,16 @@ import { useCart } from "@/contexts/CartContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   description: string;
-  category: string;
+  category_id: string | null;
   image: string;
-  gallery?: string[];
-  images?: string[];
+  images: string[];
   stock: number;
+  is_active: boolean;
+  user_id: string;
 }
 
 interface ProductModalProps {
@@ -32,11 +33,9 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
   const { addToCart } = useCart();
   const isMobile = useIsMobile();
 
-  // Combinar images e gallery em uma única array
+  // Combinar images em uma única array
   const allImages = product.images && product.images.length > 0 
     ? product.images 
-    : product.gallery && product.gallery.length > 0 
-    ? product.gallery 
     : [product.image];
 
   const handleAddToCart = () => {
@@ -45,46 +44,6 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
       addToCart(product);
     }
     onClose();
-  };
-
-  const handleWhatsAppClick = () => {
-    const currentDate = new Date().toLocaleDateString('pt-BR');
-    const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const orderNumber = Math.floor(Math.random() * 10000);
-    const subtotal = product.price * quantity;
-    
-    const message = `🛍️ *Novo Pedido*
-
-📋 *Detalhes do Pedido:*
-• Produto: ${product.name}
-• Preço Unitário: R$ ${product.price.toFixed(2).replace('.', ',')}
-• Quantidade: ${quantity}
-• Categoria: ${product.category}
-• Descrição: ${product.description}
-
-💰 *Resumo Financeiro:*
-• Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}
-• Taxa de Entrega: A combinar
-• Pagamento: A combinar
-• *Total: R$ ${subtotal.toFixed(2).replace('.', ',')}*
-
-📅 Data: ${currentDate}
-⏰ Horário: ${currentTime}
-📝 Pedido: #${orderNumber}
-
-📍 *Endereço para entrega:*
-(Aguardando informação do cliente)
-
-🎯 *Próximos Passos:*
-Por favor, me informe:
-• Seu endereço completo para entrega
-• Forma de pagamento (PIX, Cartão, Dinheiro)
-• Observações especiais ou preferências
-
-Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
-
-    // Remove número fictício - cada usuário deve configurar seu próprio número
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const ProductContent = () => (
@@ -130,7 +89,7 @@ Muito obrigado pela preferência! Vamos finalizar seu pedido. 😊`;
         <div className="space-y-4">
           <div>
             <Badge variant="secondary" className="mb-2">
-              {product.category}
+              Produto
             </Badge>
             <div className="prose prose-sm max-w-none">
               <p className="text-gray-600 leading-relaxed whitespace-pre-wrap break-words text-sm">
