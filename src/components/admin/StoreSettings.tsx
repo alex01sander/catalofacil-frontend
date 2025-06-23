@@ -143,7 +143,7 @@ const StoreSettings = () => {
     }
   };
 
-  const handleTextInput = (field: 'store_name' | 'store_description', value: string) => {
+  const handleTextInput = (field: 'store_name' | 'store_description' | 'store_subtitle' | 'instagram_url' | 'whatsapp_number', value: string) => {
     const sanitizedValue = sanitizeText(value);
     setFormSettings(prev => ({
       ...prev,
@@ -254,7 +254,15 @@ const StoreSettings = () => {
               />
               {errors.store_name && <p className="text-red-500 text-sm mt-1">{errors.store_name}</p>}
             </div>
-            
+            <div>
+              <Label htmlFor="storeSubtitle" className="text-sm font-medium">Subtítulo da Loja</Label>
+              <Input
+                id="storeSubtitle"
+                value={formSettings.store_subtitle || ''}
+                onChange={(e) => handleTextInput('store_subtitle', e.target.value)}
+                placeholder="Ex: Produtos Incríveis"
+              />
+            </div>
             <div>
               <Label htmlFor="storeDescription" className="text-sm font-medium">Descrição da Loja</Label>
               <Textarea
@@ -267,6 +275,24 @@ const StoreSettings = () => {
                 maxLength={1000}
               />
               {errors.store_description && <p className="text-red-500 text-sm mt-1">{errors.store_description}</p>}
+            </div>
+            <div>
+              <Label htmlFor="instagramUrl" className="text-sm font-medium">Instagram da Loja</Label>
+              <Input
+                id="instagramUrl"
+                value={formSettings.instagram_url || ''}
+                onChange={(e) => handleTextInput('instagram_url', e.target.value)}
+                placeholder="https://instagram.com/sualoja"
+              />
+            </div>
+            <div>
+              <Label htmlFor="whatsappNumber" className="text-sm font-medium">WhatsApp da Loja</Label>
+              <Input
+                id="whatsappNumber"
+                value={formSettings.whatsapp_number || ''}
+                onChange={(e) => handleTextInput('whatsapp_number', e.target.value)}
+                placeholder="5511999999999"
+              />
             </div>
           </CardContent>
         </Card>

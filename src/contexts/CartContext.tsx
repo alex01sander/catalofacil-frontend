@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { toast } from "sonner";
 
 export interface CartItem {
   id: number;
@@ -54,6 +54,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         quantity: 1
       }];
     });
+    toast.success("Adicionado ao carrinho!");
   };
 
   const removeFromCart = (id: number) => {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +6,9 @@ export interface StoreSettings {
   id?: string;
   store_name: string;
   store_description: string;
+  store_subtitle: string;
+  instagram_url: string;
+  whatsapp_number: string;
   mobile_logo: string | null;
   desktop_banner: string | null;
   mobile_banner_color: string;
@@ -18,6 +20,9 @@ export const useStoreSettings = () => {
   const [settings, setSettings] = useState<StoreSettings>({
     store_name: 'Minha Loja',
     store_description: 'Bem-vindo à minha loja!\nAqui você encontra os melhores produtos.',
+    store_subtitle: 'Produtos Incríveis',
+    instagram_url: 'https://instagram.com/',
+    whatsapp_number: '5511999999999',
     mobile_logo: null,
     desktop_banner: null,
     mobile_banner_color: 'from-green-400 via-green-500 to-green-600',
@@ -51,6 +56,9 @@ export const useStoreSettings = () => {
           id: data.id,
           store_name: data.store_name,
           store_description: data.store_description,
+          store_subtitle: data.store_subtitle ?? 'Produtos Incríveis',
+          instagram_url: data.instagram_url ?? 'https://instagram.com/',
+          whatsapp_number: data.whatsapp_number ?? '5511999999999',
           mobile_logo: data.mobile_logo,
           desktop_banner: data.desktop_banner,
           mobile_banner_color: data.mobile_banner_color,
