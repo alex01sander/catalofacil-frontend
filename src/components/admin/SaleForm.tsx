@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 
 interface Sale {
   id?: number;
@@ -22,14 +23,9 @@ interface SaleFormProps {
   onCancel: () => void;
 }
 
-const products = [
-  { name: "Smartphone Galaxy Pro", price: 1299.99 },
-  { name: "Camiseta Premium Cotton", price: 89.90 },
-  { name: "Sofá Moderno 3 Lugares", price: 2499.99 },
-  { name: "Kit Skincare Completo", price: 149.90 },
-];
-
 const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
+  const { products, loading } = useOptimizedProducts();
+  
   const [formData, setFormData] = useState({
     product: "",
     quantity: 1,
@@ -64,6 +60,43 @@ const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
     }));
   };
 
+  if (loading) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">Carregando produtos...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Registrar Nova Venda</CardTitle>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center py-8 text-gray-500">
+            <p className="text-lg font-medium mb-2">Nenhum produto cadastrado</p>
+            <p className="text-sm">Você precisa cadastrar produtos antes de registrar vendas</p>
+            <Button 
+              onClick={onCancel} 
+              className="mt-4"
+            >
+              Voltar e Cadastrar Produtos
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -84,7 +117,7 @@ const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
               </SelectTrigger>
               <SelectContent>
                 {products.map((product) => (
-                  <SelectItem key={product.name} value={product.name}>
+                  <SelectItem key={product.id} value={product.name}>
                     {product.name} - R$ {product.price.toFixed(2).replace('.', ',')}
                   </SelectItem>
                 ))}
