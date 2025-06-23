@@ -243,37 +243,46 @@ export type Database = {
           created_at: string | null
           desktop_banner: string | null
           id: string
+          instagram_url: string | null
           mobile_banner_color: string | null
           mobile_banner_image: string | null
           mobile_logo: string | null
           store_description: string | null
           store_name: string
+          store_subtitle: string | null
           updated_at: string | null
           user_id: string
+          whatsapp_number: string | null
         }
         Insert: {
           created_at?: string | null
           desktop_banner?: string | null
           id?: string
+          instagram_url?: string | null
           mobile_banner_color?: string | null
           mobile_banner_image?: string | null
           mobile_logo?: string | null
           store_description?: string | null
           store_name?: string
+          store_subtitle?: string | null
           updated_at?: string | null
           user_id: string
+          whatsapp_number?: string | null
         }
         Update: {
           created_at?: string | null
           desktop_banner?: string | null
           id?: string
+          instagram_url?: string | null
           mobile_banner_color?: string | null
           mobile_banner_image?: string | null
           mobile_logo?: string | null
           store_description?: string | null
           store_name?: string
+          store_subtitle?: string | null
           updated_at?: string | null
           user_id?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

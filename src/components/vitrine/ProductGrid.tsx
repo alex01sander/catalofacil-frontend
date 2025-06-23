@@ -1,137 +1,81 @@
 
-import { useState, useEffect } from "react";
+import React, { memo } from "react";
 import ProductCard from "./ProductCard";
-import ProductModal from "./ProductModal";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 
 interface ProductGridProps {
   searchTerm: string;
   selectedCategory: string;
 }
 
-const ProductGrid = ({ searchTerm, selectedCategory }: ProductGridProps) => {
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-
-  // Fetch products from database
-  const fetchProducts = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          categories (
-            id,
-            name
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        return;
-      }
-
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, [user]);
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === "todos" || product.category_id === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
+const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) => {
+  const { products, loading, error } = useOptimizedProducts({
+    searchTerm,
+    selectedCategory
   });
 
   if (loading) {
     return (
-      <section id="produtos" className="py-8 md:py-16 px-4">
+      <section className="py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
-              PRODUTOS EM DESTAQUE
-            </h2>
-            <p className="text-gray-600 text-sm md:text-lg max-w-2xl mx-auto">
-              Descubra nossa seleção cuidadosa de produtos de alta qualidade
-            </p>
-          </div>
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Carregando produtos...</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse">
+                <div className="aspect-square bg-gray-200 rounded-lg mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
     );
   }
 
-  return (
-    <>
-      <section id="produtos" className="py-8 md:py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Mobile-first title */}
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
-              PRODUTOS EM DESTAQUE
-            </h2>
-            <p className="text-gray-600 text-sm md:text-lg max-w-2xl mx-auto">
-              Descubra nossa seleção cuidadosa de produtos de alta qualidade
-            </p>
-          </div>
-
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-500">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">📦</span>
-                </div>
-                <h3 className="text-lg font-medium mb-2">Nenhum produto encontrado</h3>
-                <p className="text-sm">Os produtos aparecerão aqui após serem cadastrados pelo administrador da loja</p>
-              </div>
-            </div>
-          ) : (
-            /* Mobile: 2 columns, Desktop: 3-4 columns */
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onViewDetails={() => setSelectedProduct(product)}
-                />
-              ))}
-            </div>
-          )}
+  if (error) {
+    return (
+      <section className="py-8 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-gray-600">Erro ao carregar produtos. Tente novamente.</p>
         </div>
       </section>
+    );
+  }
 
-      {selectedProduct && (
-        <ProductModal
-          product={selectedProduct}
-          isOpen={!!selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
-    </>
+  if (products.length === 0) {
+    return (
+      <section className="py-8 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-gray-600">
+            {searchTerm ? 'Nenhum produto encontrado para sua pesquisa.' : 'Nenhum produto disponível.'}
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="py-8 px-4 bg-gray-50">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              price={product.price}
+              image={product.image}
+              images={product.images}
+              description={product.description}
+              stock={product.stock}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   );
-};
+});
+
+ProductGrid.displayName = 'ProductGrid';
 
 export default ProductGrid;

@@ -21,7 +21,7 @@ import {
 const StoreSettings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { settings, updateStoreSettings, loading } = useStoreSettings();
+  const { settings, updateSettings, loading } = useStoreSettings();
   const { setTheme } = useTheme();
   
   const [formSettings, setFormSettings] = useState(settings);
@@ -80,7 +80,6 @@ const StoreSettings = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Handle async file validation properly
     const fileError = await validateFileUpload(file);
     if (fileError) {
       toast({
@@ -93,9 +92,7 @@ const StoreSettings = () => {
 
     setUploading(true);
     try {
-      const bucket = type === 'mobile_logo' ? 'store-assets' : 
-                    type === 'desktop_banner' ? 'store-assets' : 'store-assets';
-      
+      const bucket = 'store-assets';
       const publicUrl = await uploadFile(file, bucket, `${type}/`);
       
       setPreviewFiles(prev => ({
@@ -108,7 +105,6 @@ const StoreSettings = () => {
         [type]: publicUrl
       }));
 
-      // Clear any previous errors for this field
       setErrors(prev => ({...prev, [type]: undefined}));
 
       toast({
@@ -137,7 +133,6 @@ const StoreSettings = () => {
       [type]: sanitizedUrl
     }));
     
-    // Clear error when user starts typing
     if (errors[type]) {
       setErrors(prev => ({...prev, [type]: undefined}));
     }
@@ -150,7 +145,6 @@ const StoreSettings = () => {
       [field]: sanitizedValue
     }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({...prev, [field]: undefined}));
     }
@@ -178,7 +172,7 @@ const StoreSettings = () => {
     }
 
     try {
-      await updateStoreSettings(formSettings);
+      await updateSettings(formSettings);
       
       toast({
         title: "Configurações salvas!",
