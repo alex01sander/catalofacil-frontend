@@ -2,7 +2,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Category {
   id: string;
@@ -11,15 +10,10 @@ interface Category {
 }
 
 export const useOptimizedCategories = (enabled = true) => {
-  const { user } = useAuth();
-
   const fetchCategories = async (): Promise<Category[]> => {
-    if (!user) return [];
-
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
-      .eq('user_id', user.id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -35,10 +29,10 @@ export const useOptimizedCategories = (enabled = true) => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['categories', user?.id],
+    queryKey: ['categories'],
     queryFn: fetchCategories,
-    enabled: enabled && !!user,
-    staleTime: 10 * 60 * 1000, // 10 minutes (categories change less frequently)
+    enabled: enabled,
+    staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
   });
 

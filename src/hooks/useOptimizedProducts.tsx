@@ -2,10 +2,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Product {
-  id: string; // Mudança: id como string para corresponder ao banco
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -28,7 +27,6 @@ export const useOptimizedProducts = ({
   selectedCategory = 'todos',
   enabled = true
 }: UseOptimizedProductsProps = {}) => {
-  const { user } = useAuth();
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   // Debounce search term
@@ -41,12 +39,9 @@ export const useOptimizedProducts = ({
   }, [searchTerm]);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
-    if (!user) return [];
-
     let query = supabase
       .from('products')
       .select('*')
-      .eq('user_id', user.id)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
@@ -68,14 +63,13 @@ export const useOptimizedProducts = ({
     }
 
     return data || [];
-  }, [user, selectedCategory, debouncedSearchTerm]);
+  }, [selectedCategory, debouncedSearchTerm]);
 
   const queryKey = useMemo(() => [
     'products',
-    user?.id,
     selectedCategory,
     debouncedSearchTerm
-  ], [user?.id, selectedCategory, debouncedSearchTerm]);
+  ], [selectedCategory, debouncedSearchTerm]);
 
   const {
     data: products = [],
@@ -85,7 +79,7 @@ export const useOptimizedProducts = ({
   } = useQuery({
     queryKey,
     queryFn: fetchProducts,
-    enabled: enabled && !!user,
+    enabled: enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
