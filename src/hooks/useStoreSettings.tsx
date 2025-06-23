@@ -1,6 +1,7 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface StoreSettings {
   id: string;
@@ -18,39 +19,43 @@ export interface StoreSettings {
   updated_at: string;
 }
 
+const defaultSettings: StoreSettings = {
+  id: '',
+  store_name: 'Minha Loja',
+  store_description: 'Catálogo de produtos',
+  store_subtitle: 'Produtos Incríveis',
+  mobile_logo: null,
+  mobile_banner_color: 'verde',
+  mobile_banner_image: null,
+  desktop_banner: null,
+  whatsapp_number: '5511999999999',
+  instagram_url: 'https://instagram.com/',
+  user_id: '',
+  created_at: '',
+  updated_at: ''
+};
+
 export const useStoreSettings = () => {
-  const fetchStoreSettings = async (): Promise<StoreSettings | null> => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const fetchStoreSettings = async (): Promise<StoreSettings> => {
     const { data, error } = await supabase
       .from('store_settings')
       .select('*')
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching store settings:', error);
-      // Return default settings if no settings found
-      return {
-        id: '',
-        store_name: 'Minha Loja',
-        store_description: 'Catálogo de produtos',
-        store_subtitle: 'Produtos Incríveis',
-        mobile_logo: null,
-        mobile_banner_color: 'verde',
-        mobile_banner_image: null,
-        desktop_banner: null,
-        whatsapp_number: '5511999999999',
-        instagram_url: 'https://instagram.com/',
-        user_id: '',
-        created_at: '',
-        updated_at: ''
-      };
+      return defaultSettings;
     }
 
-    return data;
+    return data || defaultSettings;
   };
 
   const {
-    data: settings,
+    data: settings = defaultSettings,
     isLoading: loading,
     error
   } = useQuery({
@@ -60,23 +65,30 @@ export const useStoreSettings = () => {
     gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
-  return {
-    settings: settings || {
-      id: '',
-      store_name: 'Minha Loja',
-      store_description: 'Catálogo de produtos',
-      store_subtitle: 'Produtos Incríveis',
-      mobile_logo: null,
-      mobile_banner_color: 'verde',
-      mobile_banner_image: null,
-      desktop_banner: null,
-      whatsapp_number: '5511999999999',
-      instagram_url: 'https://instagram.com/',
-      user_id: '',
-      created_at: '',
-      updated_at: ''
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (newSettings: Partial<StoreSettings>) => {
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('store_settings')
+        .update(newSettings)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store_settings'] });
+    }
+  });
+
+  const updateSettings = async (newSettings: Partial<StoreSettings>) => {
+    return updateSettingsMutation.mutateAsync(newSettings);
+  };
+
+  return {
+    settings,
     loading,
-    error
+    error,
+    updateSettings
   };
 };
