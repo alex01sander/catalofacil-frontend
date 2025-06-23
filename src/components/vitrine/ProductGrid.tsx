@@ -7,12 +7,15 @@ import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 interface ProductGridProps {
   searchTerm: string;
   selectedCategory: string;
+  storeOwnerId?: string; // Para identificar de qual loja estamos visualizando os produtos
 }
 
-const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) => {
+const ProductGrid = memo(({ searchTerm, selectedCategory, storeOwnerId }: ProductGridProps) => {
+  // Para visualização pública da loja (quando não há usuário logado mas queremos ver uma loja específica)
   const { products, loading, error } = useOptimizedProducts({
     searchTerm,
-    selectedCategory
+    selectedCategory,
+    publicView: !storeOwnerId // Se não há storeOwnerId, é visualização pública geral
   });
   
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -62,7 +65,7 @@ const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) =>
       <section className="py-8 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-gray-600">
-            {searchTerm ? 'Nenhum produto encontrado para sua pesquisa.' : 'Nenhum produto disponível.'}
+            {searchTerm ? 'Nenhum produto encontrado para sua pesquisa.' : 'Nenhum produto disponível nesta loja.'}
           </p>
         </div>
       </section>

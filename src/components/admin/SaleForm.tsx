@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Sale {
   id?: number;
@@ -24,7 +25,11 @@ interface SaleFormProps {
 }
 
 const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
-  const { products, loading } = useOptimizedProducts();
+  const { user } = useAuth();
+  const { products, loading } = useOptimizedProducts({
+    enabled: !!user, // Só buscar se o usuário estiver autenticado
+    publicView: false // Visualização administrativa (não pública)
+  });
   
   const [formData, setFormData] = useState({
     product: "",
@@ -59,6 +64,18 @@ const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
       [field]: value
     }));
   };
+
+  if (!user) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">Você precisa estar logado para registrar vendas.</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
@@ -153,7 +170,6 @@ const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
             </div>
           </div>
 
-          {/* Data */}
           <div className="space-y-2">
             <Label htmlFor="date">Data da Venda *</Label>
             <Input
@@ -165,7 +181,6 @@ const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
             />
           </div>
 
-          {/* Total calculado */}
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-lg font-medium">Total da Venda:</span>
@@ -175,7 +190,6 @@ const SaleForm = ({ onSubmit, onCancel }: SaleFormProps) => {
             </div>
           </div>
 
-          {/* Botões */}
           <div className="flex space-x-3 pt-4">
             <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700">
               Registrar Venda

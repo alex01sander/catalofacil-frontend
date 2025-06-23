@@ -40,9 +40,15 @@ export const useStoreSettings = () => {
   const queryClient = useQueryClient();
 
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
+    if (!user) {
+      console.log('No authenticated user found');
+      return defaultSettings;
+    }
+
     const { data, error } = await supabase
       .from('store_settings')
       .select('*')
+      .eq('user_id', user.id)
       .limit(1)
       .maybeSingle();
 
@@ -59,8 +65,9 @@ export const useStoreSettings = () => {
     isLoading: loading,
     error
   } = useQuery({
-    queryKey: ['store_settings'],
+    queryKey: ['store_settings', user?.id],
     queryFn: fetchStoreSettings,
+    enabled: !!user,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
   });
@@ -77,7 +84,7 @@ export const useStoreSettings = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['store_settings'] });
+      queryClient.invalidateQueries({ queryKey: ['store_settings', user?.id] });
     }
   });
 

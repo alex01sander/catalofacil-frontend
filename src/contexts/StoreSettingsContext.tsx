@@ -63,11 +63,13 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   const fetchStoreSettings = async (useCache = true) => {
     if (!user) {
       setLoading(false);
+      setSettings(defaultSettings);
       return;
     }
 
     // Check cache first
     const now = Date.now();
+    const cacheKey = `store_settings_${user.id}`;
     if (useCache && lastFetch && (now - lastFetch) < CACHE_DURATION) {
       setLoading(false);
       return;
@@ -104,11 +106,13 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         setSettings(newSettings);
         setLastFetch(now);
         
-        // Cache in localStorage
-        localStorage.setItem('store_settings', JSON.stringify({
+        // Cache in localStorage with user ID
+        localStorage.setItem(cacheKey, JSON.stringify({
           data: newSettings,
           timestamp: now
         }));
+      } else {
+        setSettings(defaultSettings);
       }
     } catch (error) {
       console.error('Error fetching store settings:', error);
@@ -138,8 +142,9 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       setSettings(updatedSettings);
       setLastFetch(Date.now());
       
-      // Update cache
-      localStorage.setItem('store_settings', JSON.stringify({
+      // Update cache with user ID
+      const cacheKey = `store_settings_${user.id}`;
+      localStorage.setItem(cacheKey, JSON.stringify({
         data: updatedSettings,
         timestamp: Date.now()
       }));
@@ -156,8 +161,9 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
 
   useEffect(() => {
     if (user) {
-      // Try to load from cache first
-      const cached = localStorage.getItem('store_settings');
+      // Try to load from cache first with user ID
+      const cacheKey = `store_settings_${user.id}`;
+      const cached = localStorage.getItem(cacheKey);
       if (cached) {
         try {
           const { data, timestamp } = JSON.parse(cached);
@@ -170,7 +176,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
           }
         } catch (error) {
           console.error('Error parsing cached settings:', error);
-          localStorage.removeItem('store_settings');
+          localStorage.removeItem(cacheKey);
         }
       }
       
