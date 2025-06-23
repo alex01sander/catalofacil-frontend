@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Package, ShoppingCart, DollarSign, Calculator } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -17,6 +18,8 @@ const AdminDashboard = () => {
   
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [sales, setSales] = useState([]);
+  const [salesLoading, setSalesLoading] = useState(true);
 
   // Estado para simulação de preço - todos os campos zerados
   const [priceSimulation, setPriceSimulation] = useState({
@@ -56,13 +59,42 @@ const AdminDashboard = () => {
     fetchOrders();
   }, [user]);
 
-  // Calcular estatísticas reais
-  const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+  // Buscar vendas registradas do usuário
+  useEffect(() => {
+    const fetchSales = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error('Erro ao buscar vendas:', error);
+        } else {
+          setSales(data || []);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar vendas:', error);
+      } finally {
+        setSalesLoading(false);
+      }
+    };
+
+    fetchSales();
+  }, [user]);
+
+  // Calcular estatísticas reais combinando pedidos e vendas
+  const totalRevenueOrders = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+  const totalRevenueSales = sales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
+  const totalRevenue = totalRevenueOrders + totalRevenueSales;
+  
   const totalProducts = products.filter(p => p.is_active).length;
-  const totalOrders = orders.length;
+  const totalOrders = orders.length + sales.length;
   const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
 
-  // Dados para gráficos baseados nos dados reais
+  // Dados para gráficos baseados nos dados reais (combinando orders e sales)
   const currentMonth = new Date().getMonth();
   const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   
@@ -70,15 +102,24 @@ const AdminDashboard = () => {
   const salesData = Array.from({ length: 6 }, (_, i) => {
     const monthIndex = (currentMonth - 5 + i + 12) % 12;
     const monthName = monthNames[monthIndex];
+    
+    // Vendas dos pedidos
     const monthOrders = orders.filter(order => {
       const orderMonth = new Date(order.created_at).getMonth();
       return orderMonth === monthIndex;
     });
-    const monthTotal = monthOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    const monthOrdersTotal = monthOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    
+    // Vendas registradas manualmente
+    const monthSales = sales.filter(sale => {
+      const saleMonth = new Date(sale.sale_date).getMonth();
+      return saleMonth === monthIndex;
+    });
+    const monthSalesTotal = monthSales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
     
     return {
       name: monthName,
-      vendas: monthTotal
+      vendas: monthOrdersTotal + monthSalesTotal
     };
   });
 
@@ -110,7 +151,7 @@ const AdminDashboard = () => {
       color: "text-blue-600",
     },
     {
-      title: "Total de Pedidos",
+      title: "Total de Vendas",
       value: totalOrders.toString(),
       change: totalOrders > 0 ? `+${totalOrders}` : "0",
       icon: ShoppingCart,
@@ -161,14 +202,19 @@ const AdminDashboard = () => {
       product: `Pedido #${order.id.slice(0, 8)}`,
       time: new Date(order.created_at).toLocaleDateString('pt-BR')
     })),
+    ...sales.slice(0, 2).map(sale => ({
+      action: "Venda registrada",
+      product: sale.product_name,
+      time: new Date(sale.created_at).toLocaleDateString('pt-BR')
+    })),
     ...products.slice(0, 2).map(product => ({
       action: "Produto cadastrado",
       product: product.name,
       time: "Recente" // Since created_at doesn't exist in Product interface, using generic text
     }))
-  ];
+  ].slice(0, 4); // Limitar a 4 atividades
 
-  if (productsLoading || ordersLoading) {
+  if (productsLoading || ordersLoading || salesLoading) {
     return (
       <div className="space-y-6">
         <div>
