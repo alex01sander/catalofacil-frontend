@@ -1,59 +1,23 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Package, ShoppingCart, DollarSign, Calculator } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
+import { useOptimizedCategories } from "@/hooks/useOptimizedCategories";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AdminDashboard = () => {
-  // Dados de exemplo para os gráficos
-  const salesData = [
-    { name: 'Jan', vendas: 4000 },
-    { name: 'Fev', vendas: 3000 },
-    { name: 'Mar', vendas: 5000 },
-    { name: 'Abr', vendas: 4500 },
-    { name: 'Mai', vendas: 6000 },
-    { name: 'Jun', vendas: 5500 },
-  ];
-
-  const categoryData = [
-    { name: 'Eletrônicos', value: 40, color: '#8B5CF6' },
-    { name: 'Roupas', value: 30, color: '#A78BFA' },
-    { name: 'Casa', value: 20, color: '#C4B5FD' },
-    { name: 'Beleza', value: 10, color: '#DDD6FE' },
-  ];
-
-  const stats = [
-    {
-      title: "Vendas do Mês",
-      value: "R$ 24.500",
-      change: "+12.5%",
-      icon: DollarSign,
-      color: "text-green-600",
-    },
-    {
-      title: "Produtos Ativos",
-      value: "127",
-      change: "+3",
-      icon: Package,
-      color: "text-blue-600",
-    },
-    {
-      title: "Pedidos Hoje",
-      value: "23",
-      change: "+8.2%",
-      icon: ShoppingCart,
-      color: "text-purple-600",
-    },
-    {
-      title: "Taxa de Conversão",
-      value: "3.2%",
-      change: "+0.5%",
-      icon: TrendingUp,
-      color: "text-orange-600",
-    },
-  ];
+  const { user } = useAuth();
+  const { products, loading: productsLoading } = useOptimizedProducts();
+  const { categories } = useOptimizedCategories();
+  
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   // Estado para simulação de preço - todos os campos zerados
   const [priceSimulation, setPriceSimulation] = useState({
@@ -66,6 +30,101 @@ const AdminDashboard = () => {
 
   const [suggestedPrice, setSuggestedPrice] = useState(0);
   const [profitAmount, setProfitAmount] = useState(0);
+
+  // Buscar pedidos do usuário
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('store_owner_id', user.id);
+        
+        if (error) {
+          console.error('Erro ao buscar pedidos:', error);
+        } else {
+          setOrders(data || []);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar pedidos:', error);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [user]);
+
+  // Calcular estatísticas reais
+  const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+  const totalProducts = products.filter(p => p.is_active).length;
+  const totalOrders = orders.length;
+  const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
+
+  // Dados para gráficos baseados nos dados reais
+  const currentMonth = new Date().getMonth();
+  const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  
+  // Criar dados dos últimos 6 meses
+  const salesData = Array.from({ length: 6 }, (_, i) => {
+    const monthIndex = (currentMonth - 5 + i + 12) % 12;
+    const monthName = monthNames[monthIndex];
+    const monthOrders = orders.filter(order => {
+      const orderMonth = new Date(order.created_at).getMonth();
+      return orderMonth === monthIndex;
+    });
+    const monthTotal = monthOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    
+    return {
+      name: monthName,
+      vendas: monthTotal
+    };
+  });
+
+  // Dados de categoria baseados nos produtos reais
+  const categoryData = categories.map(category => {
+    const categoryProducts = products.filter(p => p.category_id === category.id);
+    const percentage = totalProducts > 0 ? (categoryProducts.length / totalProducts) * 100 : 0;
+    
+    return {
+      name: category.name,
+      value: Math.round(percentage),
+      color: category.color || '#8B5CF6'
+    };
+  }).filter(item => item.value > 0);
+
+  const stats = [
+    {
+      title: "Receita Total",
+      value: `R$ ${totalRevenue.toFixed(2).replace('.', ',')}`,
+      change: totalRevenue > 0 ? "+100%" : "R$ 0,00",
+      icon: DollarSign,
+      color: "text-green-600",
+    },
+    {
+      title: "Produtos Ativos",
+      value: totalProducts.toString(),
+      change: `+${totalProducts}`,
+      icon: Package,
+      color: "text-blue-600",
+    },
+    {
+      title: "Total de Pedidos",
+      value: totalOrders.toString(),
+      change: totalOrders > 0 ? `+${totalOrders}` : "0",
+      icon: ShoppingCart,
+      color: "text-purple-600",
+    },
+    {
+      title: "Taxa de Conversão",
+      value: `${conversionRate}%`,
+      change: `+${conversionRate}%`,
+      icon: TrendingUp,
+      color: "text-orange-600",
+    },
+  ];
 
   const calculatePrice = () => {
     const { cost, margin, taxes, expenses } = priceSimulation;
@@ -95,6 +154,31 @@ const AdminDashboard = () => {
       [field]: value
     }));
   };
+
+  // Atividades recentes baseadas nos dados reais
+  const recentActivities = [
+    ...orders.slice(0, 2).map(order => ({
+      action: "Nova venda realizada",
+      product: `Pedido #${order.id.slice(0, 8)}`,
+      time: new Date(order.created_at).toLocaleDateString('pt-BR')
+    })),
+    ...products.slice(0, 2).map(product => ({
+      action: "Produto cadastrado",
+      product: product.name,
+      time: new Date(product.created_at).toLocaleDateString('pt-BR')
+    }))
+  ];
+
+  if (productsLoading || ordersLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -322,27 +406,33 @@ const AdminDashboard = () => {
         {/* Category Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Vendas por Categoria</CardTitle>
+            <CardTitle>Produtos por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+              {categoryData.length > 0 ? (
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>Nenhuma categoria com produtos encontrada</p>
+                </div>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -354,22 +444,24 @@ const AdminDashboard = () => {
           <CardTitle>Atividade Recente</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[
-              { action: "Nova venda realizada", product: "Smartphone Galaxy Pro", time: "2 min atrás" },
-              { action: "Produto adicionado", product: "Camiseta Premium Cotton", time: "1 hora atrás" },
-              { action: "Estoque baixo", product: "Kit Skincare Completo", time: "2 horas atrás" },
-              { action: "Nova categoria criada", product: "Acessórios", time: "1 dia atrás" },
-            ].map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{activity.action}</p>
-                  <p className="text-sm text-gray-600">{activity.product}</p>
+          {recentActivities.length > 0 ? (
+            <div className="space-y-4">
+              {recentActivities.map((activity, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{activity.action}</p>
+                    <p className="text-sm text-gray-600">{activity.product}</p>
+                  </div>
+                  <span className="text-sm text-gray-500">{activity.time}</span>
                 </div>
-                <span className="text-sm text-gray-500">{activity.time}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-lg font-medium mb-2">Nenhuma atividade recente</p>
+              <p className="text-sm">Suas atividades aparecerão aqui conforme você usar o sistema</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
