@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Product {
-  id: number;
+  id: string; // Mudança: id como string para corresponder ao banco
   name: string;
   price: number;
   image: string;

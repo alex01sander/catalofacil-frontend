@@ -61,13 +61,10 @@ const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) =>
           {products.map((product) => (
             <ProductCard
               key={product.id}
-              id={product.id}
-              name={product.name}
-              price={product.price}
-              image={product.image}
-              images={product.images}
-              description={product.description}
-              stock={product.stock}
+              product={product}
+              onViewDetails={() => {
+                console.log('Ver detalhes do produto:', product.name);
+              }}
             />
           ))}
         </div>

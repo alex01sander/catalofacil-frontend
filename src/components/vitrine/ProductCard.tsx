@@ -6,32 +6,47 @@ import { ShoppingCart, Plus } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 interface Product {
-  id: number;
+  id: string; // Mudança: id como string
   name: string;
   price: number;
   description: string;
-  category: string;
+  category_id: string | null;
   image: string;
+  images: string[];
   stock: number;
+  is_active: boolean;
+  user_id: string;
 }
 
 interface ProductCardProps {
   product: Product;
-  onViewDetails: () => void;
+  onViewDetails?: () => void;
 }
 
 const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
   const { addToCart } = useCart();
 
+  // Verificação de segurança para evitar erros de undefined
+  if (!product) {
+    console.warn('ProductCard: product is undefined');
+    return null;
+  }
+
   const handleAddToCart = () => {
     addToCart(product);
   };
 
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails();
+    }
+  };
+
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-      <div className="relative overflow-hidden cursor-pointer" onClick={onViewDetails}>
+      <div className="relative overflow-hidden cursor-pointer" onClick={handleViewDetails}>
         <img
-          src={product.image}
+          src={product.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop"}
           alt={product.name}
           className="w-full h-32 md:h-48 object-cover group-hover:scale-110 transition-transform duration-300"
         />
@@ -64,7 +79,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={onViewDetails}
+            onClick={handleViewDetails}
             className="w-full md:flex-1 text-xs md:text-sm h-8 md:h-9"
           >
             <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1" />
