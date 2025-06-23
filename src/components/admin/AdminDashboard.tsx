@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Package, ShoppingCart, DollarSign, Calculator } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -91,7 +90,7 @@ const AdminDashboard = () => {
     return {
       name: category.name,
       value: Math.round(percentage),
-      color: category.color || '#8B5CF6'
+      color: '#8B5CF6' // Using default color since color property doesn't exist in Category interface
     };
   }).filter(item => item.value > 0);
 
@@ -165,7 +164,7 @@ const AdminDashboard = () => {
     ...products.slice(0, 2).map(product => ({
       action: "Produto cadastrado",
       product: product.name,
-      time: new Date(product.created_at).toLocaleDateString('pt-BR')
+      time: "Recente" // Since created_at doesn't exist in Product interface, using generic text
     }))
   ];
 
