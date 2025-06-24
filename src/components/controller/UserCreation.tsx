@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
@@ -13,27 +14,35 @@ const UserCreation = () => {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserName, setNewUserName] = useState("");
+  const [makeControllerAdmin, setMakeControllerAdmin] = useState(false);
   const queryClient = useQueryClient();
 
   const createUserMutation = useMutation({
-    mutationFn: async ({ email, password, fullName }: { email: string; password: string; fullName: string }) => {
-      console.log('Tentando criar usuário:', { email, fullName });
+    mutationFn: async ({ email, password, fullName, makeControllerAdmin }: { 
+      email: string; 
+      password: string; 
+      fullName: string; 
+      makeControllerAdmin: boolean;
+    }) => {
+      console.log('Tentando criar usuário:', { email, fullName, makeControllerAdmin });
       
-      // Usar signUp normal para criar o usuário (sem fazer login automático)
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: fullName || email
-          }
+      // Chamar a edge function para criar o usuário
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email,
+          password,
+          fullName,
+          makeControllerAdmin
         }
       });
 
       if (error) {
         console.error('Erro ao criar usuário:', error);
         throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao criar usuário');
       }
 
       console.log('Usuário criado com sucesso:', data);
@@ -45,6 +54,7 @@ const UserCreation = () => {
       setNewUserEmail("");
       setNewUserPassword("");
       setNewUserName("");
+      setMakeControllerAdmin(false);
       toast.success("Usuário criado com sucesso!");
     },
     onError: (error: any) => {
@@ -69,7 +79,8 @@ const UserCreation = () => {
     createUserMutation.mutate({ 
       email: newUserEmail.trim(), 
       password: newUserPassword.trim(),
-      fullName: newUserName.trim() || newUserEmail.trim()
+      fullName: newUserName.trim() || newUserEmail.trim(),
+      makeControllerAdmin
     });
   };
 
@@ -119,6 +130,16 @@ const UserCreation = () => {
               required
               minLength={6}
             />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="makeControllerAdmin"
+              checked={makeControllerAdmin}
+              onCheckedChange={(checked) => setMakeControllerAdmin(checked as boolean)}
+            />
+            <Label htmlFor="makeControllerAdmin" className="text-sm">
+              Tornar este usuário um administrador controller
+            </Label>
           </div>
           <Button 
             type="submit" 
