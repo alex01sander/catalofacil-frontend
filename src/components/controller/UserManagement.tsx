@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
+import UserCreation from "./UserCreation";
 
 interface UserProfile {
   id: string;
@@ -56,9 +57,11 @@ const UserManagement = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Usuários Ativos</h1>
-        <p className="text-gray-600">Visualize todos os usuários cadastrados no sistema</p>
+        <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
+        <p className="text-gray-600">Crie novos usuários e visualize todos os usuários cadastrados no sistema</p>
       </div>
+
+      <UserCreation />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>

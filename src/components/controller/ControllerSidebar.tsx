@@ -1,5 +1,4 @@
-
-import { Settings, Users, Globe } from "lucide-react";
+import { Settings, Users, Globe, UserPlus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +24,7 @@ const ControllerSidebar = ({ currentView, onViewChange }: ControllerSidebarProps
       value: "domains" as const,
     },
     {
-      title: "Usuários Ativos",
+      title: "Gerenciar Usuários",
       icon: Users,
       value: "users" as const,
     },

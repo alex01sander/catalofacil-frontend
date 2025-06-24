@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import { StoreSettingsProvider } from "@/contexts/StoreSettingsContext";
 import { CartProvider } from "@/contexts/CartContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DomainProtectedRoute from "@/components/DomainProtectedRoute";
+import ControllerProtectedRoute from "@/components/ControllerProtectedRoute";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Controller from "./pages/Controller";
@@ -60,7 +60,9 @@ function App() {
                       path="/controller/*"
                       element={
                         <ProtectedRoute>
-                          <Controller />
+                          <ControllerProtectedRoute>
+                            <Controller />
+                          </ControllerProtectedRoute>
                         </ProtectedRoute>
                       }
                     />
