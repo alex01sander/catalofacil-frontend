@@ -32,7 +32,7 @@ export const useOptimizedProducts = ({
   publicView = false
 }: UseOptimizedProductsProps = {}) => {
   const { user } = useAuth();
-  const { effectiveUserId, allowAccess } = useDomainFilteredData();
+  const { effectiveUserId } = useDomainFilteredData();
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   // Debounce search term
@@ -45,14 +45,14 @@ export const useOptimizedProducts = ({
   }, [searchTerm]);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
-    // Para visualização pública, usar o usuário efetivo do domínio
-    const targetUserId = publicView ? effectiveUserId : (user?.id || effectiveUserId);
+    const targetUserId = effectiveUserId;
     
-    if (!targetUserId || (!publicView && !allowAccess)) {
-      console.log('No user ID found or access not allowed for products');
+    if (!targetUserId) {
+      console.log('No user ID found for products');
       return [];
     }
 
+    // Agora os produtos são públicos devido às políticas RLS atualizadas
     let query = supabase
       .from('products')
       .select('*')
@@ -82,7 +82,7 @@ export const useOptimizedProducts = ({
     }
 
     return data || [];
-  }, [selectedCategory, debouncedSearchTerm, user?.id, effectiveUserId, publicView, allowAccess]);
+  }, [selectedCategory, debouncedSearchTerm, effectiveUserId, publicView]);
 
   const queryKey = useMemo(() => [
     'products',
@@ -100,7 +100,7 @@ export const useOptimizedProducts = ({
   } = useQuery({
     queryKey,
     queryFn: fetchProducts,
-    enabled: enabled && !!effectiveUserId && allowAccess,
+    enabled: enabled && !!effectiveUserId, // Remover verificação de allowAccess
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });

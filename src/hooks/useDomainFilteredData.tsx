@@ -7,25 +7,28 @@ export const useDomainFilteredData = () => {
   const { user } = useAuth();
   const { domainOwner, allowAccess, userId: domainUserId, currentDomain } = useDomainAccess();
 
-  // Retorna o ID do usuário que deve ser usado para filtrar dados
-  // APENAS se o acesso for permitido e houver um dono do domínio definido
+  // Para visualização pública (catálogo), sempre permitir acesso aos dados
+  // Para funcionalidades administrativas, verificar autenticação
   const effectiveUserId = useMemo(() => {
-    if (!allowAccess) return null;
-    
-    // Para localhost, usar o usuário atual
+    // Para localhost, usar o usuário atual se estiver logado
     const isLocalhost = currentDomain === 'localhost' || currentDomain === '127.0.0.1';
     if (isLocalhost) {
       return user?.id || null;
     }
     
-    // Para domínios reais, usar apenas o ID do dono do domínio
-    return domainUserId || null;
-  }, [allowAccess, domainUserId, user?.id, currentDomain]);
+    // Para domínios reais, usar o ID do dono do domínio (para visualização pública)
+    // ou o usuário atual se for o proprietário (para funcionalidades admin)
+    return domainUserId || user?.id || null;
+  }, [domainUserId, user?.id, currentDomain]);
+
+  // Para visualização pública, sempre permitir acesso aos dados
+  const publicAccess = !!effectiveUserId;
 
   return {
     effectiveUserId,
-    allowAccess,
+    allowAccess: publicAccess, // Sempre permitir acesso aos dados do catálogo
     isDomainOwner: domainUserId === user?.id,
-    domainOwner
+    domainOwner,
+    isAuthenticated: !!user
   };
 };

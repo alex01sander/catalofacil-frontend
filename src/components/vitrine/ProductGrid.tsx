@@ -11,11 +11,11 @@ interface ProductGridProps {
 }
 
 const ProductGrid = memo(({ searchTerm, selectedCategory, storeOwnerId }: ProductGridProps) => {
-  // Para visualização pública da loja (quando não há usuário logado mas queremos ver uma loja específica)
+  // Para visualização pública da loja (sempre usar publicView=true para o catálogo)
   const { products, loading, error } = useOptimizedProducts({
     searchTerm,
     selectedCategory,
-    publicView: !storeOwnerId // Se não há storeOwnerId, é visualização pública geral
+    publicView: true // Sempre true para o catálogo público
   });
   
   const [selectedProduct, setSelectedProduct] = useState(null);

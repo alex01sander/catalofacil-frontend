@@ -13,16 +13,17 @@ interface Category {
 
 export const useOptimizedCategories = (enabled = true) => {
   const { user } = useAuth();
-  const { effectiveUserId, allowAccess } = useDomainFilteredData();
+  const { effectiveUserId } = useDomainFilteredData();
 
   const fetchCategories = async (): Promise<Category[]> => {
-    const targetUserId = effectiveUserId || user?.id;
+    const targetUserId = effectiveUserId;
     
-    if (!targetUserId || !allowAccess) {
-      console.log('No user ID found or access not allowed for categories');
+    if (!targetUserId) {
+      console.log('No user ID found for categories');
       return [];
     }
 
+    // Agora as categorias são públicas devido às políticas RLS atualizadas
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
@@ -44,7 +45,7 @@ export const useOptimizedCategories = (enabled = true) => {
   } = useQuery({
     queryKey: ['categories', effectiveUserId],
     queryFn: fetchCategories,
-    enabled: enabled && !!effectiveUserId && allowAccess,
+    enabled: enabled && !!effectiveUserId, // Remover verificação de allowAccess
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
   });

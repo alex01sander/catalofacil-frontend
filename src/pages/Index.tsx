@@ -17,6 +17,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("todos");
   
   const { user } = useAuth();
+  // Remover dependência de autenticação para carregamento da página
   const { settings: storeSettings, loading: settingsLoading } = useStoreSettings();
   const { categories, loading: categoriesLoading } = useOptimizedCategories();
 
@@ -241,6 +242,7 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Usar publicView=true para garantir que apenas produtos ativos sejam mostrados */}
       <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
       <Footer />
       
