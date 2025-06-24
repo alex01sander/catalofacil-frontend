@@ -54,14 +54,16 @@ export const useDomainAccess = () => {
   // Verificar se o usuário atual é o dono do domínio
   const isOwner = user && domainOwner && user.id === domainOwner.user_id;
   
-  // Se não há domainOwner definido, permitir acesso (para desenvolvimento local)
-  const allowAccess = !domainOwner || isOwner;
+  // CORREÇÃO: Apenas permitir acesso se há um domainOwner E o usuário é o proprietário
+  // OU se for localhost (para desenvolvimento)
+  const isLocalhost = currentDomain === 'localhost' || currentDomain === '127.0.0.1';
+  const allowAccess = isLocalhost || (domainOwner && isOwner);
 
   return {
     currentDomain,
     domainOwner,
     isOwner: !!isOwner,
-    allowAccess,
+    allowAccess: !!allowAccess,
     loading: isLoading,
     error,
     userId: domainOwner?.user_id
