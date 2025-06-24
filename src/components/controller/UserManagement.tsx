@@ -18,29 +18,43 @@ interface UserProfile {
 }
 
 const UserManagement = () => {
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['active_users'],
     queryFn: async () => {
-      // Primeiro buscar todos os usuários
+      console.log('Buscando usuários...');
+      
+      // Primeiro buscar todos os usuários - sem filtro de user_id já que somos admin
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Erro ao buscar profiles:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('Profiles encontrados:', profiles);
 
       // Depois buscar todos os domínios
       const { data: domainOwners, error: domainError } = await supabase
         .from('domain_owners')
         .select('user_id, domain');
 
-      if (domainError) throw domainError;
+      if (domainError) {
+        console.error('Erro ao buscar domain_owners:', domainError);
+        throw domainError;
+      }
+
+      console.log('Domain owners encontrados:', domainOwners);
 
       // Combinar os dados
       const usersWithDomains = profiles?.map(profile => ({
         ...profile,
         domain_owners: domainOwners?.filter(d => d.user_id === profile.id).map(d => ({ domain: d.domain })) || []
       })) ?? [];
+
+      console.log('Usuários com domínios:', usersWithDomains);
 
       return usersWithDomains as UserProfile[];
     }
@@ -52,6 +66,10 @@ const UserManagement = () => {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
       </div>
     );
+  }
+
+  if (error) {
+    console.error('Erro na query de usuários:', error);
   }
 
   return (
@@ -107,6 +125,11 @@ const UserManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="text-red-600 p-4 bg-red-50 rounded-md mb-4">
+              Erro ao carregar usuários: {error.message}
+            </div>
+          )}
           {users.length === 0 ? (
             <p className="text-center text-gray-500 py-8">
               Nenhum usuário encontrado
