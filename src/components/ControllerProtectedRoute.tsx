@@ -47,6 +47,7 @@ const ControllerProtectedRoute = ({ children }: ControllerProtectedRouteProps) =
       const result = await signIn(email, password);
       
       if (result.error) {
+        console.error('Login error:', result.error);
         const errorMessage = result.error.message?.includes('Invalid login credentials') 
           ? 'Email ou senha incorretos'
           : 'Erro ao fazer login. Tente novamente.';
@@ -54,20 +55,26 @@ const ControllerProtectedRoute = ({ children }: ControllerProtectedRouteProps) =
         toast.error(errorMessage);
       } else {
         toast.success('Login realizado com sucesso!');
+        // Aguardar um pouco para o estado ser atualizado
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (error: any) {
+      console.error('Login error:', error);
       toast.error('Ocorreu um erro inesperado. Tente novamente.');
     } finally {
       setLoginLoading(false);
     }
   };
 
+  // Se não está logado, mostrar formulário de login
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="text-red-500 text-6xl mb-4">🚫</div>
+            <div className="text-red-500 text-6xl mb-4">🔐</div>
             <CardTitle className="text-2xl font-bold text-gray-900">
               Acesso ao Painel Controller
             </CardTitle>
@@ -84,7 +91,7 @@ const ControllerProtectedRoute = ({ children }: ControllerProtectedRouteProps) =
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@email.com"
+                  placeholder="alexsander01@hotmail.com.br"
                   required
                   autoComplete="email"
                 />
@@ -134,6 +141,7 @@ const ControllerProtectedRoute = ({ children }: ControllerProtectedRouteProps) =
     );
   }
 
+  // Se está logado mas não é admin controller
   if (!isControllerAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -145,6 +153,9 @@ const ControllerProtectedRoute = ({ children }: ControllerProtectedRouteProps) =
           </p>
           <p className="text-sm text-gray-500 mb-4">
             Apenas administradores autorizados podem acessar esta área.
+          </p>
+          <p className="text-xs text-gray-400 mb-4">
+            Usuário atual: {user.email}
           </p>
           <div className="space-y-2">
             <button
