@@ -19,19 +19,18 @@ const UserCreation = () => {
     mutationFn: async ({ email, password, fullName }: { email: string; password: string; fullName: string }) => {
       console.log('Tentando criar usuário:', { email, fullName });
       
-      // Usar signup normal em vez de admin.createUser
-      const { data, error } = await supabase.auth.signUp({
+      // Voltar a usar admin.createUser para não fazer login do usuário criado
+      const { data, error } = await supabase.auth.admin.createUser({
         email,
         password,
-        options: {
-          data: {
-            full_name: fullName
-          }
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName
         }
       });
 
       if (error) {
-        console.error('Erro no signup:', error);
+        console.error('Erro ao criar usuário:', error);
         throw error;
       }
 
@@ -43,7 +42,7 @@ const UserCreation = () => {
       setNewUserEmail("");
       setNewUserPassword("");
       setNewUserName("");
-      toast.success("Usuário criado com sucesso! Um email de confirmação foi enviado.");
+      toast.success("Usuário criado com sucesso!");
     },
     onError: (error: any) => {
       console.error('Erro ao criar usuário:', error);
