@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDomainFilteredData } from '@/hooks/useDomainFilteredData';
 
 interface Category {
   id: string;
@@ -12,17 +13,20 @@ interface Category {
 
 export const useOptimizedCategories = (enabled = true) => {
   const { user } = useAuth();
+  const { effectiveUserId, allowAccess } = useDomainFilteredData();
 
   const fetchCategories = async (): Promise<Category[]> => {
-    if (!user) {
-      console.log('No authenticated user found for categories');
+    const targetUserId = effectiveUserId || user?.id;
+    
+    if (!targetUserId || !allowAccess) {
+      console.log('No user ID found or access not allowed for categories');
       return [];
     }
 
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -38,9 +42,9 @@ export const useOptimizedCategories = (enabled = true) => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['categories', user?.id],
+    queryKey: ['categories', effectiveUserId],
     queryFn: fetchCategories,
-    enabled: enabled && !!user,
+    enabled: enabled && !!effectiveUserId && allowAccess,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
   });

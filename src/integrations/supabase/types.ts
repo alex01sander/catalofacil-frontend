@@ -69,6 +69,30 @@ export type Database = {
         }
         Relationships: []
       }
+      domain_owners: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null

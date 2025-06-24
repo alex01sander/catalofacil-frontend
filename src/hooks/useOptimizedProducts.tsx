@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDomainFilteredData } from '@/hooks/useDomainFilteredData';
 
 interface Product {
   id: string;
@@ -21,7 +22,7 @@ interface UseOptimizedProductsProps {
   searchTerm?: string;
   selectedCategory?: string;
   enabled?: boolean;
-  publicView?: boolean; // Para visualização pública da loja
+  publicView?: boolean;
 }
 
 export const useOptimizedProducts = ({
@@ -31,6 +32,7 @@ export const useOptimizedProducts = ({
   publicView = false
 }: UseOptimizedProductsProps = {}) => {
   const { user } = useAuth();
+  const { effectiveUserId, allowAccess } = useDomainFilteredData();
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   // Debounce search term
@@ -43,21 +45,23 @@ export const useOptimizedProducts = ({
   }, [searchTerm]);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
-    // Para visualização pública, não precisa de usuário autenticado
-    if (!publicView && !user) {
-      console.log('No authenticated user found for products');
+    // Para visualização pública, usar o usuário efetivo do domínio
+    const targetUserId = publicView ? effectiveUserId : (user?.id || effectiveUserId);
+    
+    if (!targetUserId || (!publicView && !allowAccess)) {
+      console.log('No user ID found or access not allowed for products');
       return [];
     }
 
     let query = supabase
       .from('products')
       .select('*')
-      .eq('is_active', true)
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: false });
 
-    // Se não for visualização pública, filtrar pelo usuário
-    if (!publicView && user) {
-      query = query.eq('user_id', user.id);
+    // Para visualização pública, filtrar apenas produtos ativos
+    if (publicView) {
+      query = query.eq('is_active', true);
     }
 
     // Apply category filter
@@ -78,14 +82,15 @@ export const useOptimizedProducts = ({
     }
 
     return data || [];
-  }, [selectedCategory, debouncedSearchTerm, user, publicView]);
+  }, [selectedCategory, debouncedSearchTerm, user?.id, effectiveUserId, publicView, allowAccess]);
 
   const queryKey = useMemo(() => [
     'products',
-    publicView ? 'public' : user?.id,
+    publicView ? 'public' : 'private',
+    effectiveUserId,
     selectedCategory,
     debouncedSearchTerm
-  ], [selectedCategory, debouncedSearchTerm, user?.id, publicView]);
+  ], [selectedCategory, debouncedSearchTerm, effectiveUserId, publicView]);
 
   const {
     data: products = [],
@@ -95,14 +100,14 @@ export const useOptimizedProducts = ({
   } = useQuery({
     queryKey,
     queryFn: fetchProducts,
-    enabled: enabled && (publicView || !!user),
+    enabled: enabled && !!effectiveUserId && allowAccess,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const filteredProducts = useMemo(() => {
-    return products.filter(product => product.is_active);
-  }, [products]);
+    return products.filter(product => publicView ? product.is_active : true);
+  }, [products, publicView]);
 
   return {
     products: filteredProducts,

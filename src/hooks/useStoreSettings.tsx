@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDomainFilteredData } from '@/hooks/useDomainFilteredData';
 
 export interface StoreSettings {
   id: string;
@@ -37,18 +38,21 @@ const defaultSettings: StoreSettings = {
 
 export const useStoreSettings = () => {
   const { user } = useAuth();
+  const { effectiveUserId, allowAccess } = useDomainFilteredData();
   const queryClient = useQueryClient();
 
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
-    if (!user) {
-      console.log('No authenticated user found');
+    const targetUserId = effectiveUserId || user?.id;
+    
+    if (!targetUserId || !allowAccess) {
+      console.log('No user ID found or access not allowed for store settings');
       return defaultSettings;
     }
 
     const { data, error } = await supabase
       .from('store_settings')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .limit(1)
       .maybeSingle();
 
@@ -65,26 +69,27 @@ export const useStoreSettings = () => {
     isLoading: loading,
     error
   } = useQuery({
-    queryKey: ['store_settings', user?.id],
+    queryKey: ['store_settings', effectiveUserId],
     queryFn: fetchStoreSettings,
-    enabled: !!user,
+    enabled: !!effectiveUserId && allowAccess,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: Partial<StoreSettings>) => {
-      if (!user) throw new Error('User not authenticated');
+      const targetUserId = user?.id;
+      if (!targetUserId) throw new Error('User not authenticated');
 
       const { error } = await supabase
         .from('store_settings')
         .update(newSettings)
-        .eq('user_id', user.id);
+        .eq('user_id', targetUserId);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['store_settings', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['store_settings', effectiveUserId] });
     }
   });
 

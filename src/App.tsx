@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { StoreSettingsProvider } from "@/contexts/StoreSettingsContext";
 import { CartProvider } from "@/contexts/CartContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import DomainProtectedRoute from "@/components/DomainProtectedRoute";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
@@ -48,7 +49,9 @@ function App() {
                       path="/admin/*"
                       element={
                         <ProtectedRoute>
-                          <Admin />
+                          <DomainProtectedRoute>
+                            <Admin />
+                          </DomainProtectedRoute>
                         </ProtectedRoute>
                       }
                     />
