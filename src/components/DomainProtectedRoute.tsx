@@ -3,13 +3,15 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDomainAccess } from '@/hooks/useDomainAccess';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 interface DomainProtectedRouteProps {
   children: ReactNode;
 }
 
 const DomainProtectedRoute = ({ children }: DomainProtectedRouteProps) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { allowAccess, loading: domainLoading, currentDomain, isOwner } = useDomainAccess();
 
   // Se ainda está carregando a autenticação, mostrar loading
@@ -41,6 +43,11 @@ const DomainProtectedRoute = ({ children }: DomainProtectedRouteProps) => {
     );
   }
 
+  // Função para fazer logout
+  const handleLogout = async () => {
+    await signOut();
+  };
+
   // Agora que está logado, verificar se tem acesso ao domínio
   if (!allowAccess) {
     return (
@@ -51,15 +58,30 @@ const DomainProtectedRoute = ({ children }: DomainProtectedRouteProps) => {
           <p className="text-gray-600 mb-4">
             Você não tem permissão para acessar esta loja.
           </p>
-          <p className="text-sm text-gray-500">
-            Domínio: <code className="bg-gray-100 px-2 py-1 rounded">{currentDomain}</code>
-          </p>
-          <button
-            onClick={() => window.location.href = '/auth'}
-            className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
-          >
-            Fazer Login
-          </button>
+          <div className="mb-4 space-y-2">
+            <p className="text-sm text-gray-500">
+              Email: <span className="font-medium text-gray-700">{user.email}</span>
+            </p>
+            <p className="text-sm text-gray-500">
+              Domínio: <code className="bg-gray-100 px-2 py-1 rounded">{currentDomain}</code>
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Deslogar
+            </Button>
+            <Button
+              onClick={() => window.location.href = '/auth'}
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              Fazer Login
+            </Button>
+          </div>
         </div>
       </div>
     );
