@@ -12,6 +12,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import DomainProtectedRoute from "@/components/DomainProtectedRoute";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import Controller from "./pages/Controller";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -52,6 +53,14 @@ function App() {
                           <DomainProtectedRoute>
                             <Admin />
                           </DomainProtectedRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/controller/*"
+                      element={
+                        <ProtectedRoute>
+                          <Controller />
                         </ProtectedRoute>
                       }
                     />
