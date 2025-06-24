@@ -19,13 +19,15 @@ const UserCreation = () => {
     mutationFn: async ({ email, password, fullName }: { email: string; password: string; fullName: string }) => {
       console.log('Tentando criar usuário:', { email, fullName });
       
-      // Voltar a usar admin.createUser para não fazer login do usuário criado
-      const { data, error } = await supabase.auth.admin.createUser({
+      // Usar signUp normal para criar o usuário (sem fazer login automático)
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: fullName
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: fullName || email
+          }
         }
       });
 
@@ -39,6 +41,7 @@ const UserCreation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active_users'] });
+      queryClient.invalidateQueries({ queryKey: ['domain_owners'] });
       setNewUserEmail("");
       setNewUserPassword("");
       setNewUserName("");

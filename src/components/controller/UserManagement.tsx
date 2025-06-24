@@ -21,9 +21,9 @@ const UserManagement = () => {
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['active_users'],
     queryFn: async () => {
-      console.log('Buscando usuários...');
+      console.log('Buscando usuários como admin controller...');
       
-      // Primeiro buscar todos os usuários - sem filtro de user_id já que somos admin
+      // Buscar todos os profiles (agora com permissão de admin controller)
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -36,7 +36,7 @@ const UserManagement = () => {
 
       console.log('Profiles encontrados:', profiles);
 
-      // Depois buscar todos os domínios
+      // Buscar todos os domínios (agora com permissão de admin controller)
       const { data: domainOwners, error: domainError } = await supabase
         .from('domain_owners')
         .select('user_id, domain');
