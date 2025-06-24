@@ -20,16 +20,28 @@ const UserManagement = () => {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['active_users'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primeiro buscar todos os usuários
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          domain_owners(domain)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as UserProfile[];
+      if (profilesError) throw profilesError;
+
+      // Depois buscar todos os domínios
+      const { data: domainOwners, error: domainError } = await supabase
+        .from('domain_owners')
+        .select('user_id, domain');
+
+      if (domainError) throw domainError;
+
+      // Combinar os dados
+      const usersWithDomains = profiles?.map(profile => ({
+        ...profile,
+        domain_owners: domainOwners?.filter(d => d.user_id === profile.id).map(d => ({ domain: d.domain })) || []
+      })) ?? [];
+
+      return usersWithDomains as UserProfile[];
     }
   });
 

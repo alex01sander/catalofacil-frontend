@@ -18,7 +18,7 @@ interface DomainOwner {
   profiles: {
     full_name: string;
     email: string;
-  };
+  } | null;
 }
 
 const DomainManagement = () => {
@@ -29,16 +29,33 @@ const DomainManagement = () => {
   const { data: domains = [], isLoading } = useQuery({
     queryKey: ['domain_owners'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primeiro buscar todos os domain_owners
+      const { data: domainOwners, error: domainError } = await supabase
         .from('domain_owners')
-        .select(`
-          *,
-          profiles!inner(full_name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as DomainOwner[];
+      if (domainError) throw domainError;
+
+      // Depois buscar os profiles correspondentes
+      const userIds = domainOwners?.map(d => d.user_id) ?? [];
+      
+      if (userIds.length === 0) return [];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combinar os dados
+      const domainsWithProfiles = domainOwners?.map(domain => ({
+        ...domain,
+        profiles: profiles?.find(p => p.id === domain.user_id) || null
+      })) ?? [];
+
+      return domainsWithProfiles as DomainOwner[];
     }
   });
 
@@ -192,8 +209,8 @@ const DomainManagement = () => {
                 {domains.map((domain) => (
                   <TableRow key={domain.id}>
                     <TableCell className="font-medium">{domain.domain}</TableCell>
-                    <TableCell>{domain.profiles.full_name}</TableCell>
-                    <TableCell>{domain.profiles.email}</TableCell>
+                    <TableCell>{domain.profiles?.full_name || 'Nome não informado'}</TableCell>
+                    <TableCell>{domain.profiles?.email || 'Email não encontrado'}</TableCell>
                     <TableCell>
                       {new Date(domain.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
