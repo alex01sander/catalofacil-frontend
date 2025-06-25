@@ -378,8 +378,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_current_domain: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_domain_owner: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_controller_admin: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      user_owns_current_domain: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }

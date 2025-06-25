@@ -17,7 +17,7 @@ export const useDomainAccess = () => {
   const [currentDomain, setCurrentDomain] = useState<string>('');
 
   useEffect(() => {
-    // Obter o domínio atual
+    // Get current domain securely
     const domain = window.location.hostname;
     setCurrentDomain(domain);
   }, []);
@@ -25,6 +25,7 @@ export const useDomainAccess = () => {
   const fetchDomainOwnership = async (): Promise<DomainOwner | null> => {
     if (!currentDomain) return null;
 
+    // Only controller admins can access domain ownership data now
     const { data, error } = await supabase
       .from('domain_owners')
       .select('*')
@@ -32,8 +33,14 @@ export const useDomainAccess = () => {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching domain ownership:', error);
-      throw error;
+      // Log security events for failed domain access attempts
+      console.warn('Domain access attempt:', {
+        domain: currentDomain,
+        userId: user?.id,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      return null;
     }
 
     return data;
@@ -49,37 +56,38 @@ export const useDomainAccess = () => {
     enabled: !!currentDomain,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
+    retry: false // Don't retry failed domain access attempts
   });
 
-  // Verificar se o usuário atual é o dono do domínio
+  // Check if current user is domain owner
   const isOwner = user && domainOwner && user.id === domainOwner.user_id;
   
-  // Para localhost, sempre permitir acesso (desenvolvimento)
+  // Secure localhost handling for development only
   const isLocalhost = currentDomain === 'localhost' || currentDomain === '127.0.0.1';
   
-  // CORREÇÃO: Permitir acesso se:
-  // 1. For localhost (desenvolvimento)
-  // 2. For o dono do domínio (isOwner)
-  // 3. Se não há domainOwner registrado mas há usuário logado (caso de domínios não configurados)
-  const allowAccess = isLocalhost || isOwner || (!domainOwner && !!user);
+  // SECURE ACCESS CONTROL: Only allow access if:
+  // 1. localhost (development environment)
+  // 2. User is confirmed domain owner
+  // 3. NO fallback for unconfigured domains (security fix)
+  const allowAccess = isLocalhost || !!isOwner;
 
-  console.log('Domain Access Debug:', {
-    currentDomain,
-    userId: user?.id,
-    userEmail: user?.email,
-    domainOwner,
-    isOwner,
-    allowAccess,
-    isLocalhost,
-    hasUser: !!user,
-    noDomainOwner: !domainOwner
-  });
+  // Security logging (remove sensitive data in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Domain Access Control:', {
+      currentDomain,
+      userId: user?.id?.substring(0, 8) + '...',
+      hasUser: !!user,
+      isOwner: !!isOwner,
+      allowAccess,
+      isLocalhost
+    });
+  }
 
   return {
     currentDomain,
     domainOwner,
     isOwner: !!isOwner,
-    allowAccess: !!allowAccess,
+    allowAccess,
     loading: isLoading,
     error,
     userId: domainOwner?.user_id
