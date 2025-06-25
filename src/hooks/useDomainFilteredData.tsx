@@ -14,16 +14,26 @@ export const useDomainFilteredData = () => {
       return user?.id || null;
     }
     
-    // Para domínios reais, usar o ID do dono do domínio
+    // Para domínios reais, usar o ID do dono do domínio se existir,
+    // caso contrário usar o usuário logado (para casos onde o domain_owner não foi configurado)
     return domainUserId || user?.id || null;
   }, [domainUserId, user?.id, currentDomain]);
 
-  // Para visualização pública, sempre permitir acesso aos dados
+  // Permitir acesso se há usuário efetivo
   const publicAccess = !!effectiveUserId;
+
+  console.log('Domain Filtered Data Debug:', {
+    effectiveUserId,
+    allowAccess,
+    domainUserId,
+    currentUserId: user?.id,
+    currentDomain,
+    publicAccess
+  });
 
   return {
     effectiveUserId,
-    allowAccess: publicAccess, // Sempre permitir acesso aos dados do catálogo
+    allowAccess: publicAccess,
     isDomainOwner: domainUserId === user?.id,
     domainOwner,
     isAuthenticated: !!user

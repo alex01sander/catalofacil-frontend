@@ -54,18 +54,25 @@ export const useDomainAccess = () => {
   // Verificar se o usuário atual é o dono do domínio
   const isOwner = user && domainOwner && user.id === domainOwner.user_id;
   
-  // Para localhost, sempre permitir acesso
-  // Para domínios reais, permitir apenas se for o proprietário
+  // Para localhost, sempre permitir acesso (desenvolvimento)
   const isLocalhost = currentDomain === 'localhost' || currentDomain === '127.0.0.1';
-  const allowAccess = isLocalhost || isOwner;
+  
+  // CORREÇÃO: Permitir acesso se:
+  // 1. For localhost (desenvolvimento)
+  // 2. For o dono do domínio (isOwner)
+  // 3. Se não há domainOwner registrado mas há usuário logado (caso de domínios não configurados)
+  const allowAccess = isLocalhost || isOwner || (!domainOwner && !!user);
 
   console.log('Domain Access Debug:', {
     currentDomain,
     userId: user?.id,
+    userEmail: user?.email,
     domainOwner,
     isOwner,
     allowAccess,
-    isLocalhost
+    isLocalhost,
+    hasUser: !!user,
+    noDomainOwner: !domainOwner
   });
 
   return {
