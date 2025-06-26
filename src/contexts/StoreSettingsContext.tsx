@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,15 +60,10 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   const CACHE_DURATION = 5 * 60 * 1000;
 
   const fetchStoreSettings = async (useCache = true) => {
-    if (!user) {
-      setLoading(false);
-      setSettings(defaultSettings);
-      return;
-    }
-
+    // Não depende mais de user
     // Check cache first
     const now = Date.now();
-    const cacheKey = `store_settings_${user.id}`;
+    const cacheKey = `store_settings_global`;
     if (useCache && lastFetch && (now - lastFetch) < CACHE_DURATION) {
       setLoading(false);
       return;
@@ -80,7 +74,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .limit(1)
         .maybeSingle();
 
       if (fetchError) {
@@ -102,11 +96,9 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
           mobile_banner_color: data.mobile_banner_color || 'verde',
           mobile_banner_image: data.mobile_banner_image
         };
-        
         setSettings(newSettings);
         setLastFetch(now);
-        
-        // Cache in localStorage with user ID
+        // Cache global
         localStorage.setItem(cacheKey, JSON.stringify({
           data: newSettings,
           timestamp: now
@@ -160,32 +152,26 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   };
 
   useEffect(() => {
-    if (user) {
-      // Try to load from cache first with user ID
-      const cacheKey = `store_settings_${user.id}`;
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        try {
-          const { data, timestamp } = JSON.parse(cached);
-          const now = Date.now();
-          if ((now - timestamp) < CACHE_DURATION) {
-            setSettings(data);
-            setLastFetch(timestamp);
-            setLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error('Error parsing cached settings:', error);
-          localStorage.removeItem(cacheKey);
+    // Não depende mais de user
+    const cacheKey = `store_settings_global`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        const now = Date.now();
+        if ((now - timestamp) < CACHE_DURATION) {
+          setSettings(data);
+          setLastFetch(timestamp);
+          setLoading(false);
+          return;
         }
+      } catch (error) {
+        console.error('Error parsing cached settings:', error);
+        localStorage.removeItem(cacheKey);
       }
-      
-      fetchStoreSettings();
-    } else {
-      setSettings(defaultSettings);
-      setLoading(false);
     }
-  }, [user]);
+    fetchStoreSettings();
+  }, []);
 
   return (
     <StoreSettingsContext.Provider value={{
