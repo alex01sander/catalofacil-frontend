@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,7 +209,7 @@ const StoreSettings = () => {
     { name: 'Azul', value: 'azul' },
     { name: 'Rosa', value: 'rosa' },
     { name: 'Laranja', value: 'laranja' },
-    { name: 'Branco', value: 'branco' }
+    { name: 'Violeta', value: 'violeta' }
   ];
 
   const colorClasses: { [key: string]: string } = {
@@ -217,7 +218,7 @@ const StoreSettings = () => {
     azul: 'from-blue-500 via-blue-600 to-blue-700',
     rosa: 'from-pink-500 via-pink-600 to-pink-700',
     laranja: 'from-orange-500 via-orange-600 to-orange-700',
-    branco: 'from-white via-white to-white'
+    violeta: 'from-violet-600 via-violet-700 to-violet-800'
   };
 
   if (loading) {
@@ -496,7 +497,7 @@ const StoreSettings = () => {
                         : 'border-transparent hover:border-gray-300'
                     }`}
                     onClick={() => {
-                      const themeValue = option.value as 'verde' | 'roxo' | 'azul' | 'rosa' | 'laranja' | 'branco';
+                      const themeValue = option.value as 'verde' | 'roxo' | 'azul' | 'rosa' | 'laranja' | 'violeta';
                       setFormSettings(prev => ({ ...prev, mobile_banner_color: themeValue }));
                       setTheme(themeValue);
                     }}
