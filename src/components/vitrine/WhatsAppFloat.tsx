@@ -1,4 +1,5 @@
-import { Whatsapp } from "lucide-react";
+
+import { MessageCircle } from "lucide-react";
 
 const WhatsAppFloat = () => {
   const handleWhatsAppClick = () => {
@@ -12,10 +13,10 @@ const WhatsAppFloat = () => {
   return (
     <button
       onClick={handleWhatsAppClick}
-      className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"
+      className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 animate-pulse"
       aria-label="Contato via WhatsApp"
     >
-      <Whatsapp className="h-6 w-6" />
+      <MessageCircle className="h-6 w-6" />
     </button>
   );
 };
