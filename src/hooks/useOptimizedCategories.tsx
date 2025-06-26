@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDomainFilteredData } from '@/hooks/useDomainFilteredData';
 
 interface Category {
   id: string;
@@ -13,21 +12,17 @@ interface Category {
 
 export const useOptimizedCategories = (enabled = true) => {
   const { user } = useAuth();
-  const { effectiveUserId } = useDomainFilteredData();
 
   const fetchCategories = async (): Promise<Category[]> => {
-    const targetUserId = effectiveUserId;
-    
-    if (!targetUserId) {
+    if (!user?.id) {
       console.log('No user ID found for categories');
       return [];
     }
 
-    // Agora as categorias são públicas devido às políticas RLS atualizadas
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
-      .eq('user_id', targetUserId)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -43,11 +38,11 @@ export const useOptimizedCategories = (enabled = true) => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['categories', effectiveUserId],
+    queryKey: ['categories', user?.id],
     queryFn: fetchCategories,
-    enabled: enabled && !!effectiveUserId, // Remover verificação de allowAccess
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    enabled: enabled && !!user?.id,
+    staleTime: 30 * 60 * 1000, // 30 minutos - cache mais longo
+    gcTime: 60 * 60 * 1000, // 1 hora
   });
 
   const categories = useMemo(() => {

@@ -7,15 +7,13 @@ import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 interface ProductGridProps {
   searchTerm: string;
   selectedCategory: string;
-  storeOwnerId?: string; // Para identificar de qual loja estamos visualizando os produtos
 }
 
-const ProductGrid = memo(({ searchTerm, selectedCategory, storeOwnerId }: ProductGridProps) => {
-  // Para visualização pública da loja (sempre usar publicView=true para o catálogo)
+const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) => {
   const { products, loading, error } = useOptimizedProducts({
     searchTerm,
     selectedCategory,
-    publicView: true // Sempre true para o catálogo público
+    publicView: true
   });
   
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -88,7 +86,6 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, storeOwnerId }: Produc
         </div>
       </section>
 
-      {/* Modal do Produto */}
       {selectedProduct && (
         <ProductModal
           product={selectedProduct}

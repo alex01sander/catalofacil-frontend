@@ -3,7 +3,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDomainFilteredData } from '@/hooks/useDomainFilteredData';
 
 interface Product {
   id: string;
@@ -32,7 +31,6 @@ export const useOptimizedProducts = ({
   publicView = false
 }: UseOptimizedProductsProps = {}) => {
   const { user } = useAuth();
-  const { effectiveUserId } = useDomainFilteredData();
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   // Debounce search term
@@ -45,18 +43,15 @@ export const useOptimizedProducts = ({
   }, [searchTerm]);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
-    const targetUserId = effectiveUserId;
-    
-    if (!targetUserId) {
+    if (!user?.id) {
       console.log('No user ID found for products');
       return [];
     }
 
-    // Agora os produtos são públicos devido às políticas RLS atualizadas
     let query = supabase
       .from('products')
       .select('*')
-      .eq('user_id', targetUserId)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     // Para visualização pública, filtrar apenas produtos ativos
@@ -82,15 +77,15 @@ export const useOptimizedProducts = ({
     }
 
     return data || [];
-  }, [selectedCategory, debouncedSearchTerm, effectiveUserId, publicView]);
+  }, [selectedCategory, debouncedSearchTerm, user?.id, publicView]);
 
   const queryKey = useMemo(() => [
     'products',
     publicView ? 'public' : 'private',
-    effectiveUserId,
+    user?.id,
     selectedCategory,
     debouncedSearchTerm
-  ], [selectedCategory, debouncedSearchTerm, effectiveUserId, publicView]);
+  ], [selectedCategory, debouncedSearchTerm, user?.id, publicView]);
 
   const {
     data: products = [],
@@ -100,9 +95,9 @@ export const useOptimizedProducts = ({
   } = useQuery({
     queryKey,
     queryFn: fetchProducts,
-    enabled: enabled && !!effectiveUserId, // Remover verificação de allowAccess
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: enabled && !!user?.id,
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 30 * 60 * 1000, // 30 minutos
   });
 
   const filteredProducts = useMemo(() => {
