@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Save, Eye, X } from "lucide-react";
+import { Upload, Save, Eye, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,21 @@ import {
   validateFileUpload,
   sanitizeText 
 } from "@/utils/validation";
+
+const RecommendedDimensions = ({ title, dimensions, description }: { title: string; dimensions: string; description: string }) => (
+  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+    <div className="flex items-start space-x-2">
+      <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+      <div className="flex-1">
+        <p className="text-sm font-medium text-blue-800">{title}</p>
+        <p className="text-xs text-blue-600 mt-1">
+          <strong>Dimensões recomendadas:</strong> {dimensions}
+        </p>
+        <p className="text-xs text-blue-600 mt-1">{description}</p>
+      </div>
+    </div>
+  </div>
+);
 
 const StoreSettings = () => {
   const { toast } = useToast();
@@ -312,6 +328,12 @@ const StoreSettings = () => {
               {errors.mobile_logo && <p className="text-red-500 text-sm mt-1">{errors.mobile_logo}</p>}
             </div>
             
+            <RecommendedDimensions
+              title="Logo Mobile"
+              dimensions="200x200 pixels (quadrada)"
+              description="Use uma imagem com fundo transparente (PNG) para melhor resultado. A logo aparecerá circular no mobile."
+            />
+            
             <div>
               <Label htmlFor="mobileLogoFile" className="text-sm font-medium">Ou faça upload</Label>
               <Input
@@ -359,6 +381,12 @@ const StoreSettings = () => {
               />
             </div>
             
+            <RecommendedDimensions
+              title="Banner Desktop"
+              dimensions="1200x300 pixels (formato retangular)"
+              description="Para telas de computador e tablets. Use imagens de alta qualidade com texto legível."
+            />
+            
             <div>
               <Label htmlFor="desktopBannerFile" className="text-sm font-medium">Ou faça upload</Label>
               <Input
@@ -405,6 +433,12 @@ const StoreSettings = () => {
                   className="mt-1 text-sm"
                 />
               </div>
+              
+              <RecommendedDimensions
+                title="Banner Mobile"
+                dimensions="800x400 pixels (formato retangular)"
+                description="Para telas de celular. Prefira imagens com elementos centralizados e texto legível em telas pequenas."
+              />
               
               <div>
                 <Label htmlFor="mobileBannerFile" className="text-xs text-gray-600">Ou faça upload</Label>

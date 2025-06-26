@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { X, Upload, Trash2, GripVertical } from "lucide-react";
+import { X, Upload, Trash2, GripVertical, Info } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +36,23 @@ interface ProductFormProps {
   onSubmit: (product: Omit<Product, 'id'>) => void;
   onCancel: () => void;
 }
+
+const RecommendedDimensions = () => (
+  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+    <div className="flex items-start space-x-2">
+      <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+      <div className="flex-1">
+        <p className="text-sm font-medium text-blue-800">Imagens do Produto</p>
+        <p className="text-xs text-blue-600 mt-1">
+          <strong>Dimensões recomendadas:</strong> 600x600 pixels (quadrada)
+        </p>
+        <p className="text-xs text-blue-600 mt-1">
+          Use imagens com boa iluminação e fundo limpo. A primeira imagem será a principal.
+        </p>
+      </div>
+    </div>
+  </div>
+);
 
 const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   console.log('ProductForm render with product:', product);
@@ -231,6 +248,8 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
             {/* Imagens do produto */}
             <div className="space-y-4">
               <Label>Imagens do Produto</Label>
+              
+              <RecommendedDimensions />
               
               {/* Preview da imagem principal */}
               <div className="flex items-center space-x-4">
