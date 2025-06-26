@@ -1,8 +1,8 @@
+
 import React, { memo, useState } from "react";
 import ProductCard from "./ProductCard";
 import ProductModal from "./ProductModal";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
-import { ShoppingCart } from "lucide-react";
 
 interface ProductGridProps {
   searchTerm: string;
@@ -61,8 +61,7 @@ const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) =>
   if (products.length === 0) {
     return (
       <section className="py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center flex flex-col items-center justify-center">
-          <ShoppingCart className="h-16 w-16 text-gray-300 mb-4" />
+        <div className="max-w-6xl mx-auto text-center">
           <p className="text-gray-600">
             {searchTerm ? 'Nenhum produto encontrado para sua pesquisa.' : 'Nenhum produto disponível nesta loja.'}
           </p>
