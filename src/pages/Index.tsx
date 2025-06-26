@@ -60,9 +60,11 @@ const Index = () => {
           'from-green-400 via-green-500 to-green-600'}`}`} 
         style={storeSettings.mobile_banner_image ? {
           backgroundImage: `url('${storeSettings.mobile_banner_image}')`,
-          backgroundSize: 'cover',
+          backgroundSize: 'contain',
           backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
+          backgroundRepeat: 'no-repeat',
+          minHeight: 180,
+          height: 180
         } : {}}>
           {/* Background overlay when using image */}
           {/* {storeSettings.mobile_banner_image && <div className="absolute inset-0 bg-black/40"></div>} */}

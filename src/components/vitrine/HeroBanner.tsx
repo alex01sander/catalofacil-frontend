@@ -10,10 +10,15 @@ const HeroBanner = () => {
   const handleInstagramClick = () => {
     window.open(settings.instagram_url, "_blank");
   };
-  return <section className="relative bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 text-white overflow-hidden">
+  return <section className="relative bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 text-white overflow-hidden" style={{ minHeight: 300, height: 300 }}>
       {/* Background image */}
-      {settings.desktop_banner && <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
-      backgroundImage: `url('${settings.desktop_banner}')`
+      {settings.desktop_banner && <div className="absolute inset-0 bg-center bg-no-repeat" style={{
+      backgroundImage: `url('${settings.desktop_banner}')`,
+      backgroundSize: 'contain',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      width: '100%',
+      height: '100%'
     }} />}
       
       <div className="relative max-w-6xl mx-auto px-4 py-20">
