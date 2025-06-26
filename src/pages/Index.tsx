@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Instagram, MessageCircle } from "lucide-react";
@@ -66,7 +65,7 @@ const Index = () => {
           backgroundRepeat: 'no-repeat'
         } : {}}>
           {/* Background overlay when using image */}
-          {storeSettings.mobile_banner_image && <div className="absolute inset-0 bg-black/40"></div>}
+          {/* {storeSettings.mobile_banner_image && <div className="absolute inset-0 bg-black/40"></div>} */}
           
           <div className="relative text-center">
             {/* Logo Circle */}

@@ -15,7 +15,7 @@ const HeroBanner = () => {
       {settings.desktop_banner && <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{
       backgroundImage: `url('${settings.desktop_banner}')`
     }} />}
-      <div className="absolute inset-0 bg-black/30"></div>
+      
       <div className="relative max-w-6xl mx-auto px-4 py-20">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in drop-shadow-lg">
