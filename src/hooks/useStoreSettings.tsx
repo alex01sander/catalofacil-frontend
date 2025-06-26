@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDomainFilteredData } from '@/hooks/useDomainFilteredData';
+import { useSimplifiedData } from '@/hooks/useSimplifiedData';
 
 export interface StoreSettings {
   id: string;
@@ -38,7 +38,7 @@ const defaultSettings: StoreSettings = {
 
 export const useStoreSettings = () => {
   const { user } = useAuth();
-  const { effectiveUserId, allowAccess } = useDomainFilteredData();
+  const { effectiveUserId, allowAccess } = useSimplifiedData();
   const queryClient = useQueryClient();
 
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
