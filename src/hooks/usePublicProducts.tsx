@@ -47,10 +47,11 @@ export const usePublicProducts = ({
       setLoading(true);
       setError(null);
 
+      // Busca todos os produtos ativos sem filtrar por user_id
       let query = supabase
         .from('products')
         .select('*')
-        .eq('is_active', true) // Apenas produtos ativos para visualização pública
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       // Apply category filter

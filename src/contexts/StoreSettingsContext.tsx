@@ -61,7 +61,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       setError(null);
       setLoading(true);
       
-      // Busca as configurações globalmente (primeira entrada da tabela)
+      // Busca as configurações globalmente (primeira entrada da tabela) sem depender de autenticação
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
@@ -94,13 +94,17 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
     } catch (error) {
       console.error('Error fetching store settings:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
+      // Em caso de erro, usar configurações padrão para não quebrar a visualização
+      setSettings(defaultSettings);
     } finally {
       setLoading(false);
     }
   };
 
   const updateSettings = async (newSettings: Partial<StoreSettings>) => {
-    if (!user) return;
+    if (!user) {
+      throw new Error('User must be authenticated to update settings');
+    }
 
     try {
       setError(null);
@@ -156,7 +160,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
 
   useEffect(() => {
     fetchStoreSettings();
-  }, []);
+  }, []); // Removido a dependência do user para sempre buscar configurações
 
   return (
     <StoreSettingsContext.Provider value={{
