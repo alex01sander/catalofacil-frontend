@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,13 +54,23 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetch, setLastFetch] = useState<number>(0);
 
-  const fetchStoreSettings = async () => {
+  // Cache duration: 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000;
+
+  const fetchStoreSettings = async (useCache = true) => {
+    // Não depende mais de user
+    // Check cache first
+    const now = Date.now();
+    const cacheKey = `store_settings_global`;
+    if (useCache && lastFetch && (now - lastFetch) < CACHE_DURATION) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setError(null);
-      setLoading(true);
-      
-      // Busca QUALQUER configuração da loja (a primeira disponível) - dados públicos
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
@@ -71,85 +80,66 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       if (fetchError) {
         console.error('Error fetching store settings:', fetchError);
         setError(fetchError.message);
-        // Em caso de erro, usar configurações padrão
-        setSettings(defaultSettings);
         return;
       }
 
       if (data) {
         const newSettings: StoreSettings = {
           id: data.id,
-          store_name: data.store_name || 'Minha Loja',
-          store_description: data.store_description || 'Bem-vindo à minha loja!\nAqui você encontra os melhores produtos.',
-          store_subtitle: data.store_subtitle || 'Produtos Incríveis',
-          instagram_url: data.instagram_url || 'https://instagram.com/',
-          whatsapp_number: data.whatsapp_number || '5511999999999',
+          store_name: data.store_name,
+          store_description: data.store_description,
+          store_subtitle: data.store_subtitle ?? 'Produtos Incríveis',
+          instagram_url: data.instagram_url ?? 'https://instagram.com/',
+          whatsapp_number: data.whatsapp_number ?? '5511999999999',
           mobile_logo: data.mobile_logo,
           desktop_banner: data.desktop_banner,
           mobile_banner_color: data.mobile_banner_color || 'verde',
           mobile_banner_image: data.mobile_banner_image
         };
-        console.log('Loaded store settings:', newSettings);
         setSettings(newSettings);
+        setLastFetch(now);
+        // Cache global
+        localStorage.setItem(cacheKey, JSON.stringify({
+          data: newSettings,
+          timestamp: now
+        }));
       } else {
-        console.log('No store settings found, using defaults');
         setSettings(defaultSettings);
       }
     } catch (error) {
       console.error('Error fetching store settings:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      setSettings(defaultSettings);
     } finally {
       setLoading(false);
     }
   };
 
   const updateSettings = async (newSettings: Partial<StoreSettings>) => {
-    if (!user) {
-      throw new Error('User must be authenticated to update settings');
-    }
+    if (!user) return;
 
     try {
       setError(null);
-      
-      // Primeiro, tenta atualizar um registro existente do usuário logado
-      const { data: existingData } = await supabase
+      const { error: updateError } = await supabase
         .from('store_settings')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle();
+        .update(newSettings)
+        .eq('user_id', user.id);
 
-      if (existingData) {
-        // Atualiza registro existente
-        const { error: updateError } = await supabase
-          .from('store_settings')
-          .update(newSettings)
-          .eq('id', existingData.id);
-
-        if (updateError) {
-          console.error('Error updating store settings:', updateError);
-          setError(updateError.message);
-          throw updateError;
-        }
-      } else {
-        // Cria novo registro se não existir
-        const { error: insertError } = await supabase
-          .from('store_settings')
-          .insert([{
-            user_id: user.id,
-            ...newSettings
-          }]);
-
-        if (insertError) {
-          console.error('Error creating store settings:', insertError);
-          setError(insertError.message);
-          throw insertError;
-        }
+      if (updateError) {
+        console.error('Error updating store settings:', updateError);
+        setError(updateError.message);
+        throw updateError;
       }
 
-      // Atualiza o estado local e recarrega os dados públicos
-      await refetch();
+      const updatedSettings = { ...settings, ...newSettings };
+      setSettings(updatedSettings);
+      setLastFetch(Date.now());
+      
+      // Update cache with user ID
+      const cacheKey = `store_settings_${user.id}`;
+      localStorage.setItem(cacheKey, JSON.stringify({
+        data: updatedSettings,
+        timestamp: Date.now()
+      }));
     } catch (error) {
       console.error('Error updating store settings:', error);
       throw error;
@@ -157,12 +147,31 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   };
 
   const refetch = async () => {
-    await fetchStoreSettings();
+    setLastFetch(0); // Force refresh
+    await fetchStoreSettings(false);
   };
 
   useEffect(() => {
+    // Não depende mais de user
+    const cacheKey = `store_settings_global`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        const now = Date.now();
+        if ((now - timestamp) < CACHE_DURATION) {
+          setSettings(data);
+          setLastFetch(timestamp);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing cached settings:', error);
+        localStorage.removeItem(cacheKey);
+      }
+    }
     fetchStoreSettings();
-  }, []); // Sem dependências - sempre busca dados públicos
+  }, []);
 
   return (
     <StoreSettingsContext.Provider value={{
