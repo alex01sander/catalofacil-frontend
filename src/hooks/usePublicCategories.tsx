@@ -20,7 +20,9 @@ export const usePublicCategories = (enabled = true) => {
       setLoading(true);
       setError(null);
 
-      // Busca todas as categorias sem filtrar por user_id
+      console.log('Fetching public categories...');
+
+      // Busca TODAS as categorias de QUALQUER usuário - dados totalmente públicos
       const { data, error: fetchError } = await supabase
         .from('categories')
         .select('id, name, image')
@@ -32,6 +34,7 @@ export const usePublicCategories = (enabled = true) => {
         return;
       }
 
+      console.log('Fetched categories:', data?.length || 0);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);

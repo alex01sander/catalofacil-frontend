@@ -61,7 +61,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       setError(null);
       setLoading(true);
       
-      // Busca as configurações globalmente (primeira entrada da tabela) sem depender de autenticação
+      // Busca QUALQUER configuração da loja (a primeira disponível) - dados públicos
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
@@ -71,30 +71,33 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       if (fetchError) {
         console.error('Error fetching store settings:', fetchError);
         setError(fetchError.message);
+        // Em caso de erro, usar configurações padrão
+        setSettings(defaultSettings);
         return;
       }
 
       if (data) {
         const newSettings: StoreSettings = {
           id: data.id,
-          store_name: data.store_name,
-          store_description: data.store_description,
-          store_subtitle: data.store_subtitle ?? 'Produtos Incríveis',
-          instagram_url: data.instagram_url ?? 'https://instagram.com/',
-          whatsapp_number: data.whatsapp_number ?? '5511999999999',
+          store_name: data.store_name || 'Minha Loja',
+          store_description: data.store_description || 'Bem-vindo à minha loja!\nAqui você encontra os melhores produtos.',
+          store_subtitle: data.store_subtitle || 'Produtos Incríveis',
+          instagram_url: data.instagram_url || 'https://instagram.com/',
+          whatsapp_number: data.whatsapp_number || '5511999999999',
           mobile_logo: data.mobile_logo,
           desktop_banner: data.desktop_banner,
           mobile_banner_color: data.mobile_banner_color || 'verde',
           mobile_banner_image: data.mobile_banner_image
         };
+        console.log('Loaded store settings:', newSettings);
         setSettings(newSettings);
       } else {
+        console.log('No store settings found, using defaults');
         setSettings(defaultSettings);
       }
     } catch (error) {
       console.error('Error fetching store settings:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
-      // Em caso de erro, usar configurações padrão para não quebrar a visualização
       setSettings(defaultSettings);
     } finally {
       setLoading(false);
@@ -109,7 +112,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
     try {
       setError(null);
       
-      // Primeiro, tenta atualizar um registro existente
+      // Primeiro, tenta atualizar um registro existente do usuário logado
       const { data: existingData } = await supabase
         .from('store_settings')
         .select('id')
@@ -145,9 +148,8 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         }
       }
 
-      // Atualiza o estado local
-      const updatedSettings = { ...settings, ...newSettings };
-      setSettings(updatedSettings);
+      // Atualiza o estado local e recarrega os dados públicos
+      await refetch();
     } catch (error) {
       console.error('Error updating store settings:', error);
       throw error;
@@ -160,7 +162,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
 
   useEffect(() => {
     fetchStoreSettings();
-  }, []); // Removido a dependência do user para sempre buscar configurações
+  }, []); // Sem dependências - sempre busca dados públicos
 
   return (
     <StoreSettingsContext.Provider value={{

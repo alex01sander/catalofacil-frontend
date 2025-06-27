@@ -47,7 +47,9 @@ export const usePublicProducts = ({
       setLoading(true);
       setError(null);
 
-      // Busca todos os produtos ativos sem filtrar por user_id
+      console.log('Fetching public products...');
+
+      // Busca TODOS os produtos ativos de QUALQUER usuário - dados totalmente públicos
       let query = supabase
         .from('products')
         .select('*')
@@ -72,6 +74,7 @@ export const usePublicProducts = ({
         return;
       }
 
+      console.log('Fetched products:', data?.length || 0);
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
