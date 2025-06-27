@@ -10,10 +10,10 @@ const HeroBanner = () => {
   const handleInstagramClick = () => {
     window.open(settings.instagram_url, "_blank");
   };
-  return <section className="relative bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 text-white overflow-hidden" style={{
+  return <section style={{
     minHeight: 300,
     height: 300
-  }}>
+  }} className="relative bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 text-white overflow-hidden bg-gray-50">
       {/* Background image */}
       {settings.desktop_banner && <div style={{
       backgroundImage: `url('${settings.desktop_banner}')`,
