@@ -2,7 +2,7 @@
 import React, { memo, useState } from "react";
 import ProductCard from "./ProductCard";
 import ProductModal from "./ProductModal";
-import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
+import { usePublicProducts } from "@/hooks/usePublicProducts";
 
 interface ProductGridProps {
   searchTerm: string;
@@ -10,10 +10,9 @@ interface ProductGridProps {
 }
 
 const ProductGrid = memo(({ searchTerm, selectedCategory }: ProductGridProps) => {
-  const { products, loading, error } = useOptimizedProducts({
+  const { products, loading, error } = usePublicProducts({
     searchTerm,
-    selectedCategory,
-    publicView: true
+    selectedCategory
   });
   
   const [selectedProduct, setSelectedProduct] = useState(null);

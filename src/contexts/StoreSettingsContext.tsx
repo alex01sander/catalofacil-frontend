@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,23 +55,13 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetch, setLastFetch] = useState<number>(0);
 
-  // Cache duration: 5 minutes
-  const CACHE_DURATION = 5 * 60 * 1000;
-
-  const fetchStoreSettings = async (useCache = true) => {
-    // Não depende mais de user
-    // Check cache first
-    const now = Date.now();
-    const cacheKey = `store_settings_global`;
-    if (useCache && lastFetch && (now - lastFetch) < CACHE_DURATION) {
-      setLoading(false);
-      return;
-    }
-
+  const fetchStoreSettings = async () => {
     try {
       setError(null);
+      setLoading(true);
+      
+      // Busca as configurações globalmente (primeira entrada da tabela)
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
@@ -97,12 +88,6 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
           mobile_banner_image: data.mobile_banner_image
         };
         setSettings(newSettings);
-        setLastFetch(now);
-        // Cache global
-        localStorage.setItem(cacheKey, JSON.stringify({
-          data: newSettings,
-          timestamp: now
-        }));
       } else {
         setSettings(defaultSettings);
       }
@@ -119,27 +104,46 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
 
     try {
       setError(null);
-      const { error: updateError } = await supabase
+      
+      // Primeiro, tenta atualizar um registro existente
+      const { data: existingData } = await supabase
         .from('store_settings')
-        .update(newSettings)
-        .eq('user_id', user.id);
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
 
-      if (updateError) {
-        console.error('Error updating store settings:', updateError);
-        setError(updateError.message);
-        throw updateError;
+      if (existingData) {
+        // Atualiza registro existente
+        const { error: updateError } = await supabase
+          .from('store_settings')
+          .update(newSettings)
+          .eq('id', existingData.id);
+
+        if (updateError) {
+          console.error('Error updating store settings:', updateError);
+          setError(updateError.message);
+          throw updateError;
+        }
+      } else {
+        // Cria novo registro se não existir
+        const { error: insertError } = await supabase
+          .from('store_settings')
+          .insert([{
+            user_id: user.id,
+            ...newSettings
+          }]);
+
+        if (insertError) {
+          console.error('Error creating store settings:', insertError);
+          setError(insertError.message);
+          throw insertError;
+        }
       }
 
+      // Atualiza o estado local
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
-      setLastFetch(Date.now());
-      
-      // Update cache with user ID
-      const cacheKey = `store_settings_${user.id}`;
-      localStorage.setItem(cacheKey, JSON.stringify({
-        data: updatedSettings,
-        timestamp: Date.now()
-      }));
     } catch (error) {
       console.error('Error updating store settings:', error);
       throw error;
@@ -147,29 +151,10 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   };
 
   const refetch = async () => {
-    setLastFetch(0); // Force refresh
-    await fetchStoreSettings(false);
+    await fetchStoreSettings();
   };
 
   useEffect(() => {
-    // Não depende mais de user
-    const cacheKey = `store_settings_global`;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const { data, timestamp } = JSON.parse(cached);
-        const now = Date.now();
-        if ((now - timestamp) < CACHE_DURATION) {
-          setSettings(data);
-          setLastFetch(timestamp);
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing cached settings:', error);
-        localStorage.removeItem(cacheKey);
-      }
-    }
     fetchStoreSettings();
   }, []);
 
