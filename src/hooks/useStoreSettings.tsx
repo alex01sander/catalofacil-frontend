@@ -1,6 +1,7 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface StoreSettings {
   id: string;
@@ -35,6 +36,9 @@ const defaultSettings: StoreSettings = {
 };
 
 export const useStoreSettings = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
     const { data, error } = await supabase
       .from('store_settings')
@@ -61,9 +65,32 @@ export const useStoreSettings = () => {
     gcTime: 15 * 60 * 1000,
   });
 
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (newSettings: Partial<StoreSettings>) => {
+      if (!user) throw new Error('User not authenticated');
+      
+      const { error } = await supabase
+        .from('store_settings')
+        .update(newSettings)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      return newSettings;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-settings-public'] });
+    }
+  });
+
+  const updateSettings = async (newSettings: Partial<StoreSettings>) => {
+    return updateSettingsMutation.mutateAsync(newSettings);
+  };
+
   return {
     settings,
     loading,
-    error
+    error,
+    updateSettings
   };
 };
