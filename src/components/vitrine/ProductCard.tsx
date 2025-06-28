@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +47,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
         <img
           src={product.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop"}
           alt={product.name}
-          className="w-full h-32 md:h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+          className="w-full h-40 md:h-56 object-contain bg-white group-hover:scale-105 transition-transform duration-300"
         />
         {product.stock < 10 && (
           <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-orange-500 text-xs">
