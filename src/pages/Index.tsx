@@ -9,6 +9,7 @@ import ProductGrid from "@/components/vitrine/ProductGrid";
 import Footer from "@/components/vitrine/Footer";
 import Cart from "@/components/vitrine/Cart";
 import WhatsAppFloat from "@/components/vitrine/WhatsAppFloat";
+import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
@@ -79,8 +80,7 @@ const Index = () => {
                 className="bg-white text-black p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-100" 
                 aria-label="Seguir no Instagram"
               >
-                {/* Ícone oficial Instagram outline */}
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>
+                <FaInstagram size={24} />
               </button>
               
               <button 
@@ -88,8 +88,7 @@ const Index = () => {
                 aria-label="Contato via WhatsApp" 
                 className="p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 bg-zinc-50 text-zinc-950"
               >
-                {/* Ícone oficial WhatsApp outline */}
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.67 20.67 18.17 17.17A9 9 0 1 0 12 21a9 9 0 0 0 5.17-1.67l3.5 3.5a1 1 0 0 0 1.41-1.41z"/><path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>
+                <FaWhatsapp size={24} />
               </button>
             </div>
             
