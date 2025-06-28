@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Package, ShoppingCart, DollarSign, Calculator } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -174,16 +173,14 @@ const AdminDashboard = () => {
       setProfitAmount(0);
       return;
     }
-    
-    // Calcula o preço base com margem
-    const basePrice = cost / (1 - (margin / 100));
-    
-    // Adiciona impostos e despesas como valores absolutos
-    const finalPrice = basePrice + taxes + expenses;
-    
-    // Calcula o lucro líquido
-    const profit = finalPrice - cost - taxes - expenses;
-    
+
+    // Custo total
+    const totalCost = cost + taxes + expenses;
+    // Preço sugerido baseado na margem de lucro
+    const finalPrice = totalCost / (1 - (margin / 100));
+    // Lucro líquido
+    const profit = finalPrice - totalCost;
+
     setSuggestedPrice(finalPrice);
     setProfitAmount(profit);
   };
