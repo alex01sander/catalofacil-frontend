@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Product {
   id: string;
@@ -30,7 +29,6 @@ export const useOptimizedProducts = ({
   enabled = true,
   publicView = false
 }: UseOptimizedProductsProps = {}) => {
-  const { user } = useAuth();
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   // Debounce search term
@@ -43,15 +41,9 @@ export const useOptimizedProducts = ({
   }, [searchTerm]);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
-    if (!user?.id) {
-      console.log('No user ID found for products');
-      return [];
-    }
-
     let query = supabase
       .from('products')
       .select('*')
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     // Para visualização pública, filtrar apenas produtos ativos
@@ -77,15 +69,14 @@ export const useOptimizedProducts = ({
     }
 
     return data || [];
-  }, [selectedCategory, debouncedSearchTerm, user?.id, publicView]);
+  }, [selectedCategory, debouncedSearchTerm, publicView]);
 
   const queryKey = useMemo(() => [
     'products',
     publicView ? 'public' : 'private',
-    user?.id,
     selectedCategory,
     debouncedSearchTerm
-  ], [selectedCategory, debouncedSearchTerm, user?.id, publicView]);
+  ], [selectedCategory, debouncedSearchTerm, publicView]);
 
   const {
     data: products = [],
@@ -95,7 +86,7 @@ export const useOptimizedProducts = ({
   } = useQuery({
     queryKey,
     queryFn: fetchProducts,
-    enabled: enabled && !!user?.id,
+    enabled: enabled,
     staleTime: 10 * 60 * 1000, // 10 minutos
     gcTime: 30 * 60 * 1000, // 30 minutos
   });

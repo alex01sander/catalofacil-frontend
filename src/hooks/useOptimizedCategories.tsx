@@ -2,7 +2,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Category {
   id: string;
@@ -11,18 +10,11 @@ interface Category {
 }
 
 export const useOptimizedCategories = (enabled = true) => {
-  const { user } = useAuth();
-
   const fetchCategories = async (): Promise<Category[]> => {
-    if (!user?.id) {
-      console.log('No user ID found for categories');
-      return [];
-    }
-
+    // Buscar todas as categorias sem filtro de usuário para visualização pública
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
-      .eq('user_id', user.id)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -38,9 +30,9 @@ export const useOptimizedCategories = (enabled = true) => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['categories', user?.id],
+    queryKey: ['categories', 'public'],
     queryFn: fetchCategories,
-    enabled: enabled && !!user?.id,
+    enabled: enabled,
     staleTime: 30 * 60 * 1000, // 30 minutos - cache mais longo
     gcTime: 60 * 60 * 1000, // 1 hora
   });
