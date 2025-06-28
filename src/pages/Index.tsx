@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Instagram, MessageCircle } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useOptimizedCategories } from "@/hooks/useOptimizedCategories";
 import Header from "@/components/vitrine/Header";
@@ -15,23 +15,21 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   
-  const { user } = useAuth();
-  // Remover dependência de autenticação para carregamento da página
   const { settings: storeSettings, loading: settingsLoading } = useStoreSettings();
   const { categories, loading: categoriesLoading } = useOptimizedCategories();
 
   const loading = settingsLoading || categoriesLoading;
 
-  const handleWhatsAppClick = useMemo(() => () => {
+  const handleWhatsAppClick = () => {
     const phoneNumber = storeSettings.whatsapp_number || "5511999999999";
     const message = "Olá! Gostaria de saber mais sobre os produtos da loja.";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-  }, [storeSettings.whatsapp_number]);
+  };
   
-  const handleInstagramClick = useMemo(() => () => {
+  const handleInstagramClick = () => {
     window.open(storeSettings.instagram_url || 'https://instagram.com/', '_blank');
-  }, [storeSettings.instagram_url]);
+  };
   
   if (loading) {
     return (
@@ -66,8 +64,6 @@ const Index = () => {
           minHeight: 180,
           height: 180
         } : {}}>
-          {/* Background overlay when using image */}
-          {/* {storeSettings.mobile_banner_image && <div className="absolute inset-0 bg-black/40"></div>} */}
           
           <div className="relative text-center">
             {/* Logo Circle */}
@@ -243,11 +239,9 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Usar publicView=true para garantir que apenas produtos ativos sejam mostrados */}
       <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
       <Footer />
       
-      {/* WhatsApp Float Button */}
       <WhatsAppFloat />
     </div>
   );

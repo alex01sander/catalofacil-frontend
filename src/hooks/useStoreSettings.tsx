@@ -1,7 +1,6 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 export interface StoreSettings {
   id: string;
@@ -36,11 +35,7 @@ const defaultSettings: StoreSettings = {
 };
 
 export const useStoreSettings = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
-    // Buscar configurações da loja sem filtro de usuário para visualização pública
     const { data, error } = await supabase
       .from('store_settings')
       .select('*')
@@ -60,37 +55,15 @@ export const useStoreSettings = () => {
     isLoading: loading,
     error
   } = useQuery({
-    queryKey: ['store_settings', 'public'],
+    queryKey: ['store-settings-public'],
     queryFn: fetchStoreSettings,
-    enabled: true, // Sempre habilitado para visualização pública
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
-
-  const updateSettingsMutation = useMutation({
-    mutationFn: async (newSettings: Partial<StoreSettings>) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('store_settings')
-        .update(newSettings)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['store_settings'] });
-    }
-  });
-
-  const updateSettings = async (newSettings: Partial<StoreSettings>) => {
-    return updateSettingsMutation.mutateAsync(newSettings);
-  };
 
   return {
     settings,
     loading,
-    error,
-    updateSettings
+    error
   };
 };

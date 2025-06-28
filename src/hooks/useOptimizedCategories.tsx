@@ -11,7 +11,6 @@ interface Category {
 
 export const useOptimizedCategories = (enabled = true) => {
   const fetchCategories = async (): Promise<Category[]> => {
-    // Buscar todas as categorias sem filtro de usuário para visualização pública
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
@@ -30,15 +29,15 @@ export const useOptimizedCategories = (enabled = true) => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['categories', 'public'],
+    queryKey: ['categories-public'],
     queryFn: fetchCategories,
     enabled: enabled,
-    staleTime: 30 * 60 * 1000, // 30 minutos - cache mais longo
-    gcTime: 60 * 60 * 1000, // 1 hora
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 
   const categories = useMemo(() => {
-    const allCategories = [
+    return [
       {
         id: "todos",
         name: "Todos",
@@ -46,8 +45,6 @@ export const useOptimizedCategories = (enabled = true) => {
       },
       ...fetchedCategories
     ];
-    
-    return allCategories;
   }, [fetchedCategories]);
 
   return {

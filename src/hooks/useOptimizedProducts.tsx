@@ -31,7 +31,6 @@ export const useOptimizedProducts = ({
 }: UseOptimizedProductsProps = {}) => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
-  // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -44,19 +43,13 @@ export const useOptimizedProducts = ({
     let query = supabase
       .from('products')
       .select('*')
+      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
-    // Para visualização pública, filtrar apenas produtos ativos
-    if (publicView) {
-      query = query.eq('is_active', true);
-    }
-
-    // Apply category filter
     if (selectedCategory && selectedCategory !== 'todos') {
       query = query.eq('category_id', selectedCategory);
     }
 
-    // Apply search filter
     if (debouncedSearchTerm.trim()) {
       query = query.ilike('name', `%${debouncedSearchTerm}%`);
     }
@@ -69,14 +62,7 @@ export const useOptimizedProducts = ({
     }
 
     return data || [];
-  }, [selectedCategory, debouncedSearchTerm, publicView]);
-
-  const queryKey = useMemo(() => [
-    'products',
-    publicView ? 'public' : 'private',
-    selectedCategory,
-    debouncedSearchTerm
-  ], [selectedCategory, debouncedSearchTerm, publicView]);
+  }, [selectedCategory, debouncedSearchTerm]);
 
   const {
     data: products = [],
@@ -84,19 +70,15 @@ export const useOptimizedProducts = ({
     error,
     refetch
   } = useQuery({
-    queryKey,
+    queryKey: [`products-public-${selectedCategory}-${debouncedSearchTerm}`],
     queryFn: fetchProducts,
     enabled: enabled,
-    staleTime: 10 * 60 * 1000, // 10 minutos
-    gcTime: 30 * 60 * 1000, // 30 minutos
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(product => publicView ? product.is_active : true);
-  }, [products, publicView]);
-
   return {
-    products: filteredProducts,
+    products,
     loading: isLoading,
     error,
     refetch
