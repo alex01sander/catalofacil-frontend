@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -51,11 +50,11 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
       <div className={`${isMobile ? 'space-y-4' : 'grid md:grid-cols-2 gap-8'}`}>
         {/* Image Gallery */}
         <div className="space-y-4">
-          <div className={`${isMobile ? 'aspect-[4/3]' : 'aspect-square'} rounded-lg overflow-hidden`}>
+          <div className={`${isMobile ? 'aspect-[4/3]' : 'aspect-square'} rounded-lg overflow-hidden bg-white`}>
             <img
               src={allImages[selectedImage] || product.image}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className={`w-full h-full ${isMobile ? 'object-contain' : 'object-cover'}`}
             />
           </div>
           
