@@ -1,4 +1,3 @@
-
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { Instagram, MessageCircle } from "lucide-react";
 
@@ -34,7 +33,19 @@ const HeroBanner = () => {
       )}
       
       <div className="relative max-w-6xl mx-auto px-4 py-20">
-        <div className="text-center">
+        <div className="text-center flex flex-col items-center">
+          {/* Logo Circle - igual ao mobile */}
+          <div className="flex justify-center mb-4">
+            <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30 flex items-center justify-center">
+              {settings.mobile_logo && (
+                <img 
+                  alt={`${settings.store_name} Logo`} 
+                  className="w-full h-full object-cover" 
+                  src={settings.mobile_logo} 
+                />
+              )}
+            </div>
+          </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in drop-shadow-lg">
             {settings.store_name}
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-200 mt-2">
