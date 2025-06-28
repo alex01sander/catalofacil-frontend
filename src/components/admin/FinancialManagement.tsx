@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,12 +71,9 @@ const FinancialManagement = () => {
       return saleMonth === monthIndex;
     });
     const monthTotal = monthSales.reduce((sum, sale) => sum + Number(sale.total_price), 0);
-    const monthProfit = monthTotal * 0.3; // Estimativa de 30% de lucro
-    
     return {
       month: monthName,
-      vendas: monthTotal,
-      lucro: monthProfit
+      vendas: monthTotal
     };
   });
 
@@ -261,26 +257,6 @@ const FinancialManagement = () => {
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Lucro Estimado</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  R$ {(totalRevenue * 0.3).toFixed(2).replace('.', ',')}
-                </p>
-                <p className="text-sm text-gray-500 flex items-center">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  Estimativa de 30%
-                </p>
-              </div>
-              <div className="p-3 rounded-full bg-green-100">
-                <TrendingUp className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -297,11 +273,10 @@ const FinancialManagement = () => {
                 <Tooltip 
                   formatter={(value, name) => [
                     `R$ ${value}`, 
-                    name === 'vendas' ? 'Vendas' : 'Lucro'
+                    'Vendas'
                   ]}
                 />
                 <Bar dataKey="vendas" fill="#8B5CF6" />
-                <Bar dataKey="lucro" fill="#06D6A0" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
