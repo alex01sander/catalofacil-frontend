@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +85,7 @@ const CategoryManagement = () => {
     if (!newCategory.trim() || !user) return;
 
     try {
-      const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
+      const colors = ["#2980B9", "#34495E", "#27AE60", "#E74C3C", "#8E44AD"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
       const { data, error } = await supabase
@@ -233,68 +232,78 @@ const CategoryManagement = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6 pb-24 lg:pb-0">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Categorias</h1>
-          <p className="text-gray-600">Carregando categorias...</p>
+      <div className="space-y-8 pb-24 lg:pb-0">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
+            Categorias
+          </h1>
+          <p className="text-muted-foreground mt-2">Carregando categorias...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-24 lg:pb-0">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Categorias</h1>
-        <p className="text-gray-600">Organize seus produtos por categorias</p>
+    <div className="space-y-8 pb-24 lg:pb-0 max-w-7xl mx-auto px-4">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
+          Categorias
+        </h1>
+        <p className="text-muted-foreground mt-2 text-lg">Organize seus produtos por categorias</p>
       </div>
 
       {/* Add New Category */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Tag className="h-5 w-5 mr-2" />
+      <Card className="border-0 shadow-xl rounded-3xl bg-gradient-to-br from-background to-muted/30">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center text-2xl">
+            <div className="p-3 bg-primary/10 rounded-2xl mr-4">
+              <Tag className="h-6 w-6 text-primary" />
+            </div>
             Nova Categoria
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Input 
                 placeholder="Nome da categoria" 
                 value={newCategory} 
                 onChange={(e) => setNewCategory(e.target.value)} 
                 onKeyPress={(e) => e.key === 'Enter' && addCategory()} 
-                className="flex-1" 
+                className="flex-1 h-12 rounded-2xl border-2 focus:border-primary/50 transition-all" 
               />
               <Button 
                 onClick={addCategory} 
-                className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+                className="h-12 px-8 rounded-2xl font-semibold"
+                size="lg"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-5 w-5 mr-2" />
                 Adicionar
               </Button>
             </div>
             
             {/* Image Upload Section */}
-            <div className="space-y-3">
-              <Label>Imagem da Categoria</Label>
-              <div className="flex items-center space-x-4">
+            <div className="space-y-4 bg-muted/30 rounded-2xl p-6">
+              <Label className="text-base font-semibold">Imagem da Categoria</Label>
+              <div className="flex items-center space-x-6">
                 {newCategoryImage && (
-                  <img 
-                    src={newCategoryImage} 
-                    alt="Preview" 
-                    className="w-16 h-16 rounded-lg object-cover border" 
-                  />
+                  <div className="relative">
+                    <img 
+                      src={newCategoryImage} 
+                      alt="Preview" 
+                      className="w-20 h-20 rounded-2xl object-cover border-2 border-primary/20" 
+                    />
+                  </div>
                 )}
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-3">
                   <Input 
                     placeholder="Cole o link de uma imagem" 
                     value={newCategoryImage} 
                     onChange={(e) => setNewCategoryImage(e.target.value)} 
+                    className="rounded-2xl border-2"
                   />
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500">ou</span>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-muted-foreground">ou</span>
                     <Input 
                       type="file" 
                       accept="image/*" 
@@ -304,10 +313,10 @@ const CategoryManagement = () => {
                     />
                     <Label 
                       htmlFor="new-category-image-upload" 
-                      className="flex items-center space-x-1 cursor-pointer bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm"
+                      className="flex items-center space-x-2 cursor-pointer bg-secondary/10 hover:bg-secondary/20 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
                     >
-                      <Upload className="h-3 w-3" />
-                      <span>Anexar</span>
+                      <Upload className="h-4 w-4" />
+                      <span>Anexar Arquivo</span>
                     </Label>
                   </div>
                 </div>
@@ -318,416 +327,177 @@ const CategoryManagement = () => {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
-              <p className="text-sm text-gray-600">Total de Categorias</p>
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="border-0 shadow-lg rounded-3xl bg-gradient-to-br from-primary/5 to-primary/10 hover:shadow-xl transition-all">
+          <CardContent className="p-8 text-center">
+            <div className="text-4xl font-bold text-primary mb-2">{categories.length}</div>
+            <p className="text-muted-foreground font-medium">Total de Categorias</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">
-                {categories.reduce((sum, cat) => sum + (cat.productCount || 0), 0)}
-              </p>
-              <p className="text-sm text-gray-600">Produtos Categorizados</p>
+        <Card className="border-0 shadow-lg rounded-3xl bg-gradient-to-br from-secondary/5 to-secondary/10 hover:shadow-xl transition-all">
+          <CardContent className="p-8 text-center">
+            <div className="text-4xl font-bold text-secondary mb-2">
+              {categories.reduce((sum, cat) => sum + (cat.productCount || 0), 0)}
             </div>
+            <p className="text-muted-foreground font-medium">Produtos Categorizados</p>
           </CardContent>
         </Card>
-        <Card className="sm:col-span-2 lg:col-span-1">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
-                {categories.filter(cat => (cat.productCount || 0) > 0).length}
-              </p>
-              <p className="text-sm text-gray-600">Categorias Ativas</p>
+        <Card className="border-0 shadow-lg rounded-3xl bg-gradient-to-br from-green-50 to-green-100 hover:shadow-xl transition-all sm:col-span-2 lg:col-span-1">
+          <CardContent className="p-8 text-center">
+            <div className="text-4xl font-bold text-green-600 mb-2">
+              {categories.filter(cat => (cat.productCount || 0) > 0).length}
             </div>
+            <p className="text-muted-foreground font-medium">Categorias Ativas</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Mobile Categories Cards - Visible only on mobile */}
-      <div className="block lg:hidden space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">Lista de Categorias</h2>
+      {/* Categories Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {categories.map((category) => (
-          <Card key={category.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
-                    <div className="flex items-center space-x-2">
-                      <div 
-                        className="w-4 h-4 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: category.color }}
-                      ></div>
-                      {category.image && (
-                        <img 
-                          src={category.image} 
-                          alt={category.name} 
-                          className="w-8 h-8 rounded object-cover" 
-                        />
-                      )}
-                    </div>
-                    {editingCategory === category.id ? (
-                      <div className="flex-1 space-y-2">
-                        <Input 
-                          value={editingName} 
-                          onChange={(e) => setEditingName(e.target.value)} 
-                          onKeyPress={(e) => e.key === 'Enter' && saveEdit()} 
-                          className="text-lg font-semibold" 
-                          autoFocus 
-                        />
-                        <div className="flex items-center space-x-2">
-                          <Input 
-                            placeholder="URL da imagem" 
-                            value={editingImage} 
-                            onChange={(e) => setEditingImage(e.target.value)} 
-                            className="text-sm" 
-                          />
-                          <Input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={(e) => handleImageUpload(e, true)} 
-                            className="hidden" 
-                            id={`edit-image-${category.id}`} 
-                          />
-                          <Label 
-                            htmlFor={`edit-image-${category.id}`} 
-                            className="cursor-pointer bg-gray-100 hover:bg-gray-200 p-1 rounded"
-                          >
-                            <Upload className="h-4 w-4" />
-                          </Label>
-                        </div>
-                      </div>
-                    ) : (
-                      <h3 className="text-lg font-semibold truncate">{category.name}</h3>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Produtos:</span>
-                    <Badge variant="secondary">
-                      {category.productCount || 0} itens
-                    </Badge>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <span className="text-xs text-gray-500">Cor:</span>
-                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                      {category.color}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="h-2 rounded-full" 
-                    style={{
-                      width: `${Math.min((category.productCount || 0) / 30 * 100, 100)}%`,
-                      backgroundColor: category.color
-                    }}
-                  ></div>
-                </div>
-                
-                <div className="flex justify-between items-center pt-2">
-                  <p className="text-xs text-gray-500">
-                    {(category.productCount || 0) === 0 ? "Nenhum produto" : `${Math.round((category.productCount || 0) / 67 * 100)}% do catálogo`}
-                  </p>
-                  
-                  <div className="flex space-x-2">
+          <Card key={category.id} className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 rounded-3xl overflow-hidden group">
+            <CardContent className="p-0">
+              <div className="relative">
+                {/* Category Image/Color Header */}
+                <div 
+                  className="h-32 relative overflow-hidden"
+                  style={{ 
+                    background: category.image 
+                      ? `url(${category.image}) center/cover`
+                      : `linear-gradient(135deg, ${category.color}, ${category.color}cc)`
+                  }}
+                >
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="absolute top-4 right-4 flex space-x-2">
                     {editingCategory === category.id ? (
                       <>
-                        <Button variant="outline" size="sm" onClick={saveEdit}>
+                        <Button variant="secondary" size="sm" onClick={saveEdit} className="rounded-xl">
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={cancelEdit}>
+                        <Button variant="secondary" size="sm" onClick={cancelEdit} className="rounded-xl">
                           <X className="h-4 w-4" />
                         </Button>
                       </>
                     ) : deleteConfirm === category.id ? (
                       <>
                         <Button 
-                          variant="outline" 
+                          variant="destructive" 
                           size="sm" 
                           onClick={() => deleteCategory(category.id)} 
-                          className="text-red-600 hover:text-red-700"
+                          className="rounded-xl"
                         >
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={cancelDelete}>
+                        <Button variant="secondary" size="sm" onClick={cancelDelete} className="rounded-xl">
                           <X className="h-4 w-4" />
                         </Button>
                       </>
                     ) : (
                       <>
-                        <Button variant="outline" size="sm" onClick={() => startEditing(category)}>
+                        <Button variant="secondary" size="sm" onClick={() => startEditing(category)} className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
-                          variant="outline" 
+                          variant="destructive" 
                           size="sm" 
                           onClick={() => confirmDelete(category.id)} 
-                          className="text-red-600 hover:text-red-700"
+                          className="rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </>
                     )}
                   </div>
+                  {!category.image && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <ImageIcon className="h-12 w-12 text-white/80" />
+                    </div>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
-      {/* Categories Grid - Hidden on mobile */}
-      <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((category) => (
-          <Card key={category.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3 flex-1">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: category.color }}
-                    ></div>
-                    {category.image && (
-                      <img 
-                        src={category.image} 
-                        alt={category.name} 
-                        className="w-10 h-10 rounded object-cover" 
-                      />
-                    )}
-                  </div>
+                {/* Category Content */}
+                <div className="p-6 space-y-4">
                   {editingCategory === category.id ? (
-                    <div className="flex-1 space-y-2">
+                    <div className="space-y-3">
                       <Input 
                         value={editingName} 
                         onChange={(e) => setEditingName(e.target.value)} 
                         onKeyPress={(e) => e.key === 'Enter' && saveEdit()} 
-                        className="text-lg font-semibold" 
+                        className="text-xl font-bold border-2 rounded-2xl" 
                         autoFocus 
                       />
-                      <div className="flex items-center space-x-2">
-                        <Input 
-                          placeholder="URL da imagem" 
-                          value={editingImage} 
-                          onChange={(e) => setEditingImage(e.target.value)} 
-                          className="text-sm" 
-                        />
-                        <Input 
-                          type="file" 
-                          accept="image/*" 
-                          onChange={(e) => handleImageUpload(e, true)} 
-                          className="hidden" 
-                          id={`edit-image-grid-${category.id}`} 
-                        />
-                        <Label 
-                          htmlFor={`edit-image-grid-${category.id}`} 
-                          className="cursor-pointer bg-gray-100 hover:bg-gray-200 p-1 rounded"
-                        >
-                          <Upload className="h-4 w-4" />
-                        </Label>
-                      </div>
+                      <Input 
+                        placeholder="URL da imagem" 
+                        value={editingImage} 
+                        onChange={(e) => setEditingImage(e.target.value)} 
+                        className="rounded-2xl" 
+                      />
+                      <Input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => handleImageUpload(e, true)} 
+                        className="hidden" 
+                        id={`edit-image-${category.id}`} 
+                      />
+                      <Label 
+                        htmlFor={`edit-image-${category.id}`} 
+                        className="flex items-center space-x-2 cursor-pointer bg-secondary/10 hover:bg-secondary/20 px-4 py-2 rounded-xl text-sm font-medium transition-colors w-fit"
+                      >
+                        <Upload className="h-4 w-4" />
+                        <span>Atualizar Imagem</span>
+                      </Label>
                     </div>
                   ) : (
-                    <h3 className="text-lg font-semibold">{category.name}</h3>
+                    <h3 className="text-2xl font-bold text-foreground">{category.name}</h3>
                   )}
+
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="px-4 py-2 rounded-xl font-medium">
+                      {category.productCount || 0} produtos
+                    </Badge>
+                    <div 
+                      className="w-6 h-6 rounded-full ring-2 ring-white shadow-md" 
+                      style={{ backgroundColor: category.color }}
+                    ></div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500" 
+                        style={{
+                          width: `${Math.min((category.productCount || 0) / 30 * 100, 100)}%`,
+                          backgroundColor: category.color
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {(category.productCount || 0) === 0 ? "Nenhum produto" : `${Math.round((category.productCount || 0) / 67 * 100)}% do catálogo`}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex space-x-2">
-                  {editingCategory === category.id ? (
-                    <>
-                      <Button variant="outline" size="sm" onClick={saveEdit}>
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={cancelEdit}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : deleteConfirm === category.id ? (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => deleteCategory(category.id)} 
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={cancelDelete}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => startEditing(category)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => confirmDelete(category.id)} 
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Produtos:</span>
-                  <Badge variant="secondary">
-                    {category.productCount || 0} itens
-                  </Badge>
-                </div>
-                
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="h-2 rounded-full" 
-                    style={{
-                      width: `${Math.min((category.productCount || 0) / 30 * 100, 100)}%`,
-                      backgroundColor: category.color
-                    }}
-                  ></div>
-                </div>
-                
-                <p className="text-xs text-gray-500">
-                  {(category.productCount || 0) === 0 ? "Nenhum produto nesta categoria" : `${Math.round((category.productCount || 0) / 67 * 100)}% do catálogo`}
-                </p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Categories Table - Hidden on mobile */}
-      <Card className="hidden lg:block">
-        <CardHeader>
-          <CardTitle>Lista de Categorias</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3">Categoria</th>
-                  <th className="text-left p-3">Produtos</th>
-                  <th className="text-left p-3">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => (
-                  <tr key={category.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ backgroundColor: category.color }}
-                        ></div>
-                        {category.image && (
-                          <img 
-                            src={category.image} 
-                            alt={category.name} 
-                            className="w-8 h-8 rounded object-cover" 
-                          />
-                        )}
-                        {editingCategory === category.id ? (
-                          <div className="space-y-1">
-                            <Input 
-                              value={editingName} 
-                              onChange={(e) => setEditingName(e.target.value)} 
-                              onKeyPress={(e) => e.key === 'Enter' && saveEdit()} 
-                              className="font-medium" 
-                              autoFocus 
-                            />
-                            <div className="flex items-center space-x-1">
-                              <Input 
-                                placeholder="URL da imagem" 
-                                value={editingImage} 
-                                onChange={(e) => setEditingImage(e.target.value)} 
-                                className="text-xs" 
-                              />
-                              <Input 
-                                type="file" 
-                                accept="image/*" 
-                                onChange={(e) => handleImageUpload(e, true)} 
-                                className="hidden" 
-                                id={`edit-image-table-${category.id}`} 
-                              />
-                              <Label 
-                                htmlFor={`edit-image-table-${category.id}`} 
-                                className="cursor-pointer bg-gray-100 hover:bg-gray-200 p-1 rounded"
-                              >
-                                <Upload className="h-3 w-3" />
-                              </Label>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="font-medium">{category.name}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant="secondary">
-                        {category.productCount || 0} produtos
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      {editingCategory === category.id ? (
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={saveEdit}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={cancelEdit}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : deleteConfirm === category.id ? (
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => deleteCategory(category.id)} 
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={cancelDelete}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => startEditing(category)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => confirmDelete(category.id)} 
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      {categories.length === 0 && (
+        <Card className="border-0 shadow-lg rounded-3xl">
+          <CardContent className="p-12 text-center">
+            <div className="p-6 bg-muted/30 rounded-full w-fit mx-auto mb-6">
+              <Tag className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-2xl font-bold mb-4">Nenhuma categoria criada</h3>
+            <p className="text-muted-foreground mb-6">Comece criando sua primeira categoria para organizar seus produtos.</p>
+            <Button onClick={() => document.getElementById('new-category-input')?.focus()} className="rounded-2xl">
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Primeira Categoria
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
