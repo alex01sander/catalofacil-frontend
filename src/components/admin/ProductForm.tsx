@@ -73,6 +73,11 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
     images: product?.images || []
   });
 
+  // Estados para simulação de margem
+  const [costPrice, setCostPrice] = useState(0);
+  const [marginPercent, setMarginPercent] = useState(0);
+  const [suggestedPrice, setSuggestedPrice] = useState(0);
+
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>(product?.images || []);
 
@@ -119,6 +124,18 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
       setLoadingCategories(false);
     }
   };
+
+  // Cálculo automático do preço sugerido baseado na margem
+  useEffect(() => {
+    if (costPrice > 0 && marginPercent > 0) {
+      const calculated = costPrice * (1 + marginPercent / 100);
+      setSuggestedPrice(calculated);
+      setFormData(prev => ({
+        ...prev,
+        price: calculated
+      }));
+    }
+  }, [costPrice, marginPercent]);
 
   useEffect(() => {
     console.log('useEffect triggered for fetchCategories');
@@ -371,19 +388,79 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
                   required
                 />
               </div>
-              <div>
-                <Label htmlFor="price">Preço (R$) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price || ""}
-                  onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                  placeholder="0,00"
-                  required
-                />
+            </div>
+
+            {/* Simulação de Margem */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+              <Label className="text-base font-semibold">Simulação de Margem</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="costPrice">Preço de Custo (R$)</Label>
+                  <Input
+                    id="costPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={costPrice || ""}
+                    onChange={(e) => setCostPrice(parseFloat(e.target.value) || 0)}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="marginPercent">Margem Desejada (%)</Label>
+                  <Input
+                    id="marginPercent"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="1000"
+                    value={marginPercent || ""}
+                    onChange={(e) => setMarginPercent(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="suggestedPrice">Preço Sugerido (R$)</Label>
+                  <Input
+                    id="suggestedPrice"
+                    type="number"
+                    step="0.01"
+                    value={suggestedPrice.toFixed(2)}
+                    readOnly
+                    className="bg-green-50 border-green-200"
+                  />
+                </div>
               </div>
+              
+              {costPrice > 0 && marginPercent > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Resumo:</strong> Com custo de R$ {costPrice.toFixed(2)} e margem de {marginPercent}%, 
+                    o preço sugerido é R$ {suggestedPrice.toFixed(2)} 
+                    (lucro de R$ {(suggestedPrice - costPrice).toFixed(2)})
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Preço Final */}
+            <div>
+              <Label htmlFor="price">Preço de Venda Final (R$) *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price || ""}
+                onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                placeholder="0,00"
+                required
+                className="font-semibold"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Você pode usar o preço sugerido ou modificar conforme necessário
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
