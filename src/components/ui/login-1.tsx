@@ -108,7 +108,7 @@ Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</spa
               
               <div className='flex gap-4 justify-center items-center'>
                  <button className="group/button relative inline-flex justify-center items-center overflow-hidden rounded-md bg-[var(--color-border)] px-4 py-1.5 text-xs font-normal transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-text-primary)] cursor-pointer bg-sky-950 hover:bg-sky-800 text-slate-300">
-                <span className="text-sm px-2 py-1">Sign In</span>
+                <span className="text-sm px-2 py-1">Entrar</span>
                 <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
                   <div className="relative h-full w-8 bg-white/20" />
                 </div>
