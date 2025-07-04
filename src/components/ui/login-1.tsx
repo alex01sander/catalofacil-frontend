@@ -31,7 +31,7 @@ const AppInput = (props: InputProps) => {
       {label && <label className='block mb-2 text-sm'>
           {label}
         </label>}
-      <div className="relative w-full bg-transparent">
+      <div className="relative w-full">
         <input type="text" className="peer relative z-10 border-2 border-[var(--color-border)] h-13 w-full rounded-md bg-[var(--color-surface)] px-4 font-thin outline-none drop-shadow-sm transition-all duration-200 ease-in-out focus:bg-[var(--color-bg)] placeholder:font-medium" placeholder={placeholder} onMouseMove={handleMouseMove} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)} {...rest} />
         {isHovering && <>
             <div className="absolute pointer-events-none top-0 left-0 right-0 h-[2px] z-20 rounded-t-md overflow-hidden" style={{
@@ -102,8 +102,8 @@ const LoginComponent = () => {
 Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</span>
             </div>
             <div className='grid gap-4 items-center'>
-                <AppInput placeholder="Email" type="email" className="bg-transparent" />
-                <AppInput placeholder="Password" type="password" className="bg-transparent" />
+                <AppInput placeholder="Email" type="email" className="bg-slate-300" />
+                <AppInput placeholder="Password" type="password" className="bg-slate-300" />
               </div>
               
               <div className='flex gap-4 justify-center items-center'>
