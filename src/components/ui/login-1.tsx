@@ -98,9 +98,8 @@ const LoginComponent = () => {
                 e.preventDefault();
               }} className="text-3xl md:text-4xl font-extrabold text-slate-300">Bem vindo!</h1>
                 
-              <span className="text-sm text-slate-300">Vamos vender mais hoje?
-
- Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</span>
+              <span className="text-sm text-slate-300">Vamos vender mais hoje?  
+Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</span>
             </div>
             <div className='grid gap-4 items-center'>
                 <AppInput placeholder="Email" type="email" />
@@ -119,7 +118,7 @@ const LoginComponent = () => {
           </div>
         </div>
         <div className='hidden lg:block w-1/2 right h-full overflow-hidden'>
-            <img src='/lovable-uploads/de5fd2d5-77c0-4135-99c9-ddf3630f41ef.png' width={1000} height={1000} alt="Carousel image" className="w-full h-full object-cover transition-transform duration-300 opacity-30" />
+            <img width={1000} height={1000} alt="Carousel image" className="w-full h-full object-cover transition-transform duration-300 opacity-30" src="/lovable-uploads/e412fe03-5e8e-4dec-aec2-fe94ce8de73e.png" />
        </div>
       </div>
     </div>;
