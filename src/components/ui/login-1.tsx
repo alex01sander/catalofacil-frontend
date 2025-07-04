@@ -102,8 +102,8 @@ const LoginComponent = () => {
 Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</span>
             </div>
             <div className='grid gap-4 items-center'>
-                <AppInput placeholder="Email" type="email" className="bg-slate-300" />
-                <AppInput placeholder="Password" type="password" className="bg-slate-300" />
+                <AppInput placeholder="Email" type="email" />
+                <AppInput placeholder="Password" type="password" />
               </div>
               
               <div className='flex gap-4 justify-center items-center'>
