@@ -62,8 +62,12 @@ const LoginComponent = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
-  const { toast } = useToast();
+  const {
+    signIn
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
   const handleMouseMove = (e: React.MouseEvent) => {
     const leftSection = e.currentTarget.getBoundingClientRect();
@@ -78,7 +82,6 @@ const LoginComponent = () => {
   const handleMouseLeave = () => {
     setIsHovering(false);
   };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -89,10 +92,11 @@ const LoginComponent = () => {
       });
       return;
     }
-
     setLoading(true);
     try {
-      const { error } = await signIn(email, password);
+      const {
+        error
+      } = await signIn(email, password);
       if (error) {
         toast({
           title: "Erro no login",
@@ -102,7 +106,7 @@ const LoginComponent = () => {
       } else {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo de volta!",
+          description: "Bem-vindo de volta!"
         });
         navigate('/admin');
       }
@@ -130,7 +134,7 @@ const LoginComponent = () => {
     bg: 'bg-[var(--color-bg)]'
   }];
   return <div className="h-screen w-[100%] bg-[var(--color-bg)] flex items-center justify-center p-4">
-    <div className='card w-full max-w-4xl flex justify-between h-[600px]'>
+    <div className='card w-[80%] lg:w-[70%] md:w-[55%] flex justify-between h-[600px]'>
       <div className='w-full lg:w-1/2 px-4 lg:px-16 left h-full relative overflow-hidden' onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           <div className={`absolute pointer-events-none w-[500px] h-[500px] bg-gradient-to-r from-purple-300/30 via-blue-300/30 to-pink-300/30 rounded-full blur-3xl transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{
           transform: `translate(${mousePosition.x - 250}px, ${mousePosition.y - 250}px)`,
@@ -147,26 +151,12 @@ const LoginComponent = () => {
 Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</span>
             </div>
             <div className='grid gap-2 items-center'>
-                <AppInput 
-                  placeholder="Email" 
-                  type="email" 
-                  value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                />
-                <AppInput 
-                  placeholder="Password" 
-                  type="password" 
-                  value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                />
+                <AppInput placeholder="Email" type="email" value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
+                <AppInput placeholder="Password" type="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} />
               </div>
               
               <div className='flex gap-4 justify-center items-center'>
-                 <button 
-                   type="submit"
-                   disabled={loading}
-                   className="group/button relative inline-flex justify-center items-center overflow-hidden rounded-md bg-[var(--color-border)] px-4 py-1.5 text-xs font-normal transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-text-primary)] cursor-pointer bg-sky-950 hover:bg-sky-800 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                 >
+                 <button type="submit" disabled={loading} className="group/button relative inline-flex justify-center items-center overflow-hidden rounded-md bg-[var(--color-border)] px-4 py-1.5 text-xs font-normal transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-text-primary)] cursor-pointer bg-sky-950 hover:bg-sky-800 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span className="text-sm px-2 py-1">{loading ? 'Entrando...' : 'Entrar'}</span>
                 <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
                   <div className="relative h-full w-8 bg-white/20" />
@@ -177,7 +167,7 @@ Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</spa
           </div>
         </div>
         <div className='hidden lg:block w-1/2 right h-full overflow-hidden'>
-            <img width={1000} height={1000} alt="Carousel image" className="w-full h-full object-cover transition-transform duration-300 opacity-30" src="/lovable-uploads/e412fe03-5e8e-4dec-aec2-fe94ce8de73e.png" />
+            <img width={1000} height={1000} alt="Carousel image" className="w-full h-full object-cover transition-transform duration-300 opacity-30" src="/lovable-uploads/e20948d3-18dd-41b9-8271-4413c393afe0.png" />
        </div>
       </div>
     </div>;
