@@ -492,7 +492,7 @@ export type Database = {
         Returns: string
       }
       is_controller_admin: {
-        Args: { user_id: string }
+        Args: Record<PropertyKey, never> | { user_id: string }
         Returns: boolean
       }
       user_owns_current_domain: {

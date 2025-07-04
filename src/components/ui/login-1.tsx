@@ -130,7 +130,7 @@ const LoginComponent = () => {
     bg: 'bg-[var(--color-bg)]'
   }];
   return <div className="h-screen w-[100%] bg-[var(--color-bg)] flex items-center justify-center p-4">
-    <div className='card w-[80%] lg:w-[70%] md:w-[55%] flex justify-between h-[600px]'>
+    <div className='card w-full max-w-4xl flex justify-between h-[600px]'>
       <div className='w-full lg:w-1/2 px-4 lg:px-16 left h-full relative overflow-hidden' onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           <div className={`absolute pointer-events-none w-[500px] h-[500px] bg-gradient-to-r from-purple-300/30 via-blue-300/30 to-pink-300/30 rounded-full blur-3xl transition-opacity duration-200 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{
           transform: `translate(${mousePosition.x - 250}px, ${mousePosition.y - 250}px)`,
