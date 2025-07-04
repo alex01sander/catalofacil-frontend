@@ -2,6 +2,9 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 interface InputProps {
   label?: string;
   placeholder?: string;
@@ -32,7 +35,7 @@ const AppInput = (props: InputProps) => {
           {label}
         </label>}
       <div className="relative w-full">
-        <input type="text" className="peer relative z-10 border-2 border-[var(--color-border)] h-13 w-full rounded-md bg-[var(--color-surface)] px-4 font-thin outline-none drop-shadow-sm transition-all duration-200 ease-in-out focus:bg-[var(--color-bg)] placeholder:font-medium" placeholder={placeholder} onMouseMove={handleMouseMove} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)} {...rest} />
+        <input type="text" className="peer relative z-10 border-2 border-[var(--color-border)] h-13 w-full rounded-md bg-[var(--color-surface)] px-4 font-thin outline-none drop-shadow-sm transition-all duration-200 ease-in-out focus:bg-[var(--color-bg)] placeholder:font-medium text-[var(--color-text-primary)]" placeholder={placeholder} onMouseMove={handleMouseMove} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)} {...rest} />
         {isHovering && <>
             <div className="absolute pointer-events-none top-0 left-0 right-0 h-[2px] z-20 rounded-t-md overflow-hidden" style={{
           background: `radial-gradient(30px circle at ${mousePosition.x}px 0px, var(--color-text-primary) 0%, transparent 70%)`
@@ -56,6 +59,12 @@ const LoginComponent = () => {
     y: 0
   });
   const [isHovering, setIsHovering] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { signIn } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const handleMouseMove = (e: React.MouseEvent) => {
     const leftSection = e.currentTarget.getBoundingClientRect();
     setMousePosition({
@@ -68,6 +77,44 @@ const LoginComponent = () => {
   };
   const handleMouseLeave = () => {
     setIsHovering(false);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({
+          title: "Erro no login",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo de volta!",
+        });
+        navigate('/admin');
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   const socialIcons = [{
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4zm9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8A1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5a5 5 0 0 1-5 5a5 5 0 0 1-5-5a5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3" /></svg>,
@@ -90,9 +137,7 @@ const LoginComponent = () => {
           transition: 'transform 0.1s ease-out'
         }} />
           <div className="form-container sign-in-container h-full z-10">
-            <form className='text-center py-10 md:py-20 grid gap-2 h-full' onSubmit={e => {
-            e.preventDefault();
-          }}>
+            <form className='text-center py-10 md:py-20 grid gap-2 h-full' onSubmit={handleLogin}>
               <div className='grid gap-4 md:gap-6 mb-2'>
                 <h1 onClick={e => {
                 e.preventDefault();
@@ -101,14 +146,28 @@ const LoginComponent = () => {
               <span className="text-sm text-slate-300">Vamos vender mais hoje?  
 Entre na sua conta CataloFácil e mantenha seu catálogo sempre atualizado!</span>
             </div>
-            <div className='grid gap-4 items-center'>
-                <AppInput placeholder="Email" type="email" />
-                <AppInput placeholder="Password" type="password" />
+            <div className='grid gap-2 items-center'>
+                <AppInput 
+                  placeholder="Email" 
+                  type="email" 
+                  value={email}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                />
+                <AppInput 
+                  placeholder="Password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                />
               </div>
               
               <div className='flex gap-4 justify-center items-center'>
-                 <button className="group/button relative inline-flex justify-center items-center overflow-hidden rounded-md bg-[var(--color-border)] px-4 py-1.5 text-xs font-normal transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-text-primary)] cursor-pointer bg-sky-950 hover:bg-sky-800 text-slate-300">
-                <span className="text-sm px-2 py-1">Entrar</span>
+                 <button 
+                   type="submit"
+                   disabled={loading}
+                   className="group/button relative inline-flex justify-center items-center overflow-hidden rounded-md bg-[var(--color-border)] px-4 py-1.5 text-xs font-normal transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-[var(--color-text-primary)] cursor-pointer bg-sky-950 hover:bg-sky-800 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                <span className="text-sm px-2 py-1">{loading ? 'Entrando...' : 'Entrar'}</span>
                 <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
                   <div className="relative h-full w-8 bg-white/20" />
                 </div>
