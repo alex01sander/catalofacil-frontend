@@ -1,0 +1,330 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Plus, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Tables } from "@/integrations/supabase/types";
+
+type CashFlowEntry = Tables<'cash_flow'>;
+
+const CashFlowTab = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<CashFlowEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    type: 'income' as 'income' | 'expense',
+    category: '',
+    description: '',
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    payment_method: 'cash'
+  });
+
+  useEffect(() => {
+    fetchCashFlow();
+  }, [user]);
+
+  const fetchCashFlow = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('cash_flow')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      setEntries(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar fluxo de caixa:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar o fluxo de caixa",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('cash_flow')
+        .insert([{
+          user_id: user.id,
+          type: formData.type,
+          category: formData.category,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          date: formData.date,
+          payment_method: formData.payment_method
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setEntries(prev => [data, ...prev]);
+      setShowForm(false);
+      setFormData({
+        type: 'income',
+        category: '',
+        description: '',
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        payment_method: 'cash'
+      });
+      
+      toast({
+        title: "Sucesso",
+        description: "Lançamento adicionado com sucesso!",
+      });
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o lançamento",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const totalIncome = entries.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalExpense = entries.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
+  const balance = totalIncome - totalExpense;
+
+  if (loading) return <div>Carregando...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Controle de Caixa</h2>
+          <p className="text-gray-600">Quanto você movimentou hoje?</p>
+        </div>
+        <Button onClick={() => setShowForm(!showForm)} className="bg-green-600 hover:bg-green-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Lançamento Rápido
+        </Button>
+      </div>
+
+      {/* Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Entradas</p>
+                <p className="text-2xl font-bold text-green-600">
+                  R$ {totalIncome.toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Saídas</p>
+                <p className="text-2xl font-bold text-red-600">
+                  R$ {totalExpense.toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+              <TrendingDown className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Saldo</p>
+                <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  R$ {balance.toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-gray-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Formulário */}
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Novo Lançamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="type">Tipo</Label>
+                  <Select value={formData.type} onValueChange={(value: 'income' | 'expense') => setFormData({...formData, type: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">💰 Entrada</SelectItem>
+                      <SelectItem value="expense">💸 Saída</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="category">Categoria</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.type === 'income' ? (
+                        <>
+                          <SelectItem value="sale">🛍️ Venda</SelectItem>
+                          <SelectItem value="other">📝 Outros</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="supplier">📦 Fornecedor</SelectItem>
+                          <SelectItem value="delivery">🚚 Entrega</SelectItem>
+                          <SelectItem value="bills">📄 Contas</SelectItem>
+                          <SelectItem value="other">📝 Outros</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="amount">Valor</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                    placeholder="0,00"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="payment_method">Forma de Pagamento</Label>
+                  <Select value={formData.payment_method} onValueChange={(value) => setFormData({...formData, payment_method: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">💵 Dinheiro</SelectItem>
+                      <SelectItem value="pix">🔄 Pix</SelectItem>
+                      <SelectItem value="card">💳 Cartão</SelectItem>
+                      <SelectItem value="transfer">🏦 Transferência</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="date">Data</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="description">Descrição</Label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder="Descreva o lançamento..."
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                  Salvar Lançamento
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lista de Lançamentos */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Últimos Lançamentos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {entries.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium mb-2">Nenhum lançamento ainda</p>
+              <p className="text-sm">Adicione sua primeira movimentação financeira</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {entries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      entry.type === 'income' ? 'bg-green-100' : 'bg-red-100'
+                    }`}>
+                      {entry.type === 'income' ? 
+                        <TrendingUp className="h-5 w-5 text-green-600" /> : 
+                        <TrendingDown className="h-5 w-5 text-red-600" />
+                      }
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{entry.description}</p>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {entry.category}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          {new Date(entry.date).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-bold ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                      {entry.type === 'income' ? '+' : '-'} R$ {Number(entry.amount).toFixed(2).replace('.', ',')}
+                    </p>
+                    <p className="text-sm text-gray-500">{entry.payment_method}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default CashFlowTab;

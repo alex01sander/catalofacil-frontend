@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      cash_flow: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          payment_method: string | null
+          store_id: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          payment_method?: string | null
+          store_id?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          payment_method?: string | null
+          store_id?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string | null
@@ -74,6 +116,80 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_accounts: {
+        Row: {
+          created_at: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          store_id: string | null
+          total_debt: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          store_id?: string | null
+          total_debt?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          store_id?: string | null
+          total_debt?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          date: string
+          description: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          date?: string
+          description?: string | null
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          date?: string
+          description?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_credit_account_id_fkey"
+            columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "credit_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -135,6 +251,57 @@ export type Database = {
           domain?: string
           id?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          due_date: string | null
+          id: string
+          is_recurring: boolean | null
+          name: string
+          paid_date: string | null
+          recurring_frequency: string | null
+          status: string | null
+          store_id: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          name: string
+          paid_date?: string | null
+          recurring_frequency?: string | null
+          status?: string | null
+          store_id?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          name?: string
+          paid_date?: string | null
+          recurring_frequency?: string | null
+          status?: string | null
+          store_id?: string | null
+          type?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -240,6 +407,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_costs: {
+        Row: {
+          cost_price: number
+          created_at: string
+          desired_margin: number
+          id: string
+          product_name: string
+          store_id: string | null
+          suggested_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cost_price: number
+          created_at?: string
+          desired_margin: number
+          id?: string
+          product_name: string
+          store_id?: string | null
+          suggested_price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cost_price?: number
+          created_at?: string
+          desired_margin?: number
+          id?: string
+          product_name?: string
+          store_id?: string | null
+          suggested_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       products: {
         Row: {
