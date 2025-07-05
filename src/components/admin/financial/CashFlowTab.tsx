@@ -6,20 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tables } from "@/integrations/supabase/types";
 
 type CashFlowEntry = Tables<'cash_flow'>;
+type Product = Tables<'products'>;
 
 const CashFlowTab = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [entries, setEntries] = useState<CashFlowEntry[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showSaleForm, setShowSaleForm] = useState(false);
   const [formData, setFormData] = useState({
     type: 'income' as 'income' | 'expense',
     category: '',
@@ -28,10 +31,36 @@ const CashFlowTab = () => {
     date: new Date().toISOString().split('T')[0],
     payment_method: 'cash'
   });
+  const [saleData, setSaleData] = useState({
+    product_id: '',
+    quantity: '1',
+    unit_price: '',
+    payment_method: 'cash',
+    date: new Date().toISOString().split('T')[0],
+  });
 
   useEffect(() => {
     fetchCashFlow();
+    fetchProducts();
   }, [user]);
+
+  const fetchProducts = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
+    }
+  };
 
   const fetchCashFlow = async () => {
     if (!user) return;
@@ -54,6 +83,102 @@ const CashFlowTab = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      const product = products.find(p => p.id === saleData.product_id);
+      if (!product) {
+        toast({
+          title: "Erro",
+          description: "Produto não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const quantity = parseInt(saleData.quantity);
+      const unitPrice = parseFloat(saleData.unit_price);
+      const totalPrice = quantity * unitPrice;
+
+      // Verificar se há estoque suficiente
+      if (product.stock < quantity) {
+        toast({
+          title: "Erro",
+          description: `Estoque insuficiente. Disponível: ${product.stock}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 1. Registrar venda na tabela sales
+      const { error: saleError } = await supabase
+        .from('sales')
+        .insert([{
+          user_id: user.id,
+          product_name: product.name,
+          quantity: quantity,
+          unit_price: unitPrice,
+          total_price: totalPrice,
+          sale_date: saleData.date,
+          status: 'completed'
+        }]);
+
+      if (saleError) throw saleError;
+
+      // 2. Dar baixa no estoque
+      const { error: stockError } = await supabase
+        .from('products')
+        .update({ stock: product.stock - quantity })
+        .eq('id', product.id);
+
+      if (stockError) throw stockError;
+
+      // 3. Registrar entrada no fluxo de caixa
+      const { data: cashFlowData, error: cashFlowError } = await supabase
+        .from('cash_flow')
+        .insert([{
+          user_id: user.id,
+          type: 'income',
+          category: 'sale',
+          description: `Venda: ${product.name} (${quantity}x)`,
+          amount: totalPrice,
+          date: saleData.date,
+          payment_method: saleData.payment_method
+        }])
+        .select()
+        .single();
+
+      if (cashFlowError) throw cashFlowError;
+
+      // Atualizar listas
+      setEntries(prev => [cashFlowData, ...prev]);
+      await fetchProducts(); // Atualizar lista de produtos com estoque atualizado
+      
+      setShowSaleForm(false);
+      setSaleData({
+        product_id: '',
+        quantity: '1',
+        unit_price: '',
+        payment_method: 'cash',
+        date: new Date().toISOString().split('T')[0],
+      });
+      
+      toast({
+        title: "Sucesso",
+        description: `Venda registrada! Estoque atualizado: ${product.name} (${product.stock - quantity} restante)`,
+      });
+    } catch (error) {
+      console.error('Erro ao registrar venda:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível registrar a venda",
+        variant: "destructive",
+      });
     }
   };
 
@@ -116,10 +241,16 @@ const CashFlowTab = () => {
           <h2 className="text-2xl font-bold text-gray-900">Controle de Caixa</h2>
           <p className="text-gray-600">Quanto você movimentou hoje?</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="bg-green-600 hover:bg-green-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Lançamento Rápido
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowSaleForm(!showSaleForm)} className="bg-blue-600 hover:bg-blue-700">
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Registrar Venda
+          </Button>
+          <Button onClick={() => setShowForm(!showForm)} className="bg-green-600 hover:bg-green-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Lançamento Rápido
+          </Button>
+        </div>
       </div>
 
       {/* Resumo */}
@@ -266,6 +397,126 @@ const CashFlowTab = () => {
                   Salvar Lançamento
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Formulário de Venda de Produto */}
+      {showSaleForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>🛍️ Registrar Venda de Produto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="product">Produto</Label>
+                  <Select 
+                    value={saleData.product_id} 
+                    onValueChange={(value) => {
+                      const product = products.find(p => p.id === value);
+                      setSaleData({
+                        ...saleData, 
+                        product_id: value,
+                        unit_price: product ? product.price.toString() : ''
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um produto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name} - R$ {Number(product.price).toFixed(2).replace('.', ',')} (Estoque: {product.stock})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="quantity">Quantidade</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={saleData.quantity}
+                    onChange={(e) => setSaleData({...saleData, quantity: e.target.value})}
+                    placeholder="1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="unit_price">Preço Unitário</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={saleData.unit_price}
+                    onChange={(e) => setSaleData({...saleData, unit_price: e.target.value})}
+                    placeholder="0,00"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="payment_method">Forma de Pagamento</Label>
+                  <Select 
+                    value={saleData.payment_method} 
+                    onValueChange={(value) => setSaleData({...saleData, payment_method: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">💵 Dinheiro</SelectItem>
+                      <SelectItem value="pix">🔄 Pix</SelectItem>
+                      <SelectItem value="card">💳 Cartão</SelectItem>
+                      <SelectItem value="transfer">🏦 Transferência</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="date">Data da Venda</Label>
+                  <Input
+                    type="date"
+                    value={saleData.date}
+                    onChange={(e) => setSaleData({...saleData, date: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Resumo da Venda */}
+              {saleData.product_id && saleData.quantity && saleData.unit_price && (
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-medium text-blue-900 mb-2">Resumo da Venda:</h3>
+                  <p className="text-blue-700">
+                    <strong>Total:</strong> R$ {(parseFloat(saleData.quantity) * parseFloat(saleData.unit_price)).toFixed(2).replace('.', ',')}
+                  </p>
+                  {(() => {
+                    const product = products.find(p => p.id === saleData.product_id);
+                    const quantity = parseInt(saleData.quantity);
+                    return product && (
+                      <p className="text-blue-700">
+                        <strong>Estoque após venda:</strong> {product.stock - quantity} unidades
+                      </p>
+                    );
+                  })()}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                  🛍️ Registrar Venda
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowSaleForm(false)}>
                   Cancelar
                 </Button>
               </div>
