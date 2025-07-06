@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { StoreSettingsProvider } from "@/contexts/StoreSettingsContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { FinancialProvider } from "@/contexts/FinancialContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ControllerProtectedRoute from "@/components/ControllerProtectedRoute";
 import Index from "./pages/Index";
@@ -40,35 +41,37 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <StoreSettingsProvider>
-              <ThemeProvider>
-                <CartProvider>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route
-                      path="/admin/*"
-                      element={
-                        <ProtectedRoute>
-                          <Admin />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/controller/*"
-                      element={
-                        <ProtectedRoute>
-                          <ControllerProtectedRoute>
-                            <Controller />
-                          </ControllerProtectedRoute>
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </CartProvider>
-              </ThemeProvider>
-            </StoreSettingsProvider>
+            <FinancialProvider>
+              <StoreSettingsProvider>
+                <ThemeProvider>
+                  <CartProvider>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route
+                        path="/admin/*"
+                        element={
+                          <ProtectedRoute>
+                            <Admin />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/controller/*"
+                        element={
+                          <ProtectedRoute>
+                            <ControllerProtectedRoute>
+                              <Controller />
+                            </ControllerProtectedRoute>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </CartProvider>
+                </ThemeProvider>
+              </StoreSettingsProvider>
+            </FinancialProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

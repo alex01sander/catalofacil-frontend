@@ -9,16 +9,16 @@ import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { useOptimizedCategories } from "@/hooks/useOptimizedCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFinancial } from "@/contexts/FinancialContext";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { products, loading: productsLoading } = useOptimizedProducts();
   const { categories } = useOptimizedCategories();
+  const { data: financialData } = useFinancial();
   
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
-  const [sales, setSales] = useState([]);
-  const [salesLoading, setSalesLoading] = useState(true);
 
   // Estado para simulação de preço - todos os campos zerados
   const [priceSimulation, setPriceSimulation] = useState({
@@ -58,42 +58,16 @@ const AdminDashboard = () => {
     fetchOrders();
   }, [user]);
 
-  // Buscar vendas registradas do usuário
-  useEffect(() => {
-    const fetchSales = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('sales')
-          .select('*')
-          .eq('user_id', user.id);
-        
-        if (error) {
-          console.error('Erro ao buscar vendas:', error);
-        } else {
-          setSales(data || []);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar vendas:', error);
-      } finally {
-        setSalesLoading(false);
-      }
-    };
-
-    fetchSales();
-  }, [user]);
-
-  // Calcular estatísticas reais combinando pedidos e vendas
+  // Calcular estatísticas reais combinando pedidos e vendas do contexto financeiro
   const totalRevenueOrders = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-  const totalRevenueSales = sales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
-  const totalRevenue = totalRevenueOrders + totalRevenueSales;
+  const totalRevenueSales = financialData.sales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
+  const totalRevenue = totalRevenueOrders + totalRevenueSales + financialData.totalIncome;
   
   const totalProducts = products.filter(p => p.is_active).length;
-  const totalOrders = orders.length + sales.length;
+  const totalOrders = orders.length + financialData.sales.length;
   const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
 
-  // Dados para gráficos baseados nos dados reais (combinando orders e sales)
+  // Dados para gráficos baseados nos dados reais (combinando orders e sales do contexto)
   const currentMonth = new Date().getMonth();
   const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   
@@ -109,16 +83,23 @@ const AdminDashboard = () => {
     });
     const monthOrdersTotal = monthOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
     
-    // Vendas registradas manualmente
-    const monthSales = sales.filter(sale => {
+    // Vendas registradas manualmente do contexto
+    const monthSales = financialData.sales.filter(sale => {
       const saleMonth = new Date(sale.sale_date).getMonth();
       return saleMonth === monthIndex;
     });
     const monthSalesTotal = monthSales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
     
+    // Entradas do fluxo de caixa
+    const monthCashFlow = financialData.cashFlow.filter(entry => {
+      const entryMonth = new Date(entry.date).getMonth();
+      return entryMonth === monthIndex && entry.type === 'income';
+    });
+    const monthCashFlowTotal = monthCashFlow.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+    
     return {
       name: monthName,
-      vendas: monthOrdersTotal + monthSalesTotal
+      vendas: monthOrdersTotal + monthSalesTotal + monthCashFlowTotal
     };
   });
 
@@ -157,11 +138,11 @@ const AdminDashboard = () => {
       color: "text-purple-600",
     },
     {
-      title: "Taxa de Conversão",
-      value: `${conversionRate}%`,
-      change: `+${conversionRate}%`,
+      title: "Saldo em Caixa",
+      value: `R$ ${financialData.balance.toFixed(2).replace('.', ',')}`,
+      change: financialData.balance >= 0 ? `+${conversionRate}%` : `-${conversionRate}%`,
       icon: TrendingUp,
-      color: "text-orange-600",
+      color: financialData.balance >= 0 ? "text-green-600" : "text-red-600",
     },
   ];
 
@@ -192,26 +173,26 @@ const AdminDashboard = () => {
     }));
   };
 
-  // Atividades recentes baseadas nos dados reais
+  // Atividades recentes baseadas nos dados reais do contexto financeiro
   const recentActivities = [
     ...orders.slice(0, 2).map(order => ({
       action: "Nova venda realizada",
       product: `Pedido #${order.id.slice(0, 8)}`,
       time: new Date(order.created_at).toLocaleDateString('pt-BR')
     })),
-    ...sales.slice(0, 2).map(sale => ({
+    ...financialData.sales.slice(0, 2).map(sale => ({
       action: "Venda registrada",
       product: sale.product_name,
       time: new Date(sale.created_at).toLocaleDateString('pt-BR')
     })),
-    ...products.slice(0, 2).map(product => ({
-      action: "Produto cadastrado",
-      product: product.name,
-      time: "Recente" // Since created_at doesn't exist in Product interface, using generic text
+    ...financialData.cashFlow.slice(0, 2).map(entry => ({
+      action: entry.type === 'income' ? "Entrada registrada" : "Despesa registrada",
+      product: entry.description,
+      time: new Date(entry.date).toLocaleDateString('pt-BR')
     }))
   ].slice(0, 4); // Limitar a 4 atividades
 
-  if (productsLoading || ordersLoading || salesLoading) {
+  if (productsLoading || ordersLoading || financialData.isLoading) {
     return (
       <div className="space-y-6">
         <div>

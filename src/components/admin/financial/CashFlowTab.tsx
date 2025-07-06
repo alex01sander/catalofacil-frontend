@@ -8,19 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Tables } from "@/integrations/supabase/types";
-
-type CashFlowEntry = Tables<'cash_flow'>;
-type Product = Tables<'products'>;
+import { useFinancial } from "@/contexts/FinancialContext";
 
 const CashFlowTab = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [entries, setEntries] = useState<CashFlowEntry[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: financialData, addCashFlowEntry, registerSale } = useFinancial();
   const [showForm, setShowForm] = useState(false);
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,200 +33,46 @@ const CashFlowTab = () => {
     date: new Date().toISOString().split('T')[0],
   });
 
-  useEffect(() => {
-    fetchCashFlow();
-    fetchProducts();
-  }, [user]);
-
-  const fetchProducts = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('name');
-      
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
-    }
-  };
-
-  const fetchCashFlow = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('cash_flow')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-      
-      if (error) throw error;
-      setEntries(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar fluxo de caixa:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar o fluxo de caixa",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
-    try {
-      const product = products.find(p => p.id === saleData.product_id);
-      if (!product) {
-        toast({
-          title: "Erro",
-          description: "Produto não encontrado",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const quantity = parseInt(saleData.quantity);
-      const unitPrice = parseFloat(saleData.unit_price);
-      const totalPrice = quantity * unitPrice;
-
-      // Verificar se há estoque suficiente
-      if (product.stock < quantity) {
-        toast({
-          title: "Erro",
-          description: `Estoque insuficiente. Disponível: ${product.stock}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // 1. Registrar venda na tabela sales
-      const { error: saleError } = await supabase
-        .from('sales')
-        .insert([{
-          user_id: user.id,
-          product_name: product.name,
-          quantity: quantity,
-          unit_price: unitPrice,
-          total_price: totalPrice,
-          sale_date: saleData.date,
-          status: 'completed'
-        }]);
-
-      if (saleError) throw saleError;
-
-      // 2. Dar baixa no estoque
-      const { error: stockError } = await supabase
-        .from('products')
-        .update({ stock: product.stock - quantity })
-        .eq('id', product.id);
-
-      if (stockError) throw stockError;
-
-      // 3. Registrar entrada no fluxo de caixa
-      const { data: cashFlowData, error: cashFlowError } = await supabase
-        .from('cash_flow')
-        .insert([{
-          user_id: user.id,
-          type: 'income',
-          category: 'sale',
-          description: `Venda: ${product.name} (${quantity}x)`,
-          amount: totalPrice,
-          date: saleData.date,
-          payment_method: saleData.payment_method
-        }])
-        .select()
-        .single();
-
-      if (cashFlowError) throw cashFlowError;
-
-      // Atualizar listas
-      setEntries(prev => [cashFlowData, ...prev]);
-      await fetchProducts(); // Atualizar lista de produtos com estoque atualizado
-      
-      setShowSaleForm(false);
-      setSaleData({
-        product_id: '',
-        quantity: '1',
-        unit_price: '',
-        payment_method: 'cash',
-        date: new Date().toISOString().split('T')[0],
-      });
-      
-      toast({
-        title: "Sucesso",
-        description: `Venda registrada! Estoque atualizado: ${product.name} (${product.stock - quantity} restante)`,
-      });
-    } catch (error) {
-      console.error('Erro ao registrar venda:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível registrar a venda",
-        variant: "destructive",
-      });
-    }
+    await registerSale(saleData);
+    setShowSaleForm(false);
+    setSaleData({
+      product_id: '',
+      quantity: '1',
+      unit_price: '',
+      payment_method: 'cash',
+      date: new Date().toISOString().split('T')[0],
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('cash_flow')
-        .insert([{
-          user_id: user.id,
-          type: formData.type,
-          category: formData.category,
-          description: formData.description,
-          amount: parseFloat(formData.amount),
-          date: formData.date,
-          payment_method: formData.payment_method
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setEntries(prev => [data, ...prev]);
-      setShowForm(false);
-      setFormData({
-        type: 'income',
-        category: '',
-        description: '',
-        amount: '',
-        date: new Date().toISOString().split('T')[0],
-        payment_method: 'cash'
-      });
-      
-      toast({
-        title: "Sucesso",
-        description: "Lançamento adicionado com sucesso!",
-      });
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar o lançamento",
-        variant: "destructive",
-      });
-    }
+    await addCashFlowEntry({
+      user_id: user.id,
+      store_id: null,
+      type: formData.type,
+      category: formData.category,
+      description: formData.description,
+      amount: parseFloat(formData.amount),
+      date: formData.date,
+      payment_method: formData.payment_method
+    });
+    
+    setShowForm(false);
+    setFormData({
+      type: 'income',
+      category: '',
+      description: '',
+      amount: '',
+      date: new Date().toISOString().split('T')[0],
+      payment_method: 'cash'
+    });
   };
 
-  const totalIncome = entries.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalExpense = entries.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
-  const balance = totalIncome - totalExpense;
-
-  if (loading) return <div>Carregando...</div>;
+  if (financialData.isLoading) return <div>Carregando...</div>;
 
   return (
     <div className="space-y-6">
@@ -261,7 +101,7 @@ const CashFlowTab = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Entradas</p>
                 <p className="text-2xl font-bold text-green-600">
-                  R$ {totalIncome.toFixed(2).replace('.', ',')}
+                  R$ {financialData.totalIncome.toFixed(2).replace('.', ',')}
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
@@ -275,7 +115,7 @@ const CashFlowTab = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Saídas</p>
                 <p className="text-2xl font-bold text-red-600">
-                  R$ {totalExpense.toFixed(2).replace('.', ',')}
+                  R$ {financialData.totalExpenses.toFixed(2).replace('.', ',')}
                 </p>
               </div>
               <TrendingDown className="h-8 w-8 text-red-600" />
@@ -288,8 +128,8 @@ const CashFlowTab = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Saldo</p>
-                <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  R$ {balance.toFixed(2).replace('.', ',')}
+                <p className={`text-2xl font-bold ${financialData.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  R$ {financialData.balance.toFixed(2).replace('.', ',')}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-gray-600" />
@@ -419,7 +259,7 @@ const CashFlowTab = () => {
                   <Select 
                     value={saleData.product_id} 
                     onValueChange={(value) => {
-                      const product = products.find(p => p.id === value);
+                      const product = financialData.products.find(p => p.id === value);
                       setSaleData({
                         ...saleData, 
                         product_id: value,
@@ -431,7 +271,7 @@ const CashFlowTab = () => {
                       <SelectValue placeholder="Selecione um produto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {products.map((product) => (
+                      {financialData.products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name} - R$ {Number(product.price).toFixed(2).replace('.', ',')} (Estoque: {product.stock})
                         </SelectItem>
@@ -501,7 +341,7 @@ const CashFlowTab = () => {
                     <strong>Total:</strong> R$ {(parseFloat(saleData.quantity) * parseFloat(saleData.unit_price)).toFixed(2).replace('.', ',')}
                   </p>
                   {(() => {
-                    const product = products.find(p => p.id === saleData.product_id);
+                    const product = financialData.products.find(p => p.id === saleData.product_id);
                     const quantity = parseInt(saleData.quantity);
                     return product && (
                       <p className="text-blue-700">
@@ -531,7 +371,7 @@ const CashFlowTab = () => {
           <CardTitle>Últimos Lançamentos</CardTitle>
         </CardHeader>
         <CardContent>
-          {entries.length === 0 ? (
+          {financialData.cashFlow.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum lançamento ainda</p>
@@ -539,7 +379,7 @@ const CashFlowTab = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {entries.map((entry) => (
+              {financialData.cashFlow.map((entry) => (
                 <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
