@@ -60,7 +60,7 @@ const AdminSidebar = ({
   const SidebarContentComponent = () => <>
       <SidebarHeader className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-[#2980B9] to-[#2980B9] rounded-xl flex items-center justify-center">
             <Store className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -75,7 +75,7 @@ const AdminSidebar = ({
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               {menuItems.map(item => <SidebarMenuItem key={item.view}>
-                  <SidebarMenuButton onClick={() => handleViewChange(item.view)} className={`w-full h-12 rounded-xl transition-all duration-200 ${currentView === item.view ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}>
+                  <SidebarMenuButton onClick={() => handleViewChange(item.view)} className={`w-full h-12 rounded-xl transition-all duration-200 ${currentView === item.view ? "bg-gradient-to-r from-[#2980B9] to-[#2980B9] text-white shadow-lg shadow-[#2980B9]/25" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}>
                     <item.icon className="h-5 w-5" />
                     <span className="font-medium">{item.title}</span>
                   </SidebarMenuButton>
@@ -107,7 +107,7 @@ const AdminSidebar = ({
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 z-50 shadow-lg">
         <div className="flex justify-around items-center max-w-md mx-auto">
-          {menuItems.map(item => <button key={item.view} onClick={() => onViewChange(item.view)} className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 ${currentView === item.view ? "bg-gradient-to-t from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25 transform scale-105" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+          {menuItems.map(item => <button key={item.view} onClick={() => onViewChange(item.view)} className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-0 flex-1 mx-1 ${currentView === item.view ? "bg-gradient-to-t from-[#2980B9] to-[#2980B9] text-white shadow-lg shadow-[#2980B9]/25 transform scale-105" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
               <item.icon className={`h-5 w-5 mb-1 ${currentView === item.view ? 'animate-pulse' : ''}`} />
               
               {currentView === item.view && <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>}
