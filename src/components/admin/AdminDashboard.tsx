@@ -206,22 +206,28 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Visão geral do seu negócio</p>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          📊 Dashboard
+        </h1>
+        <p className="text-muted-foreground">Visão geral completa do seu negócio</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <Card key={index}>
+          <Card key={index} className="shadow-lg border-l-4 border-l-primary">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className={`text-sm ${stat.color}`}>{stat.change}</p>
+                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                  <p className={`text-sm font-medium ${stat.color}`}>{stat.change}</p>
                 </div>
-                <div className={`p-3 rounded-full bg-gray-100`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  index === 0 ? 'bg-green-100' : 
+                  index === 1 ? 'bg-blue-100' :
+                  index === 2 ? 'bg-purple-100' : 'bg-orange-100'
+                }`}>
                   <stat.icon className={`h-6 w-6 ${stat.color}`} />
                 </div>
               </div>
@@ -231,11 +237,13 @@ const AdminDashboard = () => {
       </div>
 
       {/* Simulação de Preço */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-purple-600" />
-            Simulação de Preço
+      <Card className="shadow-xl border-primary/20">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-purple-50 border-b">
+          <CardTitle className="text-xl flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+              <Calculator className="h-5 w-5 text-primary" />
+            </div>
+            💰 Simulação de Preço Inteligente
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -308,10 +316,10 @@ const AdminDashboard = () => {
 
               <Button 
                 onClick={calculatePrice} 
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full h-12 text-base bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white shadow-lg"
               >
                 <Calculator className="h-4 w-4 mr-2" />
-                Calcular Preço Sugerido
+                🎯 Calcular Preço Sugerido
               </Button>
             </div>
 
@@ -401,9 +409,12 @@ const AdminDashboard = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas dos Últimos 6 Meses</CardTitle>
+        <Card className="shadow-lg border-l-4 border-l-blue-500">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              📈 Vendas dos Últimos 6 Meses
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -427,9 +438,12 @@ const AdminDashboard = () => {
         </Card>
 
         {/* Category Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Produtos por Categoria</CardTitle>
+        <Card className="shadow-lg border-l-4 border-l-purple-500">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Package className="h-5 w-5 text-purple-600" />
+              🏷️ Produtos por Categoria
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

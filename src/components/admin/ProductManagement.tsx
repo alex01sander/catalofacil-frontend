@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Check, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Check, X, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -333,11 +333,13 @@ const ProductManagement = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
-          <p className="text-gray-600">Gerencie seu catálogo de produtos</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            📦 Produtos
+          </h1>
+          <p className="text-muted-foreground">Gerencie seu catálogo com facilidade</p>
         </div>
         <Button 
-          className="bg-purple-600 hover:bg-purple-700"
+          className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white shadow-lg"
           onClick={handleAddProduct}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -345,52 +347,76 @@ const ProductManagement = () => {
         </Button>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Buscar produtos..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      <Card className="shadow-lg">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="🔍 Buscar produtos por nome ou categoria..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-11 text-base"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-blue-500">
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-xl md:text-2xl font-bold text-gray-900">{products.length}</p>
-              <p className="text-xs md:text-sm text-gray-600">Total de Produtos</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">📦 Total de Produtos</p>
+                <p className="text-2xl font-bold text-blue-600">{products.length}</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Package className="h-5 w-5 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-green-500">
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-xl md:text-2xl font-bold text-green-600">
-                {products.filter(p => p.is_active).length}
-              </p>
-              <p className="text-xs md:text-sm text-gray-600">Ativos</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">✅ Produtos Ativos</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {products.filter(p => p.is_active).length}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <Plus className="h-5 w-5 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-orange-500">
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-xl md:text-2xl font-bold text-orange-600">
-                {products.filter(p => p.stock < 10).length}
-              </p>
-              <p className="text-xs md:text-sm text-gray-600">Estoque Baixo</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">⚠️ Estoque Baixo</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {products.filter(p => p.stock < 10).length}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <Package className="h-5 w-5 text-orange-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-red-500">
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-xl md:text-2xl font-bold text-red-600">
-                {products.filter(p => !p.is_active).length}
-              </p>
-              <p className="text-xs md:text-sm text-gray-600">Inativos</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">❌ Inativos</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {products.filter(p => !p.is_active).length}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <X className="h-5 w-5 text-red-600" />
+              </div>
             </div>
           </CardContent>
         </Card>

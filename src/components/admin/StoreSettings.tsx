@@ -235,20 +235,27 @@ const StoreSettings = () => {
   return (
     <div className="space-y-4 lg:space-y-6 p-4 lg:p-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Configurações da Loja</h2>
-        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto" disabled={uploading}>
+        <div>
+          <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-primary to-green-600 bg-clip-text text-transparent">
+            ⚙️ Configurações da Loja
+          </h2>
+          <p className="text-muted-foreground">Personalize sua loja virtual</p>
+        </div>
+        <Button onClick={handleSave} className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg w-full sm:w-auto h-11" disabled={uploading}>
           <Save className="h-4 w-4 mr-2" />
-          {uploading ? "Salvando..." : "Salvar Alterações"}
+          {uploading ? "💾 Salvando..." : "💾 Salvar Alterações"}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Informações Básicas */}
-        <Card className="order-1 lg:order-1">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
-              <Eye className="h-4 w-4 mr-2" />
-              Informações da Loja
+        <Card className="order-1 lg:order-1 shadow-lg border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Eye className="h-5 w-5 text-blue-600" />
+              </div>
+              🏪 Informações da Loja
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -308,11 +315,13 @@ const StoreSettings = () => {
         </Card>
 
         {/* Logo Mobile */}
-        <Card className="order-2 lg:order-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
-              <Upload className="h-4 w-4 mr-2" />
-              Logo Mobile
+        <Card className="order-2 lg:order-2 shadow-lg border-l-4 border-l-purple-500">
+          <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                <Upload className="h-5 w-5 text-purple-600" />
+              </div>
+              📱 Logo Mobile
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -362,11 +371,13 @@ const StoreSettings = () => {
         </Card>
 
         {/* Banner Desktop */}
-        <Card className="order-3 lg:order-3">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center text-lg">
-              <Upload className="h-4 w-4 mr-2" />
-              Banner Desktop
+        <Card className="order-3 lg:order-3 shadow-lg border-l-4 border-l-green-500">
+          <CardHeader className="pb-3 bg-gradient-to-r from-green-50 to-green-100 border-b">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <Upload className="h-5 w-5 text-green-600" />
+              </div>
+              🖥️ Banner Desktop
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -415,9 +426,14 @@ const StoreSettings = () => {
         </Card>
 
         {/* Banner Mobile - Imagem ou Cor */}
-        <Card className="order-4 lg:order-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Banner Mobile</CardTitle>
+        <Card className="order-4 lg:order-4 shadow-lg border-l-4 border-l-orange-500">
+          <CardHeader className="pb-3 bg-gradient-to-r from-orange-50 to-orange-100 border-b">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <Upload className="h-5 w-5 text-orange-600" />
+              </div>
+              📱 Banner Mobile
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Upload de Imagem */}

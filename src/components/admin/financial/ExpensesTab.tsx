@@ -148,10 +148,12 @@ const ExpensesTab = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Controle de Despesas</h2>
-          <p className="text-gray-600">Adicione uma despesa rápida</p>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+            💸 Controle de Despesas
+          </h2>
+          <p className="text-muted-foreground">Gerencie seus gastos de forma inteligente</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="bg-red-600 hover:bg-red-700">
+        <Button onClick={() => setShowForm(!showForm)} className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg">
           <Plus className="h-4 w-4 mr-2" />
           Nova Despesa
         </Button>
@@ -159,56 +161,64 @@ const ExpensesTab = () => {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-blue-500">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Despesas Fixas</p>
+                <p className="text-sm font-medium text-muted-foreground">📅 Despesas Fixas</p>
                 <p className="text-2xl font-bold text-blue-600">
                   R$ {totalFixed.toFixed(2).replace('.', ',')}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-orange-500">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Despesas Variáveis</p>
+                <p className="text-sm font-medium text-muted-foreground">📝 Despesas Variáveis</p>
                 <p className="text-2xl font-bold text-orange-600">
                   R$ {totalVariable.toFixed(2).replace('.', ',')}
                 </p>
               </div>
-              <Receipt className="h-8 w-8 text-orange-600" />
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <Receipt className="h-5 w-5 text-orange-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-red-500">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">A Pagar</p>
+                <p className="text-sm font-medium text-muted-foreground">💰 A Pagar</p>
                 <p className="text-2xl font-bold text-red-600">
                   R$ {totalPending.toFixed(2).replace('.', ',')}
                 </p>
               </div>
-              <AlertCircle className="h-8 w-8 text-red-600" />
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-red-700">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Em Atraso</p>
+                <p className="text-sm font-medium text-muted-foreground">⚠️ Em Atraso</p>
                 <p className="text-2xl font-bold text-red-700">{overdueExpenses}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-red-700" />
+              <div className="w-10 h-10 bg-red-200 rounded-full flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-700" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -216,9 +226,14 @@ const ExpensesTab = () => {
 
       {/* Formulário */}
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Nova Despesa</CardTitle>
+        <Card className="shadow-xl border-red/20">
+          <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50 border-b">
+            <CardTitle className="text-xl flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Plus className="h-5 w-5 text-red-600" />
+              </div>
+              💸 Nova Despesa
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -309,10 +324,11 @@ const ExpensesTab = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" className="bg-red-600 hover:bg-red-700">
-                  Adicionar Despesa
+                <Button type="submit" className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg h-11">
+                  <Plus className="h-4 w-4 mr-2" />
+                  💸 Adicionar Despesa
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="h-11">
                   Cancelar
                 </Button>
               </div>
@@ -322,9 +338,12 @@ const ExpensesTab = () => {
       )}
 
       {/* Lista de Despesas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Suas Despesas</CardTitle>
+      <Card className="shadow-lg border-l-4 border-l-purple-500">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Receipt className="h-5 w-5 text-purple-600" />
+            📋 Suas Despesas
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {expenses.length === 0 ? (

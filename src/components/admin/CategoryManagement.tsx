@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Tag, Check, X, Upload, ImageIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Tag, Check, X, Upload, ImageIcon, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -245,16 +245,20 @@ const CategoryManagement = () => {
   return (
     <div className="space-y-6 pb-24 lg:pb-0">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Categorias</h1>
-        <p className="text-gray-600">Organize seus produtos por categorias</p>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">
+          🏷️ Categorias
+        </h1>
+        <p className="text-muted-foreground">Organize seus produtos de forma inteligente</p>
       </div>
 
       {/* Add New Category */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Tag className="h-5 w-5 mr-2" />
-            Nova Categoria
+      <Card className="shadow-xl border-primary/20">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-orange-50 border-b">
+          <CardTitle className="text-xl flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+              <Tag className="h-5 w-5 text-primary" />
+            </div>
+            ✨ Nova Categoria
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -269,10 +273,10 @@ const CategoryManagement = () => {
               />
               <Button 
                 onClick={addCategory} 
-                className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+                className="bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-700 text-white shadow-lg w-full sm:w-auto h-11"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Adicionar
+                ➕ Adicionar
               </Button>
             </div>
             
@@ -319,31 +323,46 @@ const CategoryManagement = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-blue-500">
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
-              <p className="text-sm text-gray-600">Total de Categorias</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">🏷️ Total de Categorias</p>
+                <p className="text-2xl font-bold text-blue-600">{categories.length}</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Tag className="h-5 w-5 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-lg border-l-4 border-l-purple-500">
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">
-                {categories.reduce((sum, cat) => sum + (cat.productCount || 0), 0)}
-              </p>
-              <p className="text-sm text-gray-600">Produtos Categorizados</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">📦 Produtos Categorizados</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {categories.reduce((sum, cat) => sum + (cat.productCount || 0), 0)}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                <Package className="h-5 w-5 text-purple-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="sm:col-span-2 lg:col-span-1">
+        <Card className="sm:col-span-2 lg:col-span-1 shadow-lg border-l-4 border-l-green-500">
           <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
-                {categories.filter(cat => (cat.productCount || 0) > 0).length}
-              </p>
-              <p className="text-sm text-gray-600">Categorias Ativas</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">✅ Categorias Ativas</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {categories.filter(cat => (cat.productCount || 0) > 0).length}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <Plus className="h-5 w-5 text-green-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
