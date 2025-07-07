@@ -6,20 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Users, DollarSign } from "lucide-react";
+import { Plus, Users, DollarSign, Search, FileDown, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useFinancial } from "@/contexts/FinancialContext";
 import { Tables } from "@/integrations/supabase/types";
+import ClientHistoryModal from "./ClientHistoryModal";
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 type CreditAccount = Tables<'credit_accounts'>;
 
 const CreditTab = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [accounts, setAccounts] = useState<CreditAccount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, addCreditTransaction } = useFinancial();
   const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<CreditAccount | null>(null);
+  const [showClientHistory, setShowClientHistory] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     is_new_customer: true,
     customer_name: '',
@@ -28,93 +31,29 @@ const CreditTab = () => {
     type: 'debt' as 'debt' | 'payment',
     amount: '',
     description: '',
+    payment_method: 'pix' as 'pix' | 'cash' | 'card',
   });
 
-  useEffect(() => {
-    fetchCreditAccounts();
-  }, [user]);
-
-  const fetchCreditAccounts = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('credit_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('total_debt', { ascending: false });
-      
-      if (error) throw error;
-      setAccounts(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar contas de fiado:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as contas de fiado",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const accounts = data.creditAccounts;
+  const filteredAccounts = accounts.filter(account => 
+    account.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (account.customer_phone || '').includes(searchTerm)
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
+    
     try {
       const amount = parseFloat(formData.amount);
-      let accountId = formData.existing_customer_id;
-
-      // Se for cliente novo, criar primeiro
+      
       if (formData.is_new_customer) {
-        const { data: newAccount, error: accountError } = await supabase
-          .from('credit_accounts')
-          .insert([{
-            user_id: user.id,
-            customer_name: formData.customer_name,
-            customer_phone: formData.customer_phone,
-            total_debt: 0
-          }])
-          .select()
-          .single();
-
-        if (accountError) throw accountError;
-        accountId = newAccount.id;
-      }
-
-      // Inserir transação
-      const { error: transactionError } = await supabase
-        .from('credit_transactions')
-        .insert([{
-          credit_account_id: accountId,
-          user_id: user.id,
-          type: formData.type,
-          amount: amount,
-          description: formData.description,
-        }]);
-
-      if (transactionError) throw transactionError;
-
-      // Atualizar saldo da conta
-      const account = formData.is_new_customer 
-        ? { id: accountId, total_debt: 0 }
-        : accounts.find(a => a.id === accountId);
-      
-      if (account) {
-        const newDebt = formData.type === 'debt' 
-          ? Number(account.total_debt) + amount 
-          : Number(account.total_debt) - amount;
-
-        const { error: updateError } = await supabase
-          .from('credit_accounts')
-          .update({ total_debt: Math.max(0, newDebt) })
-          .eq('id', accountId);
-
-        if (updateError) throw updateError;
+        // Criar nova conta usando o contexto
+        await addCreditTransaction('', formData.type, amount, formData.description);
+      } else {
+        // Usar conta existente
+        await addCreditTransaction(formData.existing_customer_id, formData.type, amount, formData.description);
       }
       
-      await fetchCreditAccounts();
       setShowTransactionForm(false);
       setFormData({
         is_new_customer: true,
@@ -124,114 +63,204 @@ const CreditTab = () => {
         type: 'debt',
         amount: '',
         description: '',
+        payment_method: 'pix',
       });
       
-      toast({
-        title: "Sucesso",
-        description: `${formData.type === 'debt' ? 'Débito' : 'Pagamento'} registrado com sucesso!`,
-      });
     } catch (error) {
       console.error('Erro ao processar operação:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível processar a operação",
-        variant: "destructive",
-      });
     }
   };
 
-  const totalDebt = accounts.reduce((sum, account) => sum + Number(account.total_debt), 0);
-  const clientsWithDebt = accounts.filter(account => Number(account.total_debt) > 0).length;
+  const handleClientClick = (client: CreditAccount) => {
+    setSelectedClient(client);
+    setShowClientHistory(true);
+  };
 
-  if (loading) return <div>Carregando...</div>;
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.text('Relatório do Crediário', 20, 30);
+    
+    doc.setFontSize(12);
+    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 45);
+    
+    let yPosition = 65;
+    
+    filteredAccounts.forEach((account, index) => {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 30;
+      }
+      
+      doc.text(`${index + 1}. ${account.customer_name}`, 20, yPosition);
+      doc.text(`Telefone: ${account.customer_phone || 'N/A'}`, 30, yPosition + 10);
+      doc.text(`Saldo: R$ ${Number(account.total_debt).toFixed(2)}`, 30, yPosition + 20);
+      
+      yPosition += 35;
+    });
+    
+    doc.save('crediario-relatorio.pdf');
+  };
+
+  const exportToExcel = () => {
+    const worksheetData = filteredAccounts.map(account => ({
+      'Cliente': account.customer_name,
+      'Telefone': account.customer_phone || '',
+      'Saldo Devedor': Number(account.total_debt).toFixed(2),
+      'Status': Number(account.total_debt) > 0 ? 'Em débito' : 'Quitado',
+      'Data Cadastro': new Date(account.created_at).toLocaleDateString('pt-BR')
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Crediário');
+    
+    XLSX.writeFile(workbook, 'crediario-relatorio.xlsx');
+  };
+
+  const totalDebt = data.totalDebt;
+  const clientsWithDebt = accounts.filter(account => Number(account.total_debt) > 0).length;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Controle de Fiado</h2>
-          <p className="text-gray-600">Registre débitos e pagamentos de forma simples</p>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            💳 Crediário
+          </h2>
+          <p className="text-muted-foreground">Sistema inteligente de crédito para sua loja</p>
         </div>
-        <Button 
-          onClick={() => setShowTransactionForm(!showTransactionForm)} 
-          className="bg-orange-600 hover:bg-orange-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {showTransactionForm ? 'Fechar' : 'Registrar Operação'}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            onClick={() => setShowTransactionForm(!showTransactionForm)} 
+            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {showTransactionForm ? 'Fechar' : 'Nova Operação'}
+          </Button>
+          <Button variant="outline" onClick={exportToPDF} className="border-orange-200 text-orange-600 hover:bg-orange-50">
+            <FileDown className="h-4 w-4 mr-2" />
+            PDF
+          </Button>
+          <Button variant="outline" onClick={exportToExcel} className="border-green-200 text-green-600 hover:bg-green-50">
+            <FileDown className="h-4 w-4 mr-2" />
+            Excel
+          </Button>
+        </div>
       </div>
 
-      {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
+      {/* Métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-l-4 border-l-red-500 shadow-lg">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total em Débito</p>
+                <p className="text-sm font-medium text-muted-foreground">💰 Dinheiro em Aberto</p>
                 <p className="text-2xl font-bold text-red-600">
                   R$ {totalDebt.toFixed(2).replace('.', ',')}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-red-600" />
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-red-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-l-4 border-l-orange-500 shadow-lg">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Clientes Devendo</p>
+                <p className="text-sm font-medium text-muted-foreground">⚠️ Clientes Devendo</p>
                 <p className="text-2xl font-bold text-orange-600">{clientsWithDebt}</p>
               </div>
-              <Users className="h-8 w-8 text-orange-600" />
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-orange-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-l-4 border-l-blue-500 shadow-lg">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total de Clientes</p>
+                <p className="text-sm font-medium text-muted-foreground">👥 Total de Clientes</p>
                 <p className="text-2xl font-bold text-blue-600">{accounts.length}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Formulário Unificado */}
+      {/* Barra de Pesquisa */}
+      <Card className="shadow-lg">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="🔍 Buscar cliente por nome ou telefone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-11 text-base"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Formulário Moderno */}
       {showTransactionForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Registrar Débito ou Pagamento</CardTitle>
+        <Card className="shadow-xl border-orange-200">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b">
+            <CardTitle className="text-xl flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <Plus className="h-5 w-5 text-orange-600" />
+              </div>
+              Nova Operação do Crediário
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Tipo de Operação */}
-              <div>
-                <Label htmlFor="type">Tipo de Operação</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={(value: 'debt' | 'payment') => 
-                    setFormData({...formData, type: value})
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="debt">📝 Novo Débito (Cliente ficou devendo)</SelectItem>
-                    <SelectItem value="payment">💰 Pagamento (Cliente pagou)</SelectItem>
-                  </SelectContent>
-                </Select>
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Tipo de Operação com Cards */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">Tipo de Operação</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card 
+                    className={`cursor-pointer transition-all ${formData.type === 'debt' 
+                      ? 'border-red-500 bg-red-50' 
+                      : 'border-muted hover:border-red-300'
+                    }`}
+                    onClick={() => setFormData({...formData, type: 'debt'})}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl mb-2">📝</div>
+                      <h3 className="font-medium">Novo Débito</h3>
+                      <p className="text-sm text-muted-foreground">Cliente ficou devendo</p>
+                    </CardContent>
+                  </Card>
+                  <Card 
+                    className={`cursor-pointer transition-all ${formData.type === 'payment' 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-muted hover:border-green-300'
+                    }`}
+                    onClick={() => setFormData({...formData, type: 'payment'})}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <div className="text-2xl mb-2">💰</div>
+                      <h3 className="font-medium">Pagamento</h3>
+                      <p className="text-sm text-muted-foreground">Cliente pagou</p>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
 
               {/* Cliente */}
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   <Switch
                     id="customer-type"
                     checked={formData.is_new_customer}
@@ -239,8 +268,8 @@ const CreditTab = () => {
                       setFormData({...formData, is_new_customer: checked})
                     }
                   />
-                  <Label htmlFor="customer-type">
-                    {formData.is_new_customer ? "Cliente novo" : "Cliente existente"}
+                  <Label htmlFor="customer-type" className="font-medium">
+                    {formData.is_new_customer ? "👤 Cliente novo" : "📋 Cliente existente"}
                   </Label>
                 </div>
 
@@ -251,16 +280,18 @@ const CreditTab = () => {
                       <Input
                         value={formData.customer_name}
                         onChange={(e) => setFormData({...formData, customer_name: e.target.value})}
-                        placeholder="Nome completo"
+                        placeholder="Digite o nome completo"
+                        className="h-11"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="customer_phone">Telefone (WhatsApp)</Label>
+                      <Label htmlFor="customer_phone">WhatsApp</Label>
                       <Input
                         value={formData.customer_phone}
                         onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
                         placeholder="(11) 99999-9999"
+                        className="h-11"
                       />
                     </div>
                   </div>
@@ -273,13 +304,21 @@ const CreditTab = () => {
                         setFormData({...formData, existing_customer_id: value})
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o cliente" />
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Escolha o cliente da lista" />
                       </SelectTrigger>
                       <SelectContent>
                         {accounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
-                            {account.customer_name} - Deve: R$ {Number(account.total_debt).toFixed(2).replace('.', ',')}
+                            <div className="flex items-center justify-between w-full">
+                              <span>{account.customer_name}</span>
+                              <Badge variant={Number(account.total_debt) > 0 ? "destructive" : "default"} className="ml-2">
+                                {Number(account.total_debt) > 0 
+                                  ? `Deve: R$ ${Number(account.total_debt).toFixed(2).replace('.', ',')}`
+                                  : 'Em dia'
+                                }
+                              </Badge>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -290,32 +329,63 @@ const CreditTab = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="amount">Valor</Label>
+                  <Label htmlFor="amount">💵 Valor</Label>
                   <Input
                     type="number"
                     step="0.01"
                     value={formData.amount}
                     onChange={(e) => setFormData({...formData, amount: e.target.value})}
                     placeholder="0,00"
+                    className="h-11 text-lg"
                     required
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="description">Descrição</Label>
-                  <Input
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    placeholder="Ex: Compra de produtos"
-                  />
-                </div>
+                {formData.type === 'payment' && (
+                  <div>
+                    <Label htmlFor="payment_method">Forma de Pagamento</Label>
+                    <Select 
+                      value={formData.payment_method} 
+                      onValueChange={(value: 'pix' | 'cash' | 'card') => 
+                        setFormData({...formData, payment_method: value})
+                      }
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pix">🔵 PIX</SelectItem>
+                        <SelectItem value="cash">💵 Dinheiro</SelectItem>
+                        <SelectItem value="card">💳 Cartão</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
-                  {formData.type === 'debt' ? '📝 Registrar Débito' : '💰 Registrar Pagamento'}
+              <div>
+                <Label htmlFor="description">📝 Descrição</Label>
+                <Input
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder="Ex: Compra de produtos, Parcela do mês..."
+                  className="h-11"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  type="submit" 
+                  className="flex-1 h-12 text-base bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                >
+                  {formData.type === 'debt' ? '📝 Registrar Débito' : '💰 Confirmar Pagamento'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowTransactionForm(false)}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowTransactionForm(false)}
+                  className="px-8 h-12"
+                >
                   Cancelar
                 </Button>
               </div>
@@ -324,47 +394,75 @@ const CreditTab = () => {
         </Card>
       )}
 
-      {/* Lista de Clientes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Clientes e Débitos</CardTitle>
+      {/* Lista Moderna de Clientes */}
+      <Card className="shadow-lg">
+        <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-gray-100">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Users className="h-5 w-5" />
+            Meus Clientes ({filteredAccounts.length})
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          {accounts.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Nenhum cliente cadastrado</p>
-              <p className="text-sm">Registre sua primeira operação para começar</p>
+        <CardContent className="p-0">
+          {filteredAccounts.length === 0 ? (
+            <div className="text-center py-12 px-6">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-medium mb-2 text-muted-foreground">
+                {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {searchTerm ? 'Tente uma busca diferente' : 'Registre sua primeira operação para começar'}
+              </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {accounts.map((account) => (
-                <div key={account.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      Number(account.total_debt) > 0 ? 'bg-red-100' : 'bg-green-100'
-                    }`}>
-                      <Users className={`h-6 w-6 ${
+            <div className="divide-y">
+              {filteredAccounts.map((account) => (
+                <div 
+                  key={account.id} 
+                  className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleClientClick(account)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        Number(account.total_debt) > 0 ? 'bg-red-100' : 'bg-green-100'
+                      }`}>
+                        <Users className={`h-6 w-6 ${
+                          Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
+                        }`} />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-lg">{account.customer_name}</p>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          {account.customer_phone && (
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              {account.customer_phone}
+                            </span>
+                          )}
+                          <span>Clique para ver histórico</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-xl font-bold mb-1 ${
                         Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
-                      }`} />
+                      }`}>
+                        {Number(account.total_debt) > 0 
+                          ? `R$ ${Number(account.total_debt).toFixed(2).replace('.', ',')}`
+                          : '✅ Quitado'
+                        }
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={Number(account.total_debt) > 0 ? "destructive" : "default"} 
+                          className="text-xs"
+                        >
+                          {Number(account.total_debt) > 0 ? '⚠️ Em débito' : '✅ Em dia'}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{account.customer_name}</p>
-                      {account.customer_phone && (
-                        <p className="text-sm text-gray-500">{account.customer_phone}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold ${
-                      Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      {Number(account.total_debt) > 0 ? 'Deve: ' : 'Quitado'}
-                      {Number(account.total_debt) > 0 && `R$ ${Number(account.total_debt).toFixed(2).replace('.', ',')}`}
-                    </p>
-                    <Badge variant={Number(account.total_debt) > 0 ? "destructive" : "default"} className="text-xs">
-                      {Number(account.total_debt) > 0 ? 'Em débito' : 'Em dia'}
-                    </Badge>
                   </div>
                 </div>
               ))}
@@ -372,6 +470,13 @@ const CreditTab = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Histórico */}
+      <ClientHistoryModal
+        isOpen={showClientHistory}
+        onClose={() => setShowClientHistory(false)}
+        client={selectedClient}
+      />
     </div>
   );
 };

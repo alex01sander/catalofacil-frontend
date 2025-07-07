@@ -22,7 +22,7 @@ const FinancialManagement = () => {
           </TabsTrigger>
           <TabsTrigger value="credit" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Fiado
+            Crediário
           </TabsTrigger>
           <TabsTrigger value="expenses" className="flex items-center gap-2">
             <Receipt className="h-4 w-4" />
