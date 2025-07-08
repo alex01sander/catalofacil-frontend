@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tables } from "@/integrations/supabase/types";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { ptBR } from "date-fns/locale";
 
 type Expense = Tables<'expenses'>;
 
@@ -291,10 +294,13 @@ const ExpensesTab = () => {
 
                 <div>
                   <Label htmlFor="due_date">Data de Vencimento</Label>
-                  <Input
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                  <DatePicker
+                    selected={formData.due_date ? new Date(formData.due_date) : null}
+                    onChange={date => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })}
+                    dateFormat="dd/MM/yyyy"
+                    locale={ptBR}
+                    placeholderText="dd/mm/aaaa"
+                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
