@@ -46,6 +46,7 @@ export const useFinancial = () => {
 export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [storeId, setStoreId] = useState<string | null>(null);
   const [data, setData] = useState<FinancialData>({
     cashFlow: [],
     creditAccounts: [],
@@ -63,6 +64,17 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     
     try {
+      // Buscar store_id do usuário
+      const { data: storeData } = await supabase
+        .from('stores')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (storeData) {
+        setStoreId(storeData.id);
+      }
+      
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
         supabase.from('cash_flow').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('credit_accounts').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -219,6 +231,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         .from('sales')
         .insert([{
           user_id: user!.id,
+          store_id: storeId,
           product_name: product.name,
           quantity: quantity,
           unit_price: unitPrice,
@@ -240,7 +253,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       // Adicionar ao fluxo de caixa
       await addCashFlowEntry({
         user_id: user!.id,
-        store_id: null,
+        store_id: storeId,
         type: 'income',
         category: 'sale',
         description: `Venda: ${product.name} (${quantity}x)`,
