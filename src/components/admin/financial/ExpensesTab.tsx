@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,20 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Receipt, AlertCircle, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Tables } from "@/integrations/supabase/types";
+import { useFinancial } from "@/contexts/FinancialContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ptBR } from "date-fns/locale";
 
-type Expense = Tables<'expenses'>;
-
 const ExpensesTab = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, addExpense, updateExpense, addCashFlowEntry } = useFinancial();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -33,57 +29,25 @@ const ExpensesTab = () => {
     recurring_frequency: 'monthly',
   });
 
-  useEffect(() => {
-    fetchExpenses();
-  }, [user]);
-
-  const fetchExpenses = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('due_date', { ascending: true });
-      
-      if (error) throw error;
-      setExpenses(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar despesas:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as despesas",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('expenses')
-        .insert([{
-          user_id: user.id,
-          name: formData.name,
-          category: formData.category,
-          type: formData.type,
-          amount: parseFloat(formData.amount),
-          due_date: formData.due_date || null,
-          is_recurring: formData.is_recurring,
-          recurring_frequency: formData.is_recurring ? formData.recurring_frequency : null,
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
+      await addExpense({
+        user_id: user.id,
+        name: formData.name,
+        category: formData.category,
+        type: formData.type,
+        amount: parseFloat(formData.amount),
+        due_date: formData.due_date || null,
+        is_recurring: formData.is_recurring,
+        recurring_frequency: formData.is_recurring ? formData.recurring_frequency : null,
+        paid_date: null,
+        status: 'pending',
+        store_id: null,
+      });
       
-      setExpenses(prev => [data, ...prev]);
       setShowForm(false);
       setFormData({
         name: '',
@@ -94,37 +58,34 @@ const ExpensesTab = () => {
         is_recurring: false,
         recurring_frequency: 'monthly',
       });
-      
-      toast({
-        title: "Sucesso",
-        description: "Despesa adicionada com sucesso!",
-      });
     } catch (error) {
       console.error('Erro ao salvar despesa:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar a despesa",
-        variant: "destructive",
-      });
     }
   };
 
-  const markAsPaid = async (expenseId: string) => {
+  const markAsPaid = async (expenseId: string, expense: any) => {
     try {
-      const { error } = await supabase
-        .from('expenses')
-        .update({ 
-          status: 'paid',
-          paid_date: new Date().toISOString().split('T')[0]
-        })
-        .eq('id', expenseId);
+      // Atualizar status da despesa
+      await updateExpense(expenseId, { 
+        status: 'paid',
+        paid_date: new Date().toISOString().split('T')[0]
+      });
 
-      if (error) throw error;
-      
-      await fetchExpenses();
+      // Registrar no fluxo de caixa
+      await addCashFlowEntry({
+        user_id: user!.id,
+        store_id: null,
+        type: 'expense',
+        category: 'expense',
+        description: `Pagamento: ${expense.name}`,
+        amount: Number(expense.amount),
+        date: new Date().toISOString().split('T')[0],
+        payment_method: 'cash'
+      });
+
       toast({
         title: "Sucesso",
-        description: "Despesa marcada como paga!",
+        description: "Despesa marcada como paga e registrada no fluxo de caixa!",
       });
     } catch (error) {
       console.error('Erro ao marcar despesa como paga:', error);
@@ -136,6 +97,7 @@ const ExpensesTab = () => {
     }
   };
 
+  const expenses = data.expenses;
   const totalFixed = expenses.filter(e => e.category === 'fixed').reduce((sum, e) => sum + Number(e.amount), 0);
   const totalVariable = expenses.filter(e => e.category === 'variable').reduce((sum, e) => sum + Number(e.amount), 0);
   const totalPending = expenses.filter(e => e.status === 'pending').reduce((sum, e) => sum + Number(e.amount), 0);
@@ -145,7 +107,7 @@ const ExpensesTab = () => {
     new Date(e.due_date) < new Date()
   ).length;
 
-  if (loading) return <div>Carregando...</div>;
+  if (data.isLoading) return <div>Carregando...</div>;
 
   return (
     <div className="space-y-6">
@@ -412,7 +374,7 @@ const ExpensesTab = () => {
                       {expense.status === 'pending' && (
                         <Button
                           size="sm"
-                          onClick={() => markAsPaid(expense.id)}
+                          onClick={() => markAsPaid(expense.id, expense)}
                           className="bg-green-600 hover:bg-green-700 text-xs"
                         >
                           Marcar como Pago
