@@ -258,7 +258,7 @@ const ExpensesTab = () => {
                   <Label htmlFor="due_date">Data de Vencimento</Label>
                   <DatePicker
                     selected={formData.due_date ? new Date(formData.due_date) : null}
-                    onChange={date => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })}
+                    onChange={(date: Date | null) => setFormData({ ...formData, due_date: date ? date.toISOString().split('T')[0] : '' })}
                     dateFormat="dd/MM/yyyy"
                     locale={ptBR}
                     placeholderText="dd/mm/aaaa"
