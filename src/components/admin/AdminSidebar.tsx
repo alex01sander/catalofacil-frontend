@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Tag, TrendingUp, Settings, LogOut, Store, Menu, X } from "lucide-react";
+import { LayoutDashboard, Package, Tag, TrendingUp, Settings, LogOut, Store, Menu, X, ShoppingBag } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-type AdminView = "dashboard" | "products" | "categories" | "financial" | "settings";
+type AdminView = "dashboard" | "products" | "categories" | "orders" | "financial" | "settings";
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -33,6 +33,10 @@ const AdminSidebar = ({
     title: "Categorias",
     icon: Tag,
     view: "categories" as AdminView
+  }, {
+    title: "Pedidos",
+    icon: ShoppingBag,
+    view: "orders" as AdminView
   }, {
     title: "Financeiro",
     icon: TrendingUp,
