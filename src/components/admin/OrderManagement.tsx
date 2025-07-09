@@ -32,7 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { toast } from "sonner";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
-import CreateTestOrder from "./CreateTestOrder";
+
 
 interface OrderItem {
   id: string;
@@ -326,14 +326,11 @@ const OrderManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            🛒 Pedidos
-          </h1>
-          <p className="text-muted-foreground">Gerencie os pedidos dos seus clientes</p>
-        </div>
-        <CreateTestOrder onOrderCreated={fetchOrders} />
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          🛒 Pedidos
+        </h1>
+        <p className="text-muted-foreground">Gerencie os pedidos dos seus clientes</p>
       </div>
 
       {/* Filtros */}
@@ -393,98 +390,89 @@ const OrderManagement = () => {
               order.status === 'confirmed' ? 'border-l-green-500' : 'border-l-red-500'
             }`}>
               <CardHeader className="pb-4">
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col md:flex-row md:justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CardTitle className="text-xl">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                      <CardTitle className="text-lg md:text-xl">
                         {order.customer_name}
                       </CardTitle>
-                      <Badge className={`${getStatusColor(order.status)} flex items-center gap-1`}>
+                      <Badge className={`${getStatusColor(order.status)} flex items-center gap-1 w-fit`}>
                         {getStatusIcon(order.status)}
                         {getStatusText(order.status)}
                       </Badge>
                     </div>
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-2 text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 space-y-1">
                       <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(order.created_at).toLocaleString('pt-BR')}
+                        <Calendar className="h-3 w-3" />
+                        {new Date(order.created_at).toLocaleDateString('pt-BR')}
                       </div>
                       {order.customer_phone && (
                         <div className="flex items-center gap-1">
-                          <Phone className="h-4 w-4" />
+                          <Phone className="h-3 w-3" />
                           {order.customer_phone}
-                        </div>
-                      )}
-                      {order.customer_email && (
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-4 w-4" />
-                          {order.customer_email}
                         </div>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-xl md:text-2xl font-bold text-green-600">
                       R$ {order.total_amount.toFixed(2).replace('.', ',')}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      Pedido #{order.id.slice(0, 8)}
+                    <div className="text-xs text-gray-500">
+                      #{order.id.slice(0, 8)}
                     </div>
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent>
-                {/* Items do Pedido */}
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Itens do Pedido
+                {/* Items do Pedido - Compacto */}
+                <div className="mb-4">
+                  <h4 className="font-medium mb-2 text-sm text-gray-600">
+                    {order.order_items.length} {order.order_items.length === 1 ? 'item' : 'itens'}
                   </h4>
-                  <div className="space-y-2">
-                    {order.order_items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <span className="font-medium">{item.product?.name || 'Produto não encontrado'}</span>
-                          <span className="text-gray-500 ml-2">x{item.quantity}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold">
-                            R$ {item.total_price.toFixed(2).replace('.', ',')}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            R$ {item.unit_price.toFixed(2).replace('.', ',')} cada
-                          </div>
-                        </div>
+                  <div className="text-sm space-y-1">
+                    {order.order_items.slice(0, 2).map((item, index) => (
+                      <div key={index} className="flex justify-between">
+                        <span>{item.product?.name} x{item.quantity}</span>
+                        <span className="font-medium">R$ {item.total_price.toFixed(2)}</span>
                       </div>
                     ))}
+                    {order.order_items.length > 2 && (
+                      <div className="text-gray-500 text-xs">
+                        +{order.order_items.length - 2} item(s) a mais
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Ações */}
+                {/* Ações - Compacto */}
                 {order.status === 'pending' && (
-                  <div className="flex flex-col lg:flex-row gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       onClick={() => confirmOrder(order)}
+                      size="sm"
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                     >
-                      <Check className="h-4 w-4 mr-2" />
-                      Confirmar Pedido
+                      <Check className="h-3 w-3 mr-1" />
+                      Confirmar
                     </Button>
                     <Button
                       onClick={() => openEditModal(order)}
+                      size="sm"
                       variant="outline"
                       className="flex-1"
                     >
-                      <Edit3 className="h-4 w-4 mr-2" />
-                      Editar Pedido
+                      <Edit3 className="h-3 w-3 mr-1" />
+                      Editar
                     </Button>
                     <Button
                       onClick={() => cancelOrder(order.id)}
+                      size="sm"
                       variant="destructive"
                       className="flex-1"
                     >
-                      <X className="h-4 w-4 mr-2" />
+                      <X className="h-3 w-3 mr-1" />
                       Cancelar
                     </Button>
                   </div>
