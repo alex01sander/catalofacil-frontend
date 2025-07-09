@@ -60,10 +60,9 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   const CACHE_DURATION = 5 * 60 * 1000;
 
   const fetchStoreSettings = async (useCache = true) => {
-    // Não depende mais de user
     // Check cache first
     const now = Date.now();
-    const cacheKey = `store_settings_global`;
+    const cacheKey = `store_settings_domain`;
     if (useCache && lastFetch && (now - lastFetch) < CACHE_DURATION) {
       setLoading(false);
       return;
@@ -71,10 +70,30 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
 
     try {
       setError(null);
+      
+      // Buscar o proprietário do domínio atual
+      const { data: domainOwner, error: domainError } = await supabase
+        .rpc('get_current_domain_owner');
+      
+      if (domainError) {
+        console.error('Error getting domain owner:', domainError);
+        setSettings(defaultSettings);
+        setLoading(false);
+        return;
+      }
+      
+      // Se não encontrou proprietário do domínio, usar configurações padrão
+      if (!domainOwner) {
+        setSettings(defaultSettings);
+        setLoading(false);
+        return;
+      }
+      
+      // Buscar configurações da loja do proprietário do domínio
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
-        .limit(1)
+        .eq('user_id', domainOwner)
         .maybeSingle();
 
       if (fetchError) {
@@ -98,12 +117,13 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         };
         setSettings(newSettings);
         setLastFetch(now);
-        // Cache global
+        // Cache por domínio
         localStorage.setItem(cacheKey, JSON.stringify({
           data: newSettings,
           timestamp: now
         }));
       } else {
+        // Se não há dados, retornar configurações padrão para o proprietário configurar
         setSettings(defaultSettings);
       }
     } catch (error) {
@@ -152,8 +172,8 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   };
 
   useEffect(() => {
-    // Não depende mais de user
-    const cacheKey = `store_settings_global`;
+    // Cache por domínio
+    const cacheKey = `store_settings_domain`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {

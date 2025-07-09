@@ -40,23 +40,38 @@ export const useStoreSettings = () => {
   const queryClient = useQueryClient();
 
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
-    if (!user) {
-      console.log('Usuário não autenticado, retornando settings padrão');
+    try {
+      // Buscar o proprietário do domínio atual
+      const { data: domainOwner, error: domainError } = await supabase
+        .rpc('get_current_domain_owner');
+      
+      if (domainError) {
+        console.error('Error getting domain owner:', domainError);
+        return defaultSettings;
+      }
+      
+      // Se não encontrou proprietário do domínio, usar configurações padrão
+      if (!domainOwner) {
+        return defaultSettings;
+      }
+      
+      // Buscar configurações da loja do proprietário do domínio
+      const { data, error } = await supabase
+        .from('store_settings')
+        .select('*')
+        .eq('user_id', domainOwner)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching store settings:', error);
+        return defaultSettings;
+      }
+
+      return data || defaultSettings;
+    } catch (error) {
+      console.error('Error in fetchStoreSettings:', error);
       return defaultSettings;
     }
-
-    const { data, error } = await supabase
-      .from('store_settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching store settings:', error);
-      return defaultSettings;
-    }
-
-    return data || defaultSettings;
   };
 
   const {
