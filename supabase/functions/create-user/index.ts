@@ -31,7 +31,33 @@ serve(async (req) => {
     })
 
     if (userError) {
-      throw userError
+      console.error('Erro ao criar usuário:', userError)
+      
+      // Tratar erro específico de email já existente
+      if (userError.message?.includes('already been registered') || userError.message?.includes('email_exists')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Este email já está cadastrado no sistema. Use outro email ou faça login.' 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400 
+          }
+        )
+      }
+      
+      // Outros erros
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: userError.message || 'Erro ao criar usuário' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
     }
 
     console.log('Usuário criado:', userData.user?.id)
