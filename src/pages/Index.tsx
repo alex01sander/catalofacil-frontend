@@ -112,13 +112,7 @@ const Index = () => {
         </section>
 
         {/* Service Features */}
-        <section className="px-4 pb-6">
-          <div className="grid grid-cols-3 gap-3">
-            
-            
-            
-          </div>
-        </section>
+        
       </div>
 
       {/* Desktop Hero Banner */}

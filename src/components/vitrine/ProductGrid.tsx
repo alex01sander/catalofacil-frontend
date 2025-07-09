@@ -64,7 +64,7 @@ const ProductGrid = memo(({
       </section>;
   }
   return <>
-      <section className="py-8 px-4 bg-gray-50">
+      <section className="px-4 bg-gray-50 py-px">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map(product => <ProductCard key={product.id} product={product} onViewDetails={() => handleViewDetails(product)} />)}
