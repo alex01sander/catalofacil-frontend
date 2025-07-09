@@ -36,6 +36,20 @@ const DomainManagement = () => {
   const [deletingDomain, setDeletingDomain] = useState<DomainOwner | null>(null);
   const queryClient = useQueryClient();
 
+  // Buscar todos os usuários para o select
+  const { data: users = [] } = useQuery({
+    queryKey: ['all_users_for_domain'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .order('email');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: domains = [], isLoading } = useQuery({
     queryKey: ['domain_owners'],
     queryFn: async () => {
@@ -227,15 +241,19 @@ const DomainManagement = () => {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="userEmail">Email do Usuário</Label>
-                <Input
-                  id="userEmail"
-                  type="email"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  placeholder="usuario@email.com"
-                  required
-                />
+                <Label htmlFor="userEmail">Proprietário</Label>
+                <Select value={newUserEmail} onValueChange={setNewUserEmail}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.email}>
+                        {user.full_name || user.email} ({user.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <Button 
