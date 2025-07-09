@@ -48,6 +48,8 @@ const Cart = () => {
       const { data: domainOwner, error: domainError } = await supabase
         .rpc('get_current_domain_owner');
       
+      console.log('Domain owner result:', { domainOwner, domainError });
+      
       if (domainError) {
         console.error('Erro ao obter dono do domínio:', domainError);
         toast.error('Erro ao processar pedido. Tente novamente.');
@@ -57,8 +59,17 @@ const Cart = () => {
       const { data: storeId, error: storeError } = await supabase
         .rpc('get_current_store');
       
+      console.log('Store ID result:', { storeId, storeError });
+      
       if (storeError) {
         console.error('Erro ao obter store:', storeError);
+      }
+
+      // Debug: verificar se temos os dados necessários
+      if (!domainOwner) {
+        console.error('Domain owner é null/undefined');
+        toast.error('Erro: não foi possível identificar o dono da loja.');
+        return;
       }
 
       // 2. Criar o pedido na tabela orders
