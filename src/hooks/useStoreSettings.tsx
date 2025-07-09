@@ -106,8 +106,12 @@ export const useStoreSettings = () => {
       
       const { error } = await supabase
         .from('store_settings')
-        .update(newSettings)
-        .eq('user_id', domainOwner);
+        .upsert({
+          ...newSettings,
+          user_id: domainOwner
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
       
