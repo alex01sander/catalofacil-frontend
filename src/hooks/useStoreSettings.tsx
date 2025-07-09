@@ -87,12 +87,27 @@ export const useStoreSettings = () => {
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: Partial<StoreSettings>) => {
-      if (!user) throw new Error('User not authenticated');
+      // Buscar o proprietário do domínio atual para validar permissão de edição
+      const { data: domainOwner, error: domainError } = await supabase
+        .rpc('get_current_domain_owner');
+      
+      if (domainError) {
+        throw new Error('Erro ao identificar proprietário do domínio');
+      }
+      
+      if (!domainOwner) {
+        throw new Error('Domínio não encontrado');
+      }
+      
+      // Verificar se o usuário logado é o proprietário do domínio
+      if (!user || user.id !== domainOwner) {
+        throw new Error('Você não tem permissão para editar as configurações desta loja');
+      }
       
       const { error } = await supabase
         .from('store_settings')
         .update(newSettings)
-        .eq('user_id', user.id);
+        .eq('user_id', domainOwner);
 
       if (error) throw error;
       
