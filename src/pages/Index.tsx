@@ -75,19 +75,11 @@ const Index = () => {
             
             {/* Instagram and WhatsApp Icons */}
             <div className="flex justify-center gap-4 mb-6">
-              <button 
-                onClick={handleInstagramClick} 
-                className="bg-white text-black p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-100" 
-                aria-label="Seguir no Instagram"
-              >
+              <button onClick={handleInstagramClick} className="bg-white text-black p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-100" aria-label="Seguir no Instagram">
                 <FaInstagram size={24} />
               </button>
               
-              <button 
-                onClick={handleWhatsAppClick} 
-                aria-label="Contato via WhatsApp" 
-                className="p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 bg-zinc-50 text-zinc-950"
-              >
+              <button onClick={handleWhatsAppClick} aria-label="Contato via WhatsApp" className="p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 bg-zinc-50 text-zinc-950">
                 <FaWhatsapp size={24} />
               </button>
             </div>
@@ -122,24 +114,9 @@ const Index = () => {
         {/* Service Features */}
         <section className="px-4 pb-6">
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-green-600 text-sm">🚚</span>
-              </div>
-              <p className="text-xs text-gray-600 font-medium">Entrega Rápida</p>
-            </div>
-            <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-blue-600 text-sm">💳</span>
-              </div>
-              <p className="text-xs text-gray-600 font-medium">Desconto no PIX</p>
-            </div>
-            <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-green-600 text-sm">🎁</span>
-              </div>
-              <p className="text-xs text-gray-600 font-medium">Suporte 24h</p>
-            </div>
+            
+            
+            
           </div>
         </section>
       </div>
