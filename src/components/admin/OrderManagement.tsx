@@ -7,10 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   ShoppingBag, 
   User, 
-  Calendar, 
+  CalendarIcon, 
   Package, 
   DollarSign, 
   Check, 
@@ -27,11 +30,14 @@ import {
   Plus,
   Trash2
 } from "lucide-react";
+import { format, isToday, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { toast } from "sonner";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
+import { cn } from "@/lib/utils";
 
 
 interface OrderItem {
@@ -68,6 +74,7 @@ const OrderManagement = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [editingItems, setEditingItems] = useState<OrderItem[]>([]);
 
@@ -270,7 +277,14 @@ const OrderManagement = () => {
     const matchesSearch = order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.customer_phone?.includes(searchTerm) ||
                          order.id.includes(searchTerm);
-    return matchesFilter && matchesSearch;
+    
+    // Filtrar por data selecionada
+    const orderDate = new Date(order.created_at);
+    const matchesDate = selectedDate ? 
+      format(orderDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') :
+      true;
+    
+    return matchesFilter && matchesSearch && matchesDate;
   });
 
   const getStatusIcon = (status: string) => {
@@ -348,6 +362,39 @@ const OrderManagement = () => {
                 />
               </div>
             </div>
+            
+            {/* Calendário */}
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-gray-500" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    {selectedDate ? (
+                      format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecionar data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <Select value={filter} onValueChange={setFilter}>
@@ -366,122 +413,113 @@ const OrderManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Lista de Pedidos */}
-      <div className="grid gap-6">
-        {filteredOrders.length === 0 ? (
-          <Card className="shadow-lg">
-            <CardContent className="p-12 text-center">
-              <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                Nenhum pedido encontrado
-              </h3>
-              <p className="text-gray-400">
-                {searchTerm || filter !== 'all' 
-                  ? 'Tente ajustar os filtros de busca'
-                  : 'Os pedidos dos clientes aparecerão aqui'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredOrders.map((order) => (
-            <Card key={order.id} className={`shadow-lg border-l-4 ${
-              order.status === 'pending' ? 'border-l-yellow-500' :
-              order.status === 'confirmed' ? 'border-l-green-500' : 'border-l-red-500'
-            }`}>
-              <CardHeader className="pb-4">
-                <div className="flex flex-col md:flex-row md:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                      <CardTitle className="text-lg md:text-xl">
-                        {order.customer_name}
-                      </CardTitle>
-                      <Badge className={`${getStatusColor(order.status)} flex items-center gap-1 w-fit`}>
-                        {getStatusIcon(order.status)}
-                        {getStatusText(order.status)}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(order.created_at).toLocaleDateString('pt-BR')}
-                      </div>
-                      {order.customer_phone && (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {order.customer_phone}
+      {/* Tabela de Pedidos */}
+      {filteredOrders.length === 0 ? (
+        <Card className="shadow-lg">
+          <CardContent className="p-12 text-center">
+            <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              Nenhum pedido encontrado
+            </h3>
+            <p className="text-gray-400">
+              {searchTerm || filter !== 'all' || selectedDate
+                ? 'Tente ajustar os filtros de busca'
+                : 'Os pedidos dos clientes aparecerão aqui'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="shadow-lg border-l-4 border-l-primary">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Data</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="hidden md:table-cell">Telefone</TableHead>
+                    <TableHead>Itens</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="w-[200px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="text-sm">
+                        {format(new Date(order.created_at), "dd/MM", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{order.customer_name}</div>
+                          <div className="text-xs text-gray-500">#{order.id.slice(0, 8)}</div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl md:text-2xl font-bold text-green-600">
-                      R$ {order.total_amount.toFixed(2).replace('.', ',')}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      #{order.id.slice(0, 8)}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                {/* Items do Pedido - Compacto */}
-                <div className="mb-4">
-                  <h4 className="font-medium mb-2 text-sm text-gray-600">
-                    {order.order_items.length} {order.order_items.length === 1 ? 'item' : 'itens'}
-                  </h4>
-                  <div className="text-sm space-y-1">
-                    {order.order_items.slice(0, 2).map((item, index) => (
-                      <div key={index} className="flex justify-between">
-                        <span>{item.product?.name} x{item.quantity}</span>
-                        <span className="font-medium">R$ {item.total_price.toFixed(2)}</span>
-                      </div>
-                    ))}
-                    {order.order_items.length > 2 && (
-                      <div className="text-gray-500 text-xs">
-                        +{order.order_items.length - 2} item(s) a mais
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Ações - Compacto */}
-                {order.status === 'pending' && (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      onClick={() => confirmOrder(order)}
-                      size="sm"
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Check className="h-3 w-3 mr-1" />
-                      Confirmar
-                    </Button>
-                    <Button
-                      onClick={() => openEditModal(order)}
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <Edit3 className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                    <Button
-                      onClick={() => cancelOrder(order.id)}
-                      size="sm"
-                      variant="destructive"
-                      className="flex-1"
-                    >
-                      <X className="h-3 w-3 mr-1" />
-                      Cancelar
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">
+                        {order.customer_phone || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{order.order_items.length} {order.order_items.length === 1 ? 'item' : 'itens'}</div>
+                          <div className="text-xs text-gray-500">
+                            {order.order_items.slice(0, 1).map(item => item.product?.name).join(', ')}
+                            {order.order_items.length > 1 && ' +'}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${getStatusColor(order.status)} flex items-center gap-1 w-fit`}>
+                          {getStatusIcon(order.status)}
+                          <span className="hidden sm:inline">{getStatusText(order.status)}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        <div className="text-green-600">
+                          R$ {order.total_amount.toFixed(2).replace('.', ',')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {order.status === 'pending' ? (
+                          <div className="flex gap-1">
+                            <Button
+                              onClick={() => confirmOrder(order)}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={() => openEditModal(order)}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0"
+                            >
+                              <Edit3 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={() => cancelOrder(order.id)}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modal de Edição */}
       <Dialog open={!!editingOrder} onOpenChange={() => setEditingOrder(null)}>
