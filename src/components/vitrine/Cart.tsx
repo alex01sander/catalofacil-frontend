@@ -8,6 +8,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { ShoppingCart, Plus, Minus, Trash2, User, MapPin, CreditCard } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Cart = () => {
   const {
@@ -35,39 +37,110 @@ const Cart = () => {
       [field]: value
     }));
   };
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.phone || formData.deliveryMethod === 'delivery' && !formData.address) {
-      alert('Por favor, preencha todos os campos obrigatórios');
+      toast.error('Por favor, preencha todos os campos obrigatórios');
       return;
     }
-    const orderSummary = items.map(item => `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
-    const paymentMethodText = {
-      pix: 'PIX',
-      money: 'Dinheiro',
-      credit: 'Cartão de Crédito',
-      debit: 'Cartão de Débito'
-    }[formData.paymentMethod];
-    const deliveryMethodText = formData.deliveryMethod === 'delivery' ? 'Entrega' : 'Retirada no Local';
-    const message = `🛍️ *Novo Pedido*\n\n👤 *Dados do Cliente:*\n• Nome: ${formData.name}\n• Telefone: ${formData.phone}\n${formData.deliveryMethod === 'delivery' ? `• Endereço: ${formData.address}` : ''}\n\n📋 *Itens do Pedido:*\n${orderSummary}\n\n💰 *Resumo Financeiro:*\n• Total: R$ ${totalPrice.toFixed(2).replace('.', ',')}\n• Forma de Pagamento: ${paymentMethodText}\n• Forma de Entrega: ${deliveryMethodText}\n\n📅 Data: ${new Date().toLocaleDateString('pt-BR')}\n⏰ Horário: ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit',minute: '2-digit'})}\n\nObrigado pela preferência! 😊`;
-    window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
-    setLastOrder({
-      ...formData,
-      items: [...items],
-      total: totalPrice,
-      paymentMethodText,
-      deliveryMethodText
-    });
-    setShowThankYou(true);
-    clearCart();
-    setShowCheckoutForm(false);
-    setIsSheetOpen(false);
-    setFormData({
-      name: '',
-      phone: '',
-      address: '',
-      paymentMethod: 'pix',
-      deliveryMethod: 'delivery'
-    });
+
+    try {
+      // 1. Obter o dono da loja atual e store_id
+      const { data: domainOwner, error: domainError } = await supabase
+        .rpc('get_current_domain_owner');
+      
+      if (domainError) {
+        console.error('Erro ao obter dono do domínio:', domainError);
+        toast.error('Erro ao processar pedido. Tente novamente.');
+        return;
+      }
+
+      const { data: storeId, error: storeError } = await supabase
+        .rpc('get_current_store');
+      
+      if (storeError) {
+        console.error('Erro ao obter store:', storeError);
+      }
+
+      // 2. Criar o pedido na tabela orders
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          customer_name: formData.name,
+          customer_phone: formData.phone,
+          customer_email: formData.deliveryMethod === 'delivery' ? null : formData.address, // Usando campo email como campo adicional se necessário
+          total_amount: totalPrice,
+          status: 'pending',
+          store_id: storeId,
+          store_owner_id: domainOwner
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error('Erro ao criar pedido:', orderError);
+        toast.error('Erro ao criar pedido. Tente novamente.');
+        return;
+      }
+
+      // 3. Criar os itens do pedido na tabela order_items
+      const orderItems = items.map(item => ({
+        order_id: order.id,
+        product_id: item.id.toString(),
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) {
+        console.error('Erro ao criar itens do pedido:', itemsError);
+        toast.error('Erro ao criar itens do pedido. Tente novamente.');
+        return;
+      }
+
+      // 4. Enviar mensagem para WhatsApp (mantendo funcionalidade original)
+      const orderSummary = items.map(item => `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
+      const paymentMethodText = {
+        pix: 'PIX',
+        money: 'Dinheiro',
+        credit: 'Cartão de Crédito',
+        debit: 'Cartão de Débito'
+      }[formData.paymentMethod];
+      const deliveryMethodText = formData.deliveryMethod === 'delivery' ? 'Entrega' : 'Retirada no Local';
+      const message = `🛍️ *Novo Pedido #${order.id.slice(0, 8)}*\n\n👤 *Dados do Cliente:*\n• Nome: ${formData.name}\n• Telefone: ${formData.phone}\n${formData.deliveryMethod === 'delivery' ? `• Endereço: ${formData.address}` : ''}\n\n📋 *Itens do Pedido:*\n${orderSummary}\n\n💰 *Resumo Financeiro:*\n• Total: R$ ${totalPrice.toFixed(2).replace('.', ',')}\n• Forma de Pagamento: ${paymentMethodText}\n• Forma de Entrega: ${deliveryMethodText}\n\n📅 Data: ${new Date().toLocaleDateString('pt-BR')}\n⏰ Horário: ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit',minute: '2-digit'})}\n\nObrigado pela preferência! 😊`;
+      
+      window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
+
+      // 5. Sucesso - atualizar interface
+      setLastOrder({
+        ...formData,
+        items: [...items],
+        total: totalPrice,
+        paymentMethodText,
+        deliveryMethodText,
+        orderId: order.id
+      });
+
+      toast.success('Pedido criado com sucesso!');
+      setShowThankYou(true);
+      clearCart();
+      setShowCheckoutForm(false);
+      setIsSheetOpen(false);
+      setFormData({
+        name: '',
+        phone: '',
+        address: '',
+        paymentMethod: 'pix',
+        deliveryMethod: 'delivery'
+      });
+
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast.error('Erro inesperado. Tente novamente.');
+    }
   };
   return (
     <>
