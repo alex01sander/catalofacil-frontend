@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { toast } from "sonner";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
+import CreateTestOrder from "./CreateTestOrder";
 
 interface OrderItem {
   id: string;
@@ -325,11 +326,14 @@ const OrderManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          🛒 Pedidos
-        </h1>
-        <p className="text-muted-foreground">Gerencie os pedidos dos seus clientes</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            🛒 Pedidos
+          </h1>
+          <p className="text-muted-foreground">Gerencie os pedidos dos seus clientes</p>
+        </div>
+        <CreateTestOrder onOrderCreated={fetchOrders} />
       </div>
 
       {/* Filtros */}
