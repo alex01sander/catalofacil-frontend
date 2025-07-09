@@ -40,10 +40,15 @@ export const useStoreSettings = () => {
   const queryClient = useQueryClient();
 
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
+    if (!user) {
+      console.log('Usuário não autenticado, retornando settings padrão');
+      return defaultSettings;
+    }
+
     const { data, error } = await supabase
       .from('store_settings')
       .select('*')
-      .limit(1)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (error) {
