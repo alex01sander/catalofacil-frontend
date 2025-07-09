@@ -5,14 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Edit, Search } from "lucide-react";
+import EditDomainModal from "./EditDomainModal";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 interface DomainOwner {
   id: string;
   domain: string;
+  domain_type: string;
   user_id: string;
   created_at: string;
   profiles: {
@@ -24,6 +29,11 @@ interface DomainOwner {
 const DomainManagement = () => {
   const [newDomain, setNewDomain] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [newDomainType, setNewDomainType] = useState<"domain" | "subdomain">("domain");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "domain" | "subdomain">("all");
+  const [editingDomain, setEditingDomain] = useState<DomainOwner | null>(null);
+  const [deletingDomain, setDeletingDomain] = useState<DomainOwner | null>(null);
   const queryClient = useQueryClient();
 
   const { data: domains = [], isLoading } = useQuery({
@@ -60,7 +70,32 @@ const DomainManagement = () => {
   });
 
   const addDomainMutation = useMutation({
-    mutationFn: async ({ domain, userEmail }: { domain: string; userEmail: string }) => {
+    mutationFn: async ({ domain, userEmail, domainType }: { 
+      domain: string; 
+      userEmail: string; 
+      domainType: "domain" | "subdomain" 
+    }) => {
+      // Validar formato do domínio
+      const domainRegex = domainType === 'subdomain' 
+        ? /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?){2,}$/
+        : /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+      
+      if (!domainRegex.test(domain.toLowerCase())) {
+        throw new Error(`Formato inválido para ${domainType === 'subdomain' ? 'subdomínio' : 'domínio'}`);
+      }
+
+      // Verificar se já existe
+      const { data: existingDomain, error: checkError } = await supabase
+        .from('domain_owners')
+        .select('id')
+        .eq('domain', domain.toLowerCase())
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+      if (existingDomain) {
+        throw new Error('Este domínio já está cadastrado');
+      }
+
       // Primeiro, buscar o usuário pelo email
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -75,7 +110,7 @@ const DomainManagement = () => {
       // Inserir o domínio
       const { error } = await supabase
         .from('domain_owners')
-        .insert([{ domain, user_id: profile.id }]);
+        .insert([{ domain: domain.toLowerCase(), user_id: profile.id, domain_type: domainType }]);
 
       if (error) throw error;
     },
@@ -83,6 +118,7 @@ const DomainManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['domain_owners'] });
       setNewDomain("");
       setNewUserEmail("");
+      setNewDomainType("domain");
       toast.success("Domínio adicionado com sucesso!");
     },
     onError: (error: any) => {
@@ -117,9 +153,28 @@ const DomainManagement = () => {
     
     addDomainMutation.mutate({ 
       domain: newDomain.trim(), 
-      userEmail: newUserEmail.trim() 
+      userEmail: newUserEmail.trim(),
+      domainType: newDomainType
     });
   };
+
+  const handleDeleteDomain = () => {
+    if (deletingDomain) {
+      deleteDomainMutation.mutate(deletingDomain.id);
+      setDeletingDomain(null);
+    }
+  };
+
+  // Filtrar domínios
+  const filteredDomains = domains.filter(domain => {
+    const matchesSearch = domain.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         domain.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         domain.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = filterType === "all" || domain.domain_type === filterType;
+    
+    return matchesSearch && matchesType;
+  });
 
   if (isLoading) {
     return (
@@ -148,16 +203,28 @@ const DomainManagement = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddDomain} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="domain">Domínio</Label>
+                <Label htmlFor="domain">Domínio/Subdomínio</Label>
                 <Input
                   id="domain"
                   value={newDomain}
                   onChange={(e) => setNewDomain(e.target.value)}
-                  placeholder="exemplo.com"
+                  placeholder="exemplo.com ou sub.exemplo.com"
                   required
                 />
+              </div>
+              <div>
+                <Label htmlFor="domainType">Tipo</Label>
+                <Select value={newDomainType} onValueChange={(value: "domain" | "subdomain") => setNewDomainType(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="domain">Domínio Principal</SelectItem>
+                    <SelectItem value="subdomain">Subdomínio</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="userEmail">Email do Usuário</Label>
@@ -190,15 +257,40 @@ const DomainManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {domains.length === 0 ? (
+          {/* Filtros e Busca */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar por domínio, nome ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select value={filterType} onValueChange={(value: "all" | "domain" | "subdomain") => setFilterType(value)}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="domain">Apenas domínios</SelectItem>
+                <SelectItem value="subdomain">Apenas subdomínios</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {filteredDomains.length === 0 ? (
             <p className="text-center text-gray-500 py-8">
-              Nenhum domínio cadastrado ainda
+              {domains.length === 0 ? "Nenhum domínio cadastrado ainda" : "Nenhum domínio encontrado com os filtros aplicados"}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Domínio</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Proprietário</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Data de Criação</TableHead>
@@ -206,23 +298,36 @@ const DomainManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {domains.map((domain) => (
+                {filteredDomains.map((domain) => (
                   <TableRow key={domain.id}>
                     <TableCell className="font-medium">{domain.domain}</TableCell>
+                    <TableCell>
+                      <Badge variant={domain.domain_type === 'subdomain' ? 'secondary' : 'default'}>
+                        {domain.domain_type === 'subdomain' ? 'Subdomínio' : 'Domínio'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{domain.profiles?.full_name || 'Nome não informado'}</TableCell>
                     <TableCell>{domain.profiles?.email || 'Email não encontrado'}</TableCell>
                     <TableCell>
                       {new Date(domain.created_at).toLocaleDateString('pt-BR')}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteDomainMutation.mutate(domain.id)}
-                        disabled={deleteDomainMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingDomain(domain)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setDeletingDomain(domain)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -231,6 +336,23 @@ const DomainManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modais */}
+      <EditDomainModal
+        domain={editingDomain}
+        isOpen={!!editingDomain}
+        onClose={() => setEditingDomain(null)}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={!!deletingDomain}
+        onClose={() => setDeletingDomain(null)}
+        onConfirm={handleDeleteDomain}
+        title="Excluir Domínio"
+        description="Tem certeza que deseja excluir este domínio? Esta ação não pode ser desfeita."
+        itemName={deletingDomain?.domain || ""}
+        isLoading={deleteDomainMutation.isPending}
+      />
     </div>
   );
 };

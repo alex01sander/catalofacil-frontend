@@ -1,11 +1,15 @@
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { Users, Search, Edit } from "lucide-react";
 import UserCreation from "./UserCreation";
+import EditUserModal from "./EditUserModal";
 
 interface UserProfile {
   id: string;
@@ -18,6 +22,9 @@ interface UserProfile {
 }
 
 const UserManagement = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['active_users'],
     queryFn: async () => {
@@ -58,6 +65,14 @@ const UserManagement = () => {
 
       return usersWithDomains as UserProfile[];
     }
+  });
+
+  // Filtrar usuários por busca
+  const filteredUsers = users.filter(user => {
+    const searchLower = searchTerm.toLowerCase();
+    return user.full_name?.toLowerCase().includes(searchLower) ||
+           user.email.toLowerCase().includes(searchLower) ||
+           user.domain_owners.some(domain => domain.domain.toLowerCase().includes(searchLower));
   });
 
   if (isLoading) {
@@ -125,14 +140,27 @@ const UserManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Busca */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar por nome, email ou domínio..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
           {error && (
             <div className="text-red-600 p-4 bg-red-50 rounded-md mb-4">
               Erro ao carregar usuários: {error.message}
             </div>
           )}
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <p className="text-center text-gray-500 py-8">
-              Nenhum usuário encontrado
+              {users.length === 0 ? "Nenhum usuário encontrado" : "Nenhum usuário encontrado com o termo de busca"}
             </p>
           ) : (
             <Table>
@@ -143,10 +171,11 @@ const UserManagement = () => {
                   <TableHead>Domínios</TableHead>
                   <TableHead>Data de Cadastro</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       {user.full_name || 'Nome não informado'}
@@ -178,6 +207,15 @@ const UserManagement = () => {
                         {user.domain_owners.length > 0 ? "Ativo" : "Pendente"}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingUser(user)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -185,6 +223,13 @@ const UserManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Edição */}
+      <EditUserModal
+        user={editingUser}
+        isOpen={!!editingUser}
+        onClose={() => setEditingUser(null)}
+      />
     </div>
   );
 };

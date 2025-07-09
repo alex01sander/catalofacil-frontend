@@ -240,6 +240,7 @@ export type Database = {
         Row: {
           created_at: string | null
           domain: string
+          domain_type: string
           id: string
           updated_at: string | null
           user_id: string
@@ -247,6 +248,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           domain: string
+          domain_type?: string
           id?: string
           updated_at?: string | null
           user_id: string
@@ -254,6 +256,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           domain?: string
+          domain_type?: string
           id?: string
           updated_at?: string | null
           user_id?: string
@@ -703,8 +706,16 @@ export type Database = {
         Args: Record<PropertyKey, never> | { user_id: string }
         Returns: boolean
       }
+      reset_user_password: {
+        Args: { user_email: string; new_password: string }
+        Returns: boolean
+      }
       user_owns_current_domain: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      validate_domain_format: {
+        Args: { domain_input: string; domain_type_input: string }
         Returns: boolean
       }
     }
