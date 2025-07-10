@@ -690,6 +690,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      debug_domain_info: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_current_domain: {
         Args: Record<PropertyKey, never>
         Returns: string

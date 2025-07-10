@@ -8,6 +8,12 @@ export const fetchStoreSettings = async (user: User | null): Promise<StoreSettin
     console.log('🔍 Debug Context: Fetching store settings');
     console.log('🔍 Debug Context: Current user:', user?.id);
     
+    // Debug das informações do domínio
+    const { data: debugInfo, error: debugError } = await supabase
+      .rpc('debug_domain_info');
+    
+    console.log('🔍 Debug Context: Domain debug info:', { debugInfo, debugError });
+    
     // Buscar o proprietário do domínio atual
     const { data: domainOwner, error: domainError } = await supabase
       .rpc('get_current_domain_owner');
@@ -19,8 +25,8 @@ export const fetchStoreSettings = async (user: User | null): Promise<StoreSettin
       return defaultSettings;
     }
     
-    // Para localhost, usar o usuário atual se não há proprietário específico
-    const targetUserId = domainOwner || user?.id;
+    // Usar sempre o domainOwner (que já tem a lógica do localhost incorporada)
+    const targetUserId = domainOwner;
     console.log('🔍 Debug Context: Target user for fetch:', targetUserId);
     
     // Se não temos um usuário alvo, usar configurações padrão
@@ -91,8 +97,8 @@ export const updateStoreSettings = async (
       throw new Error('Erro ao identificar proprietário do domínio');
     }
     
-    // Para localhost ou quando não há domínio específico, usar o usuário atual
-    const targetUserId = domainOwner || user.id;
+    // Usar sempre o domainOwner (que já tem a lógica do localhost incorporada)
+    const targetUserId = domainOwner;
     console.log('🔍 Debug Context: Target user ID:', targetUserId);
     
     // Verificar se o usuário logado é o proprietário do domínio
