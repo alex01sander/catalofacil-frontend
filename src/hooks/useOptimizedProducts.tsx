@@ -40,19 +40,10 @@ export const useOptimizedProducts = ({
   }, [searchTerm]);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
-    // Primeiro, buscar o proprietário do domínio atual
-    const { data: storeOwner, error: ownerError } = await supabase.rpc('get_current_store_owner');
-    
-    if (ownerError) {
-      console.error('Error getting store owner:', ownerError);
-      throw ownerError;
-    }
-
     let query = supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
-      .eq('user_id', storeOwner) // Filtrar apenas produtos do proprietário do domínio
       .order('created_at', { ascending: false });
 
     if (selectedCategory && selectedCategory !== 'todos') {
