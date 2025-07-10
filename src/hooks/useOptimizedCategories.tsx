@@ -11,9 +11,18 @@ interface Category {
 
 export const useOptimizedCategories = (enabled = true) => {
   const fetchCategories = async (): Promise<Category[]> => {
+    // Primeiro, buscar o proprietário do domínio atual
+    const { data: storeOwner, error: ownerError } = await supabase.rpc('get_current_store_owner');
+    
+    if (ownerError) {
+      console.error('Error getting store owner:', ownerError);
+      throw ownerError;
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
+      .eq('user_id', storeOwner) // Filtrar apenas categorias do proprietário do domínio
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -29,7 +38,7 @@ export const useOptimizedCategories = (enabled = true) => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['categories-public'],
+    queryKey: ['categories-domain'],
     queryFn: fetchCategories,
     enabled: enabled,
     staleTime: 30 * 60 * 1000,
