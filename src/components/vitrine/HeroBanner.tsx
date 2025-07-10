@@ -1,4 +1,4 @@
-import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useStoreSettings } from "@/contexts/StoreSettingsContext";
 import { Instagram, MessageCircle } from "lucide-react";
 import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
 

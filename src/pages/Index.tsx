@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useStoreSettings } from "@/contexts/StoreSettingsContext";
 import { useOptimizedCategories } from "@/hooks/useOptimizedCategories";
 import Header from "@/components/vitrine/Header";
 import HeroBanner from "@/components/vitrine/HeroBanner";

@@ -1,5 +1,5 @@
 import { MessageCircle } from "lucide-react";
-import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useStoreSettings } from "@/contexts/StoreSettingsContext";
 
 const WhatsAppFloat = () => {
   const { settings } = useStoreSettings();

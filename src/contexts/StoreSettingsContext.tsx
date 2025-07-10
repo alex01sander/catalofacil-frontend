@@ -60,14 +60,6 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   const CACHE_DURATION = 5 * 60 * 1000;
 
   const fetchStoreSettings = async (useCache = true) => {
-    // Check cache first
-    const now = Date.now();
-    const cacheKey = `store_settings_domain`;
-    if (useCache && lastFetch && (now - lastFetch) < CACHE_DURATION) {
-      setLoading(false);
-      return;
-    }
-
     try {
       setError(null);
       
@@ -111,6 +103,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       if (fetchError) {
         console.error('Error fetching store settings:', fetchError);
         setError(fetchError.message);
+        setLoading(false);
         return;
       }
 
@@ -128,12 +121,6 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
           mobile_banner_image: data.mobile_banner_image
         };
         setSettings(newSettings);
-        setLastFetch(now);
-        // Cache por domínio
-        localStorage.setItem(cacheKey, JSON.stringify({
-          data: newSettings,
-          timestamp: now
-        }));
       } else {
         // Se não há dados, retornar configurações padrão para o proprietário configurar
         setSettings(defaultSettings);
@@ -153,10 +140,16 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
 
     try {
       setError(null);
+
+      console.log('🔍 Debug Context: Iniciando salvamento das configurações');
+      console.log('🔍 Debug Context: User ID:', user.id);
+      console.log('🔍 Debug Context: Settings to save:', newSettings);
       
       // Buscar o proprietário do domínio atual
       const { data: domainOwner, error: domainError } = await supabase
         .rpc('get_current_domain_owner');
+      
+      console.log('🔍 Debug Context: Domain owner result:', { domainOwner, domainError });
       
       if (domainError) {
         console.error('Error getting domain owner:', domainError);
@@ -165,6 +158,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       
       // Para localhost ou quando não há domínio específico, usar o usuário atual
       const targetUserId = domainOwner || user.id;
+      console.log('🔍 Debug Context: Target user ID:', targetUserId);
       
       // Verificar se o usuário logado é o proprietário do domínio
       if (user.id !== targetUserId) {
@@ -172,25 +166,8 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       }
 
       // Filtrar apenas os campos válidos para salvar
-      const settingsToSave = {
-        store_name: newSettings.store_name,
-        store_description: newSettings.store_description,
-        store_subtitle: newSettings.store_subtitle,
-        instagram_url: newSettings.instagram_url,
-        whatsapp_number: newSettings.whatsapp_number,
-        mobile_logo: newSettings.mobile_logo,
-        desktop_banner: newSettings.desktop_banner,
-        mobile_banner_color: newSettings.mobile_banner_color,
-        mobile_banner_image: newSettings.mobile_banner_image
-      };
-
-      // Remover campos de data/hora se forem string vazia
-      if ((newSettings as any)["created_at"] && (newSettings as any)["created_at"] !== "") {
-        (settingsToSave as any)["created_at"] = (newSettings as any)["created_at"];
-      }
-      if ((newSettings as any)["updated_at"] && (newSettings as any)["updated_at"] !== "") {
-        (settingsToSave as any)["updated_at"] = (newSettings as any)["updated_at"];
-      }
+      const { id, ...settingsToSave } = newSettings;
+      console.log('🔍 Debug Context: Settings after cleanup:', settingsToSave);
 
       // Primeiro tentar atualizar, se não existir, criar
       const { data: existingSettings } = await supabase
@@ -202,12 +179,14 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       let result;
       if (existingSettings) {
         // Atualizar existente
+        console.log('🔍 Debug Context: Updating existing settings');
         result = await supabase
           .from('store_settings')
           .update(settingsToSave)
           .eq('user_id', targetUserId);
       } else {
         // Criar novo
+        console.log('🔍 Debug Context: Creating new settings');
         result = await supabase
           .from('store_settings')
           .insert({
@@ -222,16 +201,9 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         throw new Error('Erro ao salvar configurações: ' + result.error.message);
       }
 
+      console.log('🔍 Debug Context: Settings saved successfully');
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
-      setLastFetch(Date.now());
-      
-      // Update cache por domínio
-      const cacheKey = `store_settings_domain`;
-      localStorage.setItem(cacheKey, JSON.stringify({
-        data: updatedSettings,
-        timestamp: Date.now()
-      }));
     } catch (error) {
       console.error('Error updating store settings:', error);
       throw error;
@@ -239,29 +211,10 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   };
 
   const refetch = async () => {
-    setLastFetch(0); // Force refresh
     await fetchStoreSettings(false);
   };
 
   useEffect(() => {
-    // Cache por domínio
-    const cacheKey = `store_settings_domain`;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const { data, timestamp } = JSON.parse(cached);
-        const now = Date.now();
-        if ((now - timestamp) < CACHE_DURATION) {
-          setSettings(data);
-          setLastFetch(timestamp);
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing cached settings:', error);
-        localStorage.removeItem(cacheKey);
-      }
-    }
     fetchStoreSettings();
   }, []);
 

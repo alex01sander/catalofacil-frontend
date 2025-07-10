@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Save, Eye, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useStoreSettings } from "@/contexts/StoreSettingsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
