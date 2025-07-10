@@ -184,6 +184,14 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         mobile_banner_image: newSettings.mobile_banner_image
       };
 
+      // Remover campos de data/hora se forem string vazia
+      if ((newSettings as any)["created_at"] && (newSettings as any)["created_at"] !== "") {
+        (settingsToSave as any)["created_at"] = (newSettings as any)["created_at"];
+      }
+      if ((newSettings as any)["updated_at"] && (newSettings as any)["updated_at"] !== "") {
+        (settingsToSave as any)["updated_at"] = (newSettings as any)["updated_at"];
+      }
+
       // Primeiro tentar atualizar, se não existir, criar
       const { data: existingSettings } = await supabase
         .from('store_settings')
