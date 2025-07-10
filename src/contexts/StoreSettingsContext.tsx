@@ -171,6 +171,19 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         throw new Error('Você não tem permissão para editar as configurações desta loja');
       }
 
+      // Filtrar apenas os campos válidos para salvar
+      const settingsToSave = {
+        store_name: newSettings.store_name,
+        store_description: newSettings.store_description,
+        store_subtitle: newSettings.store_subtitle,
+        instagram_url: newSettings.instagram_url,
+        whatsapp_number: newSettings.whatsapp_number,
+        mobile_logo: newSettings.mobile_logo,
+        desktop_banner: newSettings.desktop_banner,
+        mobile_banner_color: newSettings.mobile_banner_color,
+        mobile_banner_image: newSettings.mobile_banner_image
+      };
+
       // Primeiro tentar atualizar, se não existir, criar
       const { data: existingSettings } = await supabase
         .from('store_settings')
@@ -183,14 +196,14 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         // Atualizar existente
         result = await supabase
           .from('store_settings')
-          .update(newSettings)
+          .update(settingsToSave)
           .eq('user_id', targetUserId);
       } else {
         // Criar novo
         result = await supabase
           .from('store_settings')
           .insert({
-            ...newSettings,
+            ...settingsToSave,
             user_id: targetUserId
           });
       }
