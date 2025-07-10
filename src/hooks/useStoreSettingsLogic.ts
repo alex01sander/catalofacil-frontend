@@ -14,32 +14,29 @@ export const fetchStoreSettings = async (user: User | null): Promise<StoreSettin
     
     console.log('🔍 Debug Context: Domain debug info:', { debugInfo, debugError });
     
-    // Buscar o proprietário do domínio atual
-    const { data: domainOwner, error: domainError } = await supabase
-      .rpc('get_current_domain_owner');
+    // Buscar o usuário da loja baseado no domínio (funciona sem autenticação)
+    const { data: storeUserId, error: storeError } = await supabase
+      .rpc('get_store_by_domain');
     
-    console.log('🔍 Debug Context: Domain owner fetch result:', { domainOwner, domainError });
+    console.log('🔍 Debug Context: Store user fetch result:', { storeUserId, storeError });
     
-    if (domainError) {
-      console.error('Error getting domain owner:', domainError);
+    if (storeError) {
+      console.error('Error getting store by domain:', storeError);
       return defaultSettings;
     }
     
-    // Usar sempre o domainOwner (que já tem a lógica do localhost incorporada)
-    const targetUserId = domainOwner;
-    console.log('🔍 Debug Context: Target user for fetch:', targetUserId);
-    
-    // Se não temos um usuário alvo, usar configurações padrão
-    if (!targetUserId) {
-      console.log('🔍 Debug Context: No target user, using default settings');
+    // Se não temos um usuário da loja, usar configurações padrão
+    if (!storeUserId) {
+      console.log('🔍 Debug Context: No store user found, using default settings');
       return defaultSettings;
     }
     
-    // Buscar configurações da loja do usuário alvo
+    console.log('🔍 Debug Context: Target user for fetch:', storeUserId);
+    
+    // Buscar configurações da loja do usuário (sem filtro adicional, a RLS cuida disso)
     const { data, error: fetchError } = await supabase
       .from('store_settings')
       .select('*')
-      .eq('user_id', targetUserId)
       .maybeSingle();
     
     console.log('🔍 Debug Context: Store settings query result:', { data, fetchError });
