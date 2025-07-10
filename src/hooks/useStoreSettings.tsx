@@ -87,33 +87,55 @@ export const useStoreSettings = () => {
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: Partial<StoreSettings>) => {
-      // Buscar o proprietário do domínio atual para validar permissão de edição
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Buscar o proprietário do domínio atual
       const { data: domainOwner, error: domainError } = await supabase
         .rpc('get_current_domain_owner');
       
       if (domainError) {
+        console.error('Error getting domain owner:', domainError);
         throw new Error('Erro ao identificar proprietário do domínio');
       }
       
-      if (!domainOwner) {
-        throw new Error('Domínio não encontrado');
-      }
+      // Para localhost ou quando não há domínio específico, usar o usuário atual
+      const targetUserId = domainOwner || user.id;
       
       // Verificar se o usuário logado é o proprietário do domínio
-      if (!user || user.id !== domainOwner) {
+      if (user.id !== targetUserId) {
         throw new Error('Você não tem permissão para editar as configurações desta loja');
       }
       
-      const { error } = await supabase
+      // Primeiro tentar atualizar, se não existir, criar
+      const { data: existingSettings } = await supabase
         .from('store_settings')
-        .upsert({
-          ...newSettings,
-          user_id: domainOwner
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('id')
+        .eq('user_id', targetUserId)
+        .maybeSingle();
 
-      if (error) throw error;
+      let result;
+      if (existingSettings) {
+        // Atualizar existente
+        result = await supabase
+          .from('store_settings')
+          .update(newSettings)
+          .eq('user_id', targetUserId);
+      } else {
+        // Criar novo
+        result = await supabase
+          .from('store_settings')
+          .insert({
+            ...newSettings,
+            user_id: targetUserId
+          });
+      }
+
+      if (result.error) {
+        console.error('Error saving store settings:', result.error);
+        throw new Error('Erro ao salvar configurações: ' + result.error.message);
+      }
       
       return newSettings;
     },

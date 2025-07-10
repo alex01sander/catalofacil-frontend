@@ -135,27 +135,66 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   };
 
   const updateSettings = async (newSettings: Partial<StoreSettings>) => {
-    if (!user) return;
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
 
     try {
       setError(null);
-      const { error: updateError } = await supabase
-        .from('store_settings')
-        .update(newSettings)
-        .eq('user_id', user.id);
+      
+      // Buscar o proprietário do domínio atual
+      const { data: domainOwner, error: domainError } = await supabase
+        .rpc('get_current_domain_owner');
+      
+      if (domainError) {
+        console.error('Error getting domain owner:', domainError);
+        throw new Error('Erro ao identificar proprietário do domínio');
+      }
+      
+      // Para localhost ou quando não há domínio específico, usar o usuário atual
+      const targetUserId = domainOwner || user.id;
+      
+      // Verificar se o usuário logado é o proprietário do domínio
+      if (user.id !== targetUserId) {
+        throw new Error('Você não tem permissão para editar as configurações desta loja');
+      }
 
-      if (updateError) {
-        console.error('Error updating store settings:', updateError);
-        setError(updateError.message);
-        throw updateError;
+      // Primeiro tentar atualizar, se não existir, criar
+      const { data: existingSettings } = await supabase
+        .from('store_settings')
+        .select('id')
+        .eq('user_id', targetUserId)
+        .maybeSingle();
+
+      let result;
+      if (existingSettings) {
+        // Atualizar existente
+        result = await supabase
+          .from('store_settings')
+          .update(newSettings)
+          .eq('user_id', targetUserId);
+      } else {
+        // Criar novo
+        result = await supabase
+          .from('store_settings')
+          .insert({
+            ...newSettings,
+            user_id: targetUserId
+          });
+      }
+
+      if (result.error) {
+        console.error('Error saving store settings:', result.error);
+        setError(result.error.message);
+        throw new Error('Erro ao salvar configurações: ' + result.error.message);
       }
 
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
       setLastFetch(Date.now());
       
-      // Update cache with user ID
-      const cacheKey = `store_settings_${user.id}`;
+      // Update cache por domínio
+      const cacheKey = `store_settings_domain`;
       localStorage.setItem(cacheKey, JSON.stringify({
         data: updatedSettings,
         timestamp: Date.now()
