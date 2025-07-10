@@ -41,26 +41,38 @@ export const useStoreSettings = () => {
 
   const fetchStoreSettings = async (): Promise<StoreSettings> => {
     try {
+      console.log('🔍 Debug: Fetching store settings');
+      console.log('🔍 Debug: Current user:', user?.id);
+      
       // Buscar o proprietário do domínio atual
       const { data: domainOwner, error: domainError } = await supabase
         .rpc('get_current_domain_owner');
+      
+      console.log('🔍 Debug: Domain owner fetch result:', { domainOwner, domainError });
       
       if (domainError) {
         console.error('Error getting domain owner:', domainError);
         return defaultSettings;
       }
       
-      // Se não encontrou proprietário do domínio, usar configurações padrão
-      if (!domainOwner) {
+      // Para localhost, usar o usuário atual se não há proprietário específico
+      const targetUserId = domainOwner || user?.id;
+      console.log('🔍 Debug: Target user for fetch:', targetUserId);
+      
+      // Se não temos um usuário alvo, usar configurações padrão
+      if (!targetUserId) {
+        console.log('🔍 Debug: No target user, using default settings');
         return defaultSettings;
       }
       
-      // Buscar configurações da loja do proprietário do domínio
+      // Buscar configurações da loja do usuário alvo
       const { data, error } = await supabase
         .from('store_settings')
         .select('*')
-        .eq('user_id', domainOwner)
+        .eq('user_id', targetUserId)
         .maybeSingle();
+      
+      console.log('🔍 Debug: Store settings query result:', { data, error });
 
       if (error) {
         console.error('Error fetching store settings:', error);
@@ -85,15 +97,21 @@ export const useStoreSettings = () => {
     gcTime: 15 * 60 * 1000,
   });
 
-  const updateSettingsMutation = useMutation({
+const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: Partial<StoreSettings>) => {
       if (!user) {
         throw new Error('Usuário não autenticado');
       }
 
+      console.log('🔍 Debug: Iniciando salvamento das configurações');
+      console.log('🔍 Debug: User ID:', user.id);
+      console.log('🔍 Debug: Settings to save:', newSettings);
+
       // Buscar o proprietário do domínio atual
       const { data: domainOwner, error: domainError } = await supabase
         .rpc('get_current_domain_owner');
+      
+      console.log('🔍 Debug: Domain owner result:', { domainOwner, domainError });
       
       if (domainError) {
         console.error('Error getting domain owner:', domainError);
@@ -102,6 +120,7 @@ export const useStoreSettings = () => {
       
       // Para localhost ou quando não há domínio específico, usar o usuário atual
       const targetUserId = domainOwner || user.id;
+      console.log('🔍 Debug: Target user ID:', targetUserId);
       
       // Verificar se o usuário logado é o proprietário do domínio
       if (user.id !== targetUserId) {

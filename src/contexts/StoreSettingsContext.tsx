@@ -71,9 +71,14 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
     try {
       setError(null);
       
+      console.log('🔍 Debug Context: Fetching store settings');
+      console.log('🔍 Debug Context: Current user:', user?.id);
+      
       // Buscar o proprietário do domínio atual
       const { data: domainOwner, error: domainError } = await supabase
         .rpc('get_current_domain_owner');
+      
+      console.log('🔍 Debug Context: Domain owner fetch result:', { domainOwner, domainError });
       
       if (domainError) {
         console.error('Error getting domain owner:', domainError);
@@ -82,19 +87,26 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
         return;
       }
       
-      // Se não encontrou proprietário do domínio, usar configurações padrão
-      if (!domainOwner) {
+      // Para localhost, usar o usuário atual se não há proprietário específico
+      const targetUserId = domainOwner || user?.id;
+      console.log('🔍 Debug Context: Target user for fetch:', targetUserId);
+      
+      // Se não temos um usuário alvo, usar configurações padrão
+      if (!targetUserId) {
+        console.log('🔍 Debug Context: No target user, using default settings');
         setSettings(defaultSettings);
         setLoading(false);
         return;
       }
       
-      // Buscar configurações da loja do proprietário do domínio
+      // Buscar configurações da loja do usuário alvo
       const { data, error: fetchError } = await supabase
         .from('store_settings')
         .select('*')
-        .eq('user_id', domainOwner)
+        .eq('user_id', targetUserId)
         .maybeSingle();
+      
+      console.log('🔍 Debug Context: Store settings query result:', { data, fetchError });
 
       if (fetchError) {
         console.error('Error fetching store settings:', fetchError);
