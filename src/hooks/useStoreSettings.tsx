@@ -127,6 +127,11 @@ const updateSettingsMutation = useMutation({
         throw new Error('Você não tem permissão para editar as configurações desta loja');
       }
       
+      // Remover campos que não devem ser enviados
+      const { id, created_at, updated_at, user_id, ...settingsToSave } = newSettings;
+      
+      console.log('🔍 Debug: Settings after cleanup:', settingsToSave);
+
       // Primeiro tentar atualizar, se não existir, criar
       const { data: existingSettings } = await supabase
         .from('store_settings')
@@ -137,16 +142,18 @@ const updateSettingsMutation = useMutation({
       let result;
       if (existingSettings) {
         // Atualizar existente
+        console.log('🔍 Debug: Updating existing settings');
         result = await supabase
           .from('store_settings')
-          .update(newSettings)
+          .update(settingsToSave)
           .eq('user_id', targetUserId);
       } else {
         // Criar novo
+        console.log('🔍 Debug: Creating new settings');
         result = await supabase
           .from('store_settings')
           .insert({
-            ...newSettings,
+            ...settingsToSave,
             user_id: targetUserId
           });
       }
