@@ -19,7 +19,7 @@ interface StoreSettingsProviderProps {
 }
 
 export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,8 +55,11 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   };
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    // Only load settings after auth is loaded
+    if (!authLoading) {
+      loadSettings();
+    }
+  }, [authLoading, user]);
 
   return (
     <StoreSettingsContext.Provider value={{
