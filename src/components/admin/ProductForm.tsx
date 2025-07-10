@@ -85,7 +85,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
 
   // Fetch categories from database
   const fetchCategories = async () => {
-    console.log('Fetching categories for user:', user?.id);
+    console.log('Fetching categories for current domain');
     
     if (!user) {
       console.log('No user found, setting loading to false');
@@ -98,7 +98,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
       const { data, error } = await supabase
         .from('categories')
         .select('id, name')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: true });
 
       if (error) {

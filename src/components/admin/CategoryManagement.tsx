@@ -39,7 +39,6 @@ const CategoryManagement = () => {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -58,8 +57,7 @@ const CategoryManagement = () => {
           const { count } = await supabase
             .from('products')
             .select('*', { count: 'exact', head: true })
-            .eq('category_id', category.id)
-            .eq('user_id', user.id);
+            .eq('category_id', category.id);
           
           return {
             ...category,
@@ -89,10 +87,24 @@ const CategoryManagement = () => {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
+      // Obter o store_id atual
+      const { data: storeData, error: storeError } = await supabase.rpc('get_current_store');
+      
+      if (storeError) {
+        console.error('Error getting current store:', storeError);
+        toast({
+          title: "Erro",
+          description: "Erro ao identificar a loja atual",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('categories')
         .insert([{
           user_id: user.id,
+          store_id: storeData,
           name: newCategory.trim(),
           color: randomColor,
           image: newCategoryImage || null
@@ -138,8 +150,7 @@ const CategoryManagement = () => {
           name: editingName.trim(),
           image: editingImage || null
         })
-        .eq('id', editingCategory)
-        .eq('user_id', user.id);
+        .eq('id', editingCategory);
 
       if (error) {
         console.error('Error updating category:', error);
@@ -187,8 +198,7 @@ const CategoryManagement = () => {
       const { error } = await supabase
         .from('categories')
         .delete()
-        .eq('id', categoryId)
-        .eq('user_id', user.id);
+        .eq('id', categoryId);
 
       if (error) {
         console.error('Error deleting category:', error);

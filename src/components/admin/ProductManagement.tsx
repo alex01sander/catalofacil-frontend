@@ -67,7 +67,6 @@ const ProductManagement = () => {
             name
           )
         `)
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -145,8 +144,7 @@ const ProductManagement = () => {
             image: productData.image,
             images: productData.images || [],
           })
-          .eq('id', editingProduct.id)
-          .eq('user_id', user.id);
+          .eq('id', editingProduct.id);
 
         if (error) {
           console.error('Error updating product:', error);
@@ -163,11 +161,24 @@ const ProductManagement = () => {
           description: "Produto atualizado com sucesso!",
         });
       } else {
-        // Create new product
+        // Create new product - obter store_id atual
+        const { data: storeData, error: storeError } = await supabase.rpc('get_current_store');
+        
+        if (storeError) {
+          console.error('Error getting current store:', storeError);
+          toast({
+            title: "Erro ao criar produto",
+            description: "Erro ao identificar a loja atual",
+            variant: "destructive"
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from('products')
           .insert([{
             user_id: user.id,
+            store_id: storeData,
             name: productData.name,
             price: productData.price,
             description: productData.description,
@@ -223,8 +234,7 @@ const ProductManagement = () => {
       const { error } = await supabase
         .from('products')
         .update({ is_active: !product.is_active })
-        .eq('id', productId)
-        .eq('user_id', user.id);
+        .eq('id', productId);
 
       if (error) {
         console.error('Error updating product status:', error);
@@ -263,8 +273,7 @@ const ProductManagement = () => {
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId)
-        .eq('user_id', user.id);
+        .eq('id', productId);
 
       if (error) {
         console.error('Error deleting product:', error);

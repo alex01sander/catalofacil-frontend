@@ -702,6 +702,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_store_owner: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_controller_admin: {
         Args: Record<PropertyKey, never> | { user_id: string }
         Returns: boolean
