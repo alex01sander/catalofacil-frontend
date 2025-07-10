@@ -64,6 +64,8 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     
     try {
+      // Logar o valor de user.id antes da consulta
+      console.log('user.id usado na consulta stores:', user?.id);
       // Buscar store_id do usuário
       const { data: storeData } = await supabase
         .from('stores')
