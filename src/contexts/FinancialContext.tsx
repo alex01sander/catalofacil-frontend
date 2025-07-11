@@ -71,7 +71,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         .from('stores')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (storeData) {
         setStoreId(storeData.id);
