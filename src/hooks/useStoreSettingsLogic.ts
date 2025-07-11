@@ -83,22 +83,26 @@ export const updateStoreSettings = async (
     console.log('🔍 Debug Context: User ID:', user.id);
     console.log('🔍 Debug Context: Settings to save:', newSettings);
     
-    // Buscar o proprietário do domínio atual
-    const { data: domainOwner, error: domainError } = await supabase
-      .rpc('get_current_domain_owner');
+    // SOLUÇÃO: Buscar o user_id do domínio atual - igual ao que é usado na busca pública
+    const { data: storeUserId, error: storeError } = await supabase
+      .rpc('get_store_by_domain');
     
-    console.log('🔍 Debug Context: Domain owner result:', { domainOwner, domainError });
+    console.log('🔍 Debug Context: Store user ID result:', { storeUserId, storeError });
     
-    if (domainError) {
-      console.error('Error getting domain owner:', domainError);
+    if (storeError) {
+      console.error('Error getting store user by domain:', storeError);
       throw new Error('Erro ao identificar proprietário do domínio');
     }
+
+    if (!storeUserId) {
+      throw new Error('Nenhuma loja encontrada para este domínio');
+    }
     
-    // Usar sempre o domainOwner (que já tem a lógica do localhost incorporada)
-    const targetUserId = domainOwner;
+    // Usar sempre o storeUserId (mesmo que é usado na busca)
+    const targetUserId = storeUserId;
     console.log('🔍 Debug Context: Target user ID:', targetUserId);
     
-    // Verificar se o usuário logado é o proprietário do domínio
+    // Verificar se o usuário logado tem permissão (é o proprietário do domínio)
     if (user.id !== targetUserId) {
       throw new Error('Você não tem permissão para editar as configurações desta loja');
     }
