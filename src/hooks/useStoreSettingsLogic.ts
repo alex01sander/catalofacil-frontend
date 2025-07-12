@@ -8,35 +8,72 @@ export const fetchStoreSettings = async (user: User | null): Promise<StoreSettin
     console.log('🔍 Debug Context: Fetching store settings');
     console.log('🔍 Debug Context: Current user:', user?.id);
     
-    // Debug das informações do domínio
-    const { data: debugInfo, error: debugError } = await supabase
-      .rpc('debug_domain_info');
+    // Usar a mesma lógica de detecção de domínio da função de salvamento
+    const currentHost = window.location.host;
+    const currentHostname = window.location.hostname;
     
-    console.log('🔍 Debug Context: Domain debug info:', { debugInfo, debugError });
+    console.log('🔍 Tentando encontrar domínio para buscar:', { currentHost, currentHostname });
     
-    // Buscar o usuário da loja baseado no domínio (funciona sem autenticação)
-    const { data: storeUserId, error: storeError } = await supabase
-      .rpc('get_store_by_domain');
+    let domainOwner = null;
     
-    console.log('🔍 Debug Context: Store user fetch result:', { storeUserId, storeError });
+    // Primeira tentativa: host completo
+    const { data: owner1, error: ownerError1 } = await supabase
+      .from('domain_owners')
+      .select('user_id')
+      .eq('domain', currentHost)
+      .maybeSingle();
     
-    if (storeError) {
-      console.error('Error getting store by domain:', storeError);
-      return defaultSettings;
+    if (owner1?.user_id) {
+      domainOwner = owner1;
+    } else {
+      // Segunda tentativa: apenas hostname
+      const { data: owner2, error: ownerError2 } = await supabase
+        .from('domain_owners')
+        .select('user_id')
+        .eq('domain', currentHostname)
+        .maybeSingle();
+      
+      if (owner2?.user_id) {
+        domainOwner = owner2;
+      } else {
+        // Terceira tentativa: verificar se há algum domínio que contenha parte do atual
+        const { data: allDomains, error: allDomainsError } = await supabase
+          .from('domain_owners')
+          .select('domain, user_id');
+        
+        if (allDomains && !allDomainsError) {
+          console.log('🔍 Todos os domínios disponíveis para buscar:', allDomains);
+          
+          // Procurar por domínio que contenha o hostname atual
+          const matchingDomain = allDomains.find(d => 
+            d.domain.includes(currentHostname) || 
+            currentHostname.includes(d.domain) ||
+            d.domain === currentHost
+          );
+          
+          if (matchingDomain) {
+            domainOwner = { user_id: matchingDomain.user_id };
+            console.log('🎯 Domínio encontrado para buscar:', matchingDomain);
+          }
+        }
+      }
     }
     
     // Se não temos um usuário da loja, usar configurações padrão
-    if (!storeUserId) {
+    if (!domainOwner?.user_id) {
       console.log('🔍 Debug Context: No store user found, using default settings');
       return defaultSettings;
     }
     
+    const storeUserId = domainOwner.user_id;
+    
     console.log('🔍 Debug Context: Target user for fetch:', storeUserId);
     
-    // Buscar configurações da loja do usuário (sem filtro adicional, a RLS cuida disso)
+    // Buscar configurações da loja do usuário específico
     const { data, error: fetchError } = await supabase
       .from('store_settings')
       .select('*')
+      .eq('user_id', storeUserId)
       .maybeSingle();
     
     console.log('🔍 Debug Context: Store settings query result:', { data, fetchError });
@@ -83,20 +120,63 @@ export const updateStoreSettings = async (
     console.log('🔍 Debug Context: User ID:', user.id);
     console.log('🔍 Debug Context: Settings to save:', newSettings);
     
-    // SOLUÇÃO: Buscar o user_id do domínio atual - igual ao que é usado na busca pública
-    const { data: storeUserId, error: storeError } = await supabase
-      .rpc('get_store_by_domain');
+    // Buscar o user_id do domínio atual usando a mesma lógica da busca pública
+    const currentHost = window.location.host;
+    const currentHostname = window.location.hostname;
     
-    console.log('🔍 Debug Context: Store user ID result:', { storeUserId, storeError });
+    console.log('🔍 Tentando encontrar domínio para salvar:', { currentHost, currentHostname });
     
-    if (storeError) {
-      console.error('Error getting store user by domain:', storeError);
-      throw new Error('Erro ao identificar proprietário do domínio');
+    let domainOwner = null;
+    
+    // Primeira tentativa: host completo
+    const { data: owner1, error: ownerError1 } = await supabase
+      .from('domain_owners')
+      .select('user_id')
+      .eq('domain', currentHost)
+      .maybeSingle();
+    
+    if (owner1?.user_id) {
+      domainOwner = owner1;
+    } else {
+      // Segunda tentativa: apenas hostname
+      const { data: owner2, error: ownerError2 } = await supabase
+        .from('domain_owners')
+        .select('user_id')
+        .eq('domain', currentHostname)
+        .maybeSingle();
+      
+      if (owner2?.user_id) {
+        domainOwner = owner2;
+      } else {
+        // Terceira tentativa: verificar se há algum domínio que contenha parte do atual
+        const { data: allDomains, error: allDomainsError } = await supabase
+          .from('domain_owners')
+          .select('domain, user_id');
+        
+        if (allDomains && !allDomainsError) {
+          console.log('🔍 Todos os domínios disponíveis para salvar:', allDomains);
+          
+          // Procurar por domínio que contenha o hostname atual
+          const matchingDomain = allDomains.find(d => 
+            d.domain.includes(currentHostname) || 
+            currentHostname.includes(d.domain) ||
+            d.domain === currentHost
+          );
+          
+          if (matchingDomain) {
+            domainOwner = { user_id: matchingDomain.user_id };
+            console.log('🎯 Domínio encontrado para salvar:', matchingDomain);
+          }
+        }
+      }
     }
-
-    if (!storeUserId) {
+    
+    if (!domainOwner?.user_id) {
       throw new Error('Nenhuma loja encontrada para este domínio');
     }
+    
+    const storeUserId = domainOwner.user_id;
+    console.log('🔍 Debug Context: Store user ID result:', storeUserId);
     
     // Usar sempre o storeUserId (mesmo que é usado na busca)
     const targetUserId = storeUserId;

@@ -46,17 +46,64 @@ export function usePublicStoreData(): UsePublicStoreDataResult {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const domain = window.location.hostname;
-        // Buscar o user_id do dono do domínio
-        const { data: owner, error: ownerError } = await supabase
-          .from('domain_owners')
-          .select('user_id')
-          .eq('domain', domain)
-          .maybeSingle();
+      const load = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          // Tentar múltiplas variações do domínio para garantir compatibilidade
+          const currentHost = window.location.host; // inclui porta se houver
+          const currentHostname = window.location.hostname; // só o hostname
+          
+          console.log('🔍 Tentando encontrar domínio:', { currentHost, currentHostname });
+          
+          // Buscar o user_id do dono do domínio - tentar várias combinações
+          let owner = null;
+          let ownerError = null;
+          
+          // Primeira tentativa: host completo
+          const { data: owner1, error: ownerError1 } = await supabase
+            .from('domain_owners')
+            .select('user_id')
+            .eq('domain', currentHost)
+            .maybeSingle();
+          
+          if (owner1?.user_id) {
+            owner = owner1;
+          } else {
+            // Segunda tentativa: apenas hostname
+            const { data: owner2, error: ownerError2 } = await supabase
+              .from('domain_owners')
+              .select('user_id')
+              .eq('domain', currentHostname)
+              .maybeSingle();
+            
+            if (owner2?.user_id) {
+              owner = owner2;
+            } else {
+              // Terceira tentativa: verificar se há algum domínio que contenha parte do atual
+              const { data: allDomains, error: allDomainsError } = await supabase
+                .from('domain_owners')
+                .select('domain, user_id');
+              
+              if (allDomains && !allDomainsError) {
+                console.log('🔍 Todos os domínios disponíveis:', allDomains);
+                
+                // Procurar por domínio que contenha o hostname atual
+                const matchingDomain = allDomains.find(d => 
+                  d.domain.includes(currentHostname) || 
+                  currentHostname.includes(d.domain) ||
+                  d.domain === currentHost
+                );
+                
+                if (matchingDomain) {
+                  owner = { user_id: matchingDomain.user_id };
+                  console.log('🎯 Domínio encontrado:', matchingDomain);
+                }
+              }
+              
+              ownerError = ownerError2 || ownerError1;
+            }
+          }
         if (ownerError) throw new Error(ownerError.message);
         if (!owner?.user_id) {
           setStoreData(null);
