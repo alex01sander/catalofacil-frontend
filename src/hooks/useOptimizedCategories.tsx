@@ -30,7 +30,7 @@ export const useOptimizedCategories = (enabled = true) => {
     isLoading,
     error
   } = useQuery({
-    queryKey: ['categories-domain'],
+    queryKey: ['categories-public'],
     queryFn: fetchCategories,
     enabled: enabled,
     staleTime: 30 * 60 * 1000,
