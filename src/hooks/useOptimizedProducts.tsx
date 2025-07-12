@@ -71,7 +71,7 @@ export const useOptimizedProducts = ({
     error,
     refetch
   } = useQuery({
-    queryKey: [`products-public-${selectedCategory}-${debouncedSearchTerm}`],
+    queryKey: [`products-domain-${window.location.host}-${selectedCategory}-${debouncedSearchTerm}`],
     queryFn: fetchProducts,
     enabled: enabled,
     staleTime: 10 * 60 * 1000,
