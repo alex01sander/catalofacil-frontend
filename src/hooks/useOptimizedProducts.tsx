@@ -40,6 +40,7 @@ export const useOptimizedProducts = ({
   }, [searchTerm]);
 
   const fetchProducts = useCallback(async (): Promise<Product[]> => {
+    // RLS policy já filtra por domínio usando get_current_domain_owner()
     let query = supabase
       .from('products')
       .select('*')

@@ -11,6 +11,7 @@ interface Category {
 
 export const useOptimizedCategories = (enabled = true) => {
   const fetchCategories = async (): Promise<Category[]> => {
+    // RLS policy já filtra por domínio usando get_current_domain_owner()
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, image')
