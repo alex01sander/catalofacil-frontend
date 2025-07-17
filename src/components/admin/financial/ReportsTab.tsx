@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Download, FileText, Share2, TrendingUp, TrendingDown, DollarSign, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+// Removido: import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tables } from "@/integrations/supabase/types";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -15,6 +15,8 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useFinancial } from "@/contexts/FinancialContext";
+import { useStoreSettings } from "@/contexts/StoreSettingsContext";
 
 type CashFlowEntry = Tables<'cash_flow'>;
 type CreditAccount = Tables<'credit_accounts'>;
@@ -36,6 +38,8 @@ const ReportsTab = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  const { data, refreshData } = useFinancial();
+  const { settings } = useStoreSettings();
 
   const getPeriodDates = () => {
     const now = new Date();
@@ -61,64 +65,36 @@ const ReportsTab = () => {
     
     setLoading(true);
     try {
+      await refreshData(); // Garante dados atualizados
       const { start, end } = getPeriodDates();
       const startDateStr = format(start, 'yyyy-MM-dd');
       const endDateStr = format(end, 'yyyy-MM-dd');
-
-      // Buscar entradas de caixa
-      const { data: cashFlowData, error: cashFlowError } = await supabase
-        .from('cash_flow')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', startDateStr)
-        .lte('date', endDateStr)
-        .order('date', { ascending: false });
-
-      if (cashFlowError) throw cashFlowError;
-
-      // Buscar despesas
-      const { data: expensesData, error: expensesError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('due_date', startDateStr)
-        .lte('due_date', endDateStr)
-        .eq('status', 'paid');
-
-      if (expensesError) throw expensesError;
-
-      // Buscar clientes devedores
-      const { data: debtorsData, error: debtorsError } = await supabase
-        .from('credit_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .gt('total_debt', 0);
-
-      if (debtorsError) throw debtorsError;
-
-      const totalIncome = (cashFlowData || [])
-        .filter(entry => entry.type === 'income')
-        .reduce((sum, entry) => sum + Number(entry.amount), 0);
-
-      const totalExpenses = (cashFlowData || [])
-        .filter(entry => entry.type === 'expense')
-        .reduce((sum, entry) => sum + Number(entry.amount), 0) +
-        (expensesData || [])
-        .reduce((sum, expense) => sum + Number(expense.amount), 0);
-
+      // Filtra lançamentos do fluxo de caixa pelo período
+      const entries = (data.cashFlow || []).filter(entry => {
+        const entryDate = entry.date ? new Date(entry.date) : null;
+        return entryDate && entryDate >= start && entryDate <= end;
+      });
+      // Filtra despesas pagas no período
+      const expensesPaid = (data.expenses || []).filter(exp => {
+        const dueDate = exp.due_date ? new Date(exp.due_date) : null;
+        return exp.status === 'paid' && dueDate && dueDate >= start && dueDate <= end;
+      });
+      // Filtra devedores
+      const debtors = (data.creditAccounts || []).filter(acc => Number(acc.total_debt) > 0);
+      // Calcula totais
+      const totalIncome = entries.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
+      const totalExpenses = entries.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0) + expensesPaid.reduce((sum, e) => sum + Number(e.amount), 0);
       setReportData({
         totalIncome,
         totalExpenses,
         profit: totalIncome - totalExpenses,
-        entries: cashFlowData || [],
-        debtors: debtorsData || []
+        entries,
+        debtors
       });
-
       toast({
         title: "Sucesso",
         description: "Relatório gerado com sucesso!",
       });
-
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
       toast({
@@ -131,47 +107,69 @@ const ReportsTab = () => {
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (!reportData) return;
-
     const doc = new jsPDF();
     const { start, end } = getPeriodDates();
-    
-    // Cabeçalho
-    doc.setFontSize(20);
-    doc.text('Relatório Financeiro', 20, 30);
+    // Adiciona logo da loja se existir
+    if (settings.mobile_logo) {
+      // Baixa a imagem e converte para base64
+      const imgData = await fetch(settings.mobile_logo)
+        .then(r => r.blob())
+        .then(blob => new Promise<string>(resolve => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        }));
+      // Centraliza a logo
+      doc.addImage(imgData, 'PNG', 80, 10, 50, 50, undefined, 'FAST');
+    }
+    // Nome da loja centralizado
+    doc.setFontSize(18);
+    doc.text(settings.store_name || 'Relatório Financeiro', 105, 70, { align: 'center' });
+    // Período
     doc.setFontSize(12);
-    doc.text(`Período: ${format(start, 'dd/MM/yyyy', { locale: ptBR })} até ${format(end, 'dd/MM/yyyy', { locale: ptBR })}`, 20, 45);
-    
+    doc.text(`Período: ${format(start, 'dd/MM/yyyy', { locale: ptBR })} até ${format(end, 'dd/MM/yyyy', { locale: ptBR })}`, 105, 80, { align: 'center' });
+    // Linha separadora
+    doc.setLineWidth(0.5);
+    doc.line(20, 85, 190, 85);
     // Métricas principais
     doc.setFontSize(14);
-    doc.text('Resumo Financeiro:', 20, 65);
+    doc.text('Resumo Financeiro:', 20, 100);
     doc.setFontSize(12);
-    doc.text(`Dinheiro que entrou: R$ ${reportData.totalIncome.toFixed(2).replace('.', ',')}`, 20, 80);
-    doc.text(`Contas pagas: R$ ${reportData.totalExpenses.toFixed(2).replace('.', ',')}`, 20, 95);
-    doc.text(`Lucro estimado: R$ ${reportData.profit.toFixed(2).replace('.', ',')}`, 20, 110);
-    
-    // Lançamentos
+    doc.text(`Dinheiro que entrou: R$ ${reportData.totalIncome.toFixed(2).replace('.', ',')}`, 20, 110);
+    doc.text(`Contas pagas: R$ ${reportData.totalExpenses.toFixed(2).replace('.', ',')}`, 20, 120);
+    doc.text(`Lucro estimado: R$ ${reportData.profit.toFixed(2).replace('.', ',')}`, 20, 130);
+    // Últimos lançamentos
     if (reportData.entries.length > 0) {
       doc.setFontSize(14);
-      doc.text('Últimos Lançamentos:', 20, 135);
-      let yPos = 150;
-      
+      doc.text('Últimos Lançamentos:', 20, 145);
+      let yPos = 155;
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text('Data', 20, yPos);
+      doc.text('Tipo', 45, yPos);
+      doc.text('Valor', 70, yPos);
+      doc.text('Descrição', 100, yPos);
+      doc.text('Categoria', 150, yPos);
+      yPos += 7;
+      doc.setTextColor(30);
       reportData.entries.slice(0, 10).forEach((entry) => {
-        doc.setFontSize(10);
         const typeText = entry.type === 'income' ? 'Entrada' : 'Saída';
         const amountText = `R$ ${Number(entry.amount).toFixed(2).replace('.', ',')}`;
-        doc.text(`${format(new Date(entry.date), 'dd/MM')} - ${typeText} - ${amountText} - ${entry.description}`, 20, yPos);
-        yPos += 15;
+        doc.text(format(new Date(entry.date), 'dd/MM'), 20, yPos);
+        doc.text(typeText, 45, yPos);
+        doc.text(amountText, 70, yPos);
+        doc.text(entry.description || '', 100, yPos);
+        doc.text(entry.category || '', 150, yPos);
+        yPos += 7;
       });
     }
-    
     // Rodapé
     doc.setFontSize(8);
-    doc.text('Relatório gerado automaticamente pelo Catalogofacil', 20, 280);
-    
+    doc.setTextColor(120);
+    doc.text('Relatório gerado automaticamente pelo Catalogofacil', 20, 285);
     doc.save(`relatorio-financeiro-${format(new Date(), 'dd-MM-yyyy')}.pdf`);
-    
     toast({
       title: "PDF Baixado",
       description: "Relatório salvo em PDF com sucesso!",
@@ -221,15 +219,17 @@ const ReportsTab = () => {
 
   const shareWhatsApp = () => {
     if (!reportData) return;
-    
     const { start, end } = getPeriodDates();
-    const message = `📊 *Relatório Financeiro*\n\n` +
-      `📅 Período: ${format(start, 'dd/MM/yyyy')} até ${format(end, 'dd/MM/yyyy')}\n\n` +
-      `💰 Dinheiro que entrou: R$ ${reportData.totalIncome.toFixed(2).replace('.', ',')}\n` +
-      `💸 Contas pagas: R$ ${reportData.totalExpenses.toFixed(2).replace('.', ',')}\n` +
-      `📈 Lucro estimado: R$ ${reportData.profit.toFixed(2).replace('.', ',')}\n\n` +
-      `📱 Gerado pelo Catalogofacil`;
-    
+    const message =
+      `*Relatório Financeiro - ${settings.store_name || ''}*\n` +
+      `\n` +
+      `Período: ${format(start, 'dd/MM/yyyy')} até ${format(end, 'dd/MM/yyyy')}\n` +
+      `\n` +
+      `Dinheiro que entrou: R$ ${reportData.totalIncome.toFixed(2).replace('.', ',')}\n` +
+      `Contas pagas: R$ ${reportData.totalExpenses.toFixed(2).replace('.', ',')}\n` +
+      `Lucro estimado: R$ ${reportData.profit.toFixed(2).replace('.', ',')}\n` +
+      `\n` +
+      `_Gerado pelo Catalogofacil_`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -245,6 +245,19 @@ const ReportsTab = () => {
       income: entry.type === 'income' ? Number(entry.amount) : 0,
       expense: entry.type === 'expense' ? Number(entry.amount) : 0
     })) : [];
+
+  // Função utilitária para traduzir tipo e método de pagamento
+  const traduzirTipo = (tipo: string) => {
+    if (tipo === 'income') return 'Entrada';
+    if (tipo === 'expense') return 'Despesa';
+    return tipo;
+  };
+  const traduzirPagamento = (metodo: string) => {
+    if (metodo === 'cash') return 'Dinheiro';
+    if (metodo === 'card') return 'Cartão';
+    if (metodo === 'pix') return 'Pix';
+    return metodo;
+  };
 
   return (
     <div className="space-y-6">
@@ -424,9 +437,7 @@ const ReportsTab = () => {
                       <div>
                         <p className="font-medium text-gray-900">{entry.description}</p>
                         <div className="flex items-center space-x-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {entry.category}
-                          </Badge>
+                          <Badge variant="secondary" className="text-xs">{traduzirTipo(entry.type)}</Badge>
                           <span className="text-sm text-gray-500">
                             {format(new Date(entry.date), 'dd/MM/yyyy', { locale: ptBR })}
                           </span>
@@ -437,7 +448,7 @@ const ReportsTab = () => {
                       <p className={`font-bold ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                         {entry.type === 'income' ? '+' : '-'} R$ {Number(entry.amount).toFixed(2).replace('.', ',')}
                       </p>
-                      <p className="text-sm text-gray-500">{entry.payment_method}</p>
+                      <p className="text-sm text-gray-500">{traduzirPagamento(entry.payment_method)}</p>
                     </div>
                   </div>
                 ))}

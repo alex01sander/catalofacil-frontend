@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+// Removido: import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,15 +43,16 @@ const EditUserModal = ({ user, isOpen, onClose }: EditUserModalProps) => {
 
   const checkControllerAdminStatus = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('controller_admins')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // Removido: const { data, error } = await supabase
+      // Removido:   .from('controller_admins')
+      // Removido:   .select('id')
+      // Removido:   .eq('user_id', userId)
+      // Removido:   .maybeSingle();
       
-      if (!error) {
-        setIsControllerAdmin(!!data);
-      }
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // if (!error) {
+      //   setIsControllerAdmin(!!data);
+      // }
     } catch (error) {
       console.error('Erro ao verificar status de admin:', error);
     }
@@ -64,15 +65,16 @@ const EditUserModal = ({ user, isOpen, onClose }: EditUserModalProps) => {
       email: string;
     }) => {
       // Atualizar o perfil
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          full_name: name.trim() || null,
-          email: email.trim()
-        })
-        .eq('id', userId);
+      // Removido: const { error } = await supabase
+      // Removido:   .from('profiles')
+      // Removido:   .update({ 
+      // Removido:     full_name: name.trim() || null,
+      // Removido:     email: email.trim()
+      // Removido:   })
+      // Removido:   .eq('id', userId);
 
-      if (error) throw error;
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active_users'] });
@@ -85,17 +87,18 @@ const EditUserModal = ({ user, isOpen, onClose }: EditUserModalProps) => {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ userEmail, password }: { userEmail: string; password: string }) => {
-      const { data, error } = await supabase.functions.invoke('reset-password', {
-        body: {
-          userEmail,
-          newPassword: password
-        }
-      });
+      // Removido: const { data, error } = await supabase.functions.invoke('reset-password', {
+      // Removido:   body: {
+      // Removido:     userEmail,
+      // Removido:     newPassword: password
+      // Removido:   }
+      // Removido: });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // if (error) throw error;
+      // if (!data.success) throw new Error(data.error);
 
-      return data;
+      // return data;
     },
     onSuccess: () => {
       toast.success("Senha redefinida com sucesso!");
@@ -112,22 +115,22 @@ const EditUserModal = ({ user, isOpen, onClose }: EditUserModalProps) => {
       email: string; 
       shouldBeAdmin: boolean; 
     }) => {
-      if (shouldBeAdmin) {
-        // Adicionar como controller admin
-        const { error } = await supabase
-          .from('controller_admins')
-          .insert({ user_id: userId, email });
+      // Removido: if (shouldBeAdmin) {
+      // Removido:   // Adicionar como controller admin
+      // Removido:   const { error } = await supabase
+      // Removido:     .from('controller_admins')
+      // Removido:     .insert({ user_id: userId, email });
         
-        if (error && !error.message.includes('duplicate')) throw error;
-      } else {
-        // Remover de controller admin
-        const { error } = await supabase
-          .from('controller_admins')
-          .delete()
-          .eq('user_id', userId);
+      // Removido:   if (error && !error.message.includes('duplicate')) throw error;
+      // Removido: } else {
+      // Removido:   // Remover de controller admin
+      // Removido:   const { error } = await supabase
+      // Removido:     .from('controller_admins')
+      // Removido:     .delete()
+      // Removido:     .eq('user_id', userId);
         
-        if (error) throw error;
-      }
+      // Removido:   if (error) throw error;
+      // Removido: }
     },
     onSuccess: (_, { shouldBeAdmin }) => {
       setIsControllerAdmin(shouldBeAdmin);

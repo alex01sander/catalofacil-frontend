@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Search, Edit } from "lucide-react";
 import UserCreation from "./UserCreation";
 import EditUserModal from "./EditUserModal";
+import { API_URL } from "@/constants/api";
 
 interface UserProfile {
   id: string;
@@ -28,41 +29,17 @@ const UserManagement = () => {
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['active_users'],
     queryFn: async () => {
-      console.log('Buscando usuários como admin controller...');
-      
-      // Buscar todos os profiles (agora com permissão de admin controller)
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (profilesError) {
-        console.error('Erro ao buscar profiles:', profilesError);
-        throw profilesError;
-      }
-
-      console.log('Profiles encontrados:', profiles);
-
-      // Buscar todos os domínios (agora com permissão de admin controller)
-      const { data: domainOwners, error: domainError } = await supabase
-        .from('domain_owners')
-        .select('user_id, domain');
-
-      if (domainError) {
-        console.error('Erro ao buscar domain_owners:', domainError);
-        throw domainError;
-      }
-
-      console.log('Domain owners encontrados:', domainOwners);
-
+      // Buscar todos os profiles do backend
+      const profilesRes = await axios.get(`${API_URL}/profiles`);
+      const profiles = profilesRes.data;
+      // Buscar todos os domínios do backend
+      const domainsRes = await axios.get(`${API_URL}/domainOwners`);
+      const domainOwners = domainsRes.data;
       // Combinar os dados
-      const usersWithDomains = profiles?.map(profile => ({
+      const usersWithDomains = profiles?.map((profile: any) => ({
         ...profile,
-        domain_owners: domainOwners?.filter(d => d.user_id === profile.id).map(d => ({ domain: d.domain })) || []
+        domain_owners: domainOwners?.filter((d: any) => d.user_id === profile.id).map((d: any) => ({ domain: d.domain })) || []
       })) ?? [];
-
-      console.log('Usuários com domínios:', usersWithDomains);
-
       return usersWithDomains as UserProfile[];
     }
   });

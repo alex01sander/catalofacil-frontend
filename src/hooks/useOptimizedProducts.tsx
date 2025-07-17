@@ -1,87 +1,52 @@
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  images: string[];
-  description: string;
-  category_id: string | null;
-  is_active: boolean;
-  stock: number;
-  user_id: string;
-}
-
-interface UseOptimizedProductsProps {
-  searchTerm?: string;
-  selectedCategory?: string;
-  enabled?: boolean;
-  publicView?: boolean;
-}
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { API_URL } from "@/constants/api";
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useOptimizedProducts = ({
   searchTerm = '',
   selectedCategory = 'todos',
   enabled = true,
-  publicView = false
-}: UseOptimizedProductsProps = {}) => {
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  publicView = false,
+  token: propToken = null
+} = {}) => {
+  const { token: contextToken } = useAuth();
+  const token = propToken || contextToken;
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  const fetchProducts = useCallback(async (): Promise<Product[]> => {
-    // RLS policy já filtra por domínio usando get_current_domain_owner()
-    let query = supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-
-    if (selectedCategory && selectedCategory !== 'todos') {
-      query = query.eq('category_id', selectedCategory);
+    if (!enabled) return;
+    if (!publicView && !token) {
+      setLoading(false);
+      return;
     }
-
-    if (debouncedSearchTerm.trim()) {
-      query = query.ilike('name', `%${debouncedSearchTerm}%`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching products:', error);
-      throw error;
-    }
-
-    return data || [];
-  }, [selectedCategory, debouncedSearchTerm]);
-
-  const {
-    data: products = [],
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: [`products-domain-${window.location.host}-${selectedCategory}-${debouncedSearchTerm}`],
-    queryFn: fetchProducts,
-    enabled: enabled,
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
+    setLoading(true);
+    const headers = publicView ? {} : { Authorization: `Bearer ${token}` };
+    axios.get(`${API_URL}/produtos`, { headers })
+      .then(res => {
+        let filtered = res.data;
+        if (selectedCategory && selectedCategory !== 'todos') {
+          filtered = filtered.filter(p => p.category_id === selectedCategory);
+        }
+        if (searchTerm.trim()) {
+          filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+        setProducts(filtered);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err);
+        setLoading(false);
+      });
+  }, [searchTerm, selectedCategory, enabled, token, publicView]);
 
   return {
     products,
-    loading: isLoading,
+    loading,
     error,
-    refetch
+    refetch: () => {},
   };
 };

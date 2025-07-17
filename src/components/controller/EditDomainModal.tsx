@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+// Removido: import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,12 +33,12 @@ const EditDomainModal = ({ domain, isOpen, onClose }: EditDomainModalProps) => {
   const { data: users = [] } = useQuery({
     queryKey: ['all_users_for_domain_edit'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .order('email');
-      
-      if (error) throw error;
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profiles/all`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
       return data;
     },
     enabled: isOpen
@@ -69,41 +69,38 @@ const EditDomainModal = ({ domain, isOpen, onClose }: EditDomainModalProps) => {
       }
 
       // Buscar o usuário pelo email
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', newUserEmail)
-        .single();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profiles/email/${newUserEmail}`);
+      if (!response.ok) {
+        throw new Error('Usuário não encontrado com este email');
+      }
+      const profile = await response.json();
 
-      if (profileError || !profile) {
+      if (!profile) {
         throw new Error('Usuário não encontrado com este email');
       }
 
       // Verificar se já existe um domínio com o mesmo nome
-      const { data: existingDomain, error: checkError } = await supabase
-        .from('domain_owners')
-        .select('id')
-        .eq('domain', newDomain.toLowerCase())
-        .neq('id', domainId)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-      
-      if (existingDomain) {
+      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/domain_owners/check/${newDomain.toLowerCase()}/${domainId}`);
+      if (!checkResponse.ok) {
         throw new Error('Este domínio já está cadastrado');
       }
-
+      
       // Atualizar o domínio
-      const { error } = await supabase
-        .from('domain_owners')
-        .update({ 
+      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/domain_owners/${domainId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
           domain: newDomain.toLowerCase(), 
           user_id: profile.id,
           domain_type: domainType
-        })
-        .eq('id', domainId);
+        }),
+      });
 
-      if (error) throw error;
+      if (!updateResponse.ok) {
+        throw new Error('Erro ao atualizar domínio');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['domain_owners'] });

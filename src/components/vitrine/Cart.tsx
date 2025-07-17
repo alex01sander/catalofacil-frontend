@@ -8,8 +8,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { ShoppingCart, Plus, Minus, Trash2, User, MapPin, CreditCard } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import axios from 'axios';
+import { API_URL } from '@/constants/api';
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useStoreSettings } from "@/contexts/StoreSettingsContext";
 
 const Cart = () => {
   const {
@@ -20,6 +23,8 @@ const Cart = () => {
     totalPrice,
     clearCart
   } = useCart();
+  const { user } = useAuth();
+  const { settings } = useStoreSettings();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
@@ -42,72 +47,33 @@ const Cart = () => {
       toast.error('Por favor, preencha todos os campos obrigatórios');
       return;
     }
-
     try {
-      // 1. Obter o dono da loja atual e store_id
-      const { data: domainOwner, error: domainError } = await supabase
-        .rpc('get_current_domain_owner');
-      
-      if (domainError) {
-        console.error('Erro ao obter dono do domínio:', domainError);
-        toast.error('Erro ao processar pedido. Tente novamente.');
-        return;
+      // Montar payload conforme schema do Prisma
+      const payload: any = {
+        store_owner_id: user?.id,
+        customer_name: formData.name,
+        customer_phone: formData.phone,
+        total_amount: totalPrice,
+        status: 'pending',
+        order_items: {
+          create: items.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            unit_price: item.price,
+            total_price: item.price * item.quantity
+          }))
+        }
+      };
+      // Campos opcionais
+      if (formData.deliveryMethod !== 'delivery' && formData.address) {
+        payload.customer_email = formData.address;
       }
-
-      const { data: storeId, error: storeError } = await supabase
-        .rpc('get_current_store');
-      
-      if (storeError) {
-        console.error('Erro ao obter store:', storeError);
-      }
-
-      if (!domainOwner) {
-        toast.error('Erro: não foi possível identificar o dono da loja.');
-        return;
-      }
-
-      // 2. Criar o pedido na tabela orders
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_name: formData.name,
-          customer_phone: formData.phone,
-          customer_email: formData.deliveryMethod === 'delivery' ? null : formData.address, // Usando campo email como campo adicional se necessário
-          total_amount: totalPrice,
-          status: 'pending',
-          store_id: storeId,
-          store_owner_id: domainOwner
-        })
-        .select()
-        .single();
-
-      if (orderError) {
-        console.error('Erro ao criar pedido:', orderError);
-        toast.error('Erro ao criar pedido. Tente novamente.');
-        return;
-      }
-
-      // 3. Criar os itens do pedido na tabela order_items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.id.toString(),
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error('Erro ao criar itens do pedido:', itemsError);
-        toast.error('Erro ao criar itens do pedido. Tente novamente.');
-        return;
-      }
-
-      // 4. Enviar mensagem para WhatsApp (mantendo funcionalidade original)
-      const orderSummary = items.map(item => `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
+      // Enviar pedido
+      const { data: order } = await axios.post(`${API_URL}/pedidos`, payload);
+      // 2. WhatsApp
+      // Garantir que o número está no formato internacional (apenas dígitos)
+      const whatsappNumber = (settings.whatsapp_number || "5511999999999").replace(/\D/g, "");
+      const orderSummary = items.map(item => `• ${item.name} — Qtd: ${item.quantity} — R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
       const paymentMethodText = {
         pix: 'PIX',
         money: 'Dinheiro',
@@ -115,11 +81,26 @@ const Cart = () => {
         debit: 'Cartão de Débito'
       }[formData.paymentMethod];
       const deliveryMethodText = formData.deliveryMethod === 'delivery' ? 'Entrega' : 'Retirada no Local';
-      const message = `🛍️ *Novo Pedido #${order.id.slice(0, 8)}*\n\n👤 *Dados do Cliente:*\n• Nome: ${formData.name}\n• Telefone: ${formData.phone}\n${formData.deliveryMethod === 'delivery' ? `• Endereço: ${formData.address}` : ''}\n\n📋 *Itens do Pedido:*\n${orderSummary}\n\n💰 *Resumo Financeiro:*\n• Total: R$ ${totalPrice.toFixed(2).replace('.', ',')}\n• Forma de Pagamento: ${paymentMethodText}\n• Forma de Entrega: ${deliveryMethodText}\n\n📅 Data: ${new Date().toLocaleDateString('pt-BR')}\n⏰ Horário: ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit',minute: '2-digit'})}\n\nObrigado pela preferência! 😊`;
-      
-      window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(message)}`, '_blank');
-
-      // 5. Sucesso - atualizar interface
+      const message =
+        `*🛒 Novo Pedido #${order.id?.slice(0, 8) || ''}*\n\n` +
+        `*👤 Dados do Cliente:*\n` +
+        `• Nome: ${formData.name}\n` +
+        `• Telefone: ${formData.phone}\n` +
+        (formData.deliveryMethod === 'delivery' ? `• Endereço: ${formData.address}\n` : '') +
+        `\n` +
+        `*📦 Itens do Pedido:*\n` +
+        `${orderSummary}\n\n` +
+        `*💰 Resumo Financeiro:*\n` +
+        `• Total: *R$ ${totalPrice.toFixed(2).replace('.', ',')}*\n` +
+        `• Forma de Pagamento: ${paymentMethodText}\n` +
+        `• Forma de Entrega: ${deliveryMethodText}\n` +
+        `\n` +
+        `*📅 Data:* ${new Date().toLocaleDateString('pt-BR')}\n` +
+        `*⏰ Horário:* ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit',minute: '2-digit'})}\n` +
+        `\n` +
+        `_Obrigado pela preferência!_`;
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
+      // 3. Sucesso
       setLastOrder({
         ...formData,
         items: [...items],
@@ -128,23 +109,12 @@ const Cart = () => {
         deliveryMethodText,
         orderId: order.id
       });
-
       toast.success('Pedido criado com sucesso!');
       setShowThankYou(true);
       clearCart();
       setShowCheckoutForm(false);
-      setIsSheetOpen(false);
-      setFormData({
-        name: '',
-        phone: '',
-        address: '',
-        paymentMethod: 'pix',
-        deliveryMethod: 'delivery'
-      });
-
     } catch (error) {
-      console.error('Erro inesperado:', error);
-      toast.error('Erro inesperado. Tente novamente.');
+      toast.error('Erro ao criar pedido. Tente novamente.');
     }
   };
   return (
@@ -181,7 +151,7 @@ const Cart = () => {
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-sm text-gray-900 truncate">{item.name}</h3>
                             <p className="text-violet-600 font-bold text-lg">
-                              R$ {item.price.toFixed(2).replace('.', ',')}
+                              R$ {Number(item.price || 0).toFixed(2).replace('.', ',')}
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-2">

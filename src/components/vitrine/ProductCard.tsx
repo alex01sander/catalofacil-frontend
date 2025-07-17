@@ -69,7 +69,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
 
         <div className="mb-3 md:mb-4">
           <span className="text-lg md:text-2xl font-bold text-green-600">
-            R$ {product.price.toFixed(2).replace('.', ',')}
+            R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
           </span>
         </div>
 

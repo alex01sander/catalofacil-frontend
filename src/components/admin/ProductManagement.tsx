@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff, Check, X, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import ProductForm from "./ProductForm";
+import { API_URL } from "@/constants/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Database Product interface (matches database schema)
 interface Product {
@@ -49,42 +51,23 @@ const ProductManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from database
+  // Fetch products from backend
   const fetchProducts = async () => {
-    if (!user) {
+    if (!user || !user.token) {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          categories (
-            id,
-            name
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        toast({
-          title: "Erro ao carregar produtos",
-          description: "Não foi possível carregar os produtos.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setProducts(data || []);
+      const res = await axios.get(`${API_URL}/produtos`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      setProducts(res.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({
         title: "Erro ao carregar produtos",
-        description: "Erro inesperado ao carregar produtos.",
+        description: "Não foi possível carregar os produtos.",
         variant: "destructive",
       });
     } finally {
@@ -93,7 +76,7 @@ const ProductManagement = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
+    if (user && user.token) fetchProducts();
   }, [user]);
 
   const filteredProducts = products.filter(product =>
@@ -102,14 +85,11 @@ const ProductManagement = () => {
   );
 
   const handleAddProduct = () => {
-    console.log('Adding new product...');
     setEditingProduct(null);
     setShowForm(true);
   };
 
   const handleEditProduct = (product: Product) => {
-    console.log('Editing product:', product);
-    // Map database product to form product interface
     const formProduct: FormProduct = {
       id: product.id,
       name: product.name,
@@ -126,139 +106,61 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
-    console.log('Form submit data:', productData);
     if (!user) return;
-
     try {
       if (editingProduct) {
         // Update existing product
-        const { error } = await supabase
-          .from('products')
-          .update({
-            name: productData.name,
-            price: productData.price,
-            description: productData.description,
-            category_id: productData.category === 'todos' ? null : productData.category,
-            stock: productData.stock,
-            is_active: productData.isActive,
-            image: productData.image,
-            images: productData.images || [],
-          })
-          .eq('id', editingProduct.id);
-
-        if (error) {
-          console.error('Error updating product:', error);
-          toast({
-            title: "Erro ao atualizar produto",
-            description: "Não foi possível atualizar o produto.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        toast({
-          title: "Produto atualizado",
-          description: "Produto atualizado com sucesso!",
+        await axios.put(`${API_URL}/produtos/${editingProduct.id}`, {
+          name: productData.name,
+          price: productData.price,
+          description: productData.description,
+          category_id: productData.category === 'todos' ? null : productData.category,
+          stock: productData.stock,
+          is_active: productData.isActive,
+          image: productData.image,
+          images: productData.images || [],
         });
+        toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
-        // Create new product - obter store_id atual
-        const { data: storeData, error: storeError } = await supabase.rpc('get_current_store');
-        
-        if (storeError) {
-          console.error('Error getting current store:', storeError);
-          toast({
-            title: "Erro ao criar produto",
-            description: "Erro ao identificar a loja atual",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const { error } = await supabase
-          .from('products')
-          .insert([{
-            user_id: user.id,
-            store_id: storeData,
-            name: productData.name,
-            price: productData.price,
-            description: productData.description,
-            category_id: productData.category === 'todos' ? null : productData.category,
-            stock: productData.stock,
-            is_active: productData.isActive,
-            image: productData.image,
-            images: productData.images || [],
-          }]);
-
-        if (error) {
-          console.error('Error creating product:', error);
-          toast({
-            title: "Erro ao criar produto",
-            description: "Não foi possível criar o produto.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        toast({
-          title: "Produto criado",
-          description: "Novo produto adicionado com sucesso!",
+        // Create new product
+        await axios.post(`${API_URL}/produtos`, {
+          user_id: user.id,
+          name: productData.name,
+          price: productData.price,
+          description: productData.description,
+          category_id: productData.category === 'todos' ? null : productData.category,
+          stock: productData.stock,
+          is_active: productData.isActive,
+          image: productData.image,
+          images: productData.images || [],
         });
+        toast({ title: "Produto criado", description: "Novo produto adicionado com sucesso!" });
       }
-
       setShowForm(false);
       setEditingProduct(null);
-      fetchProducts(); // Refresh the list
+      fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Erro inesperado ao salvar produto.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro inesperado", description: "Erro inesperado ao salvar produto.", variant: "destructive" });
     }
   };
 
   const handleFormCancel = () => {
-    console.log('Form cancelled');
     setShowForm(false);
     setEditingProduct(null);
   };
 
   const toggleProductStatus = async (productId: string) => {
     if (!user) return;
-
     const product = products.find(p => p.id === productId);
     if (!product) return;
-
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: !product.is_active })
-        .eq('id', productId);
-
-      if (error) {
-        console.error('Error updating product status:', error);
-        toast({
-          title: "Erro ao atualizar status",
-          description: "Não foi possível atualizar o status do produto.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Status atualizado",
-        description: `Produto ${product.is_active ? 'desativado' : 'ativado'} com sucesso!`,
-      });
-
-      fetchProducts(); // Refresh the list
+      await axios.put(`${API_URL}/produtos/${productId}`, { is_active: !product.is_active });
+      toast({ title: "Status atualizado", description: "Status do produto atualizado com sucesso!" });
+      fetchProducts();
     } catch (error) {
       console.error('Error updating product status:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Erro inesperado ao atualizar status.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao atualizar status", description: "Não foi possível atualizar o status do produto.", variant: "destructive" });
     }
   };
 
@@ -268,37 +170,14 @@ const ProductManagement = () => {
 
   const deleteProduct = async (productId: string) => {
     if (!user) return;
-
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
-
-      if (error) {
-        console.error('Error deleting product:', error);
-        toast({
-          title: "Erro ao remover produto",
-          description: "Não foi possível remover o produto.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Produto removido",
-        description: "Produto removido com sucesso!",
-      });
-
+      await axios.delete(`${API_URL}/produtos/${productId}`);
+      toast({ title: "Produto removido", description: "Produto removido com sucesso!" });
       setShowDeleteConfirm(null);
-      fetchProducts(); // Refresh the list
+      fetchProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
-      toast({
-        title: "Erro inesperado",
-        description: "Erro inesperado ao remover produto.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao remover produto", description: "Não foi possível remover o produto.", variant: "destructive" });
     }
   };
 
@@ -308,38 +187,21 @@ const ProductManagement = () => {
 
   console.log('ProductManagement render - showForm:', showForm, 'editingProduct:', editingProduct);
 
-  if (showForm) {
-    console.log('Rendering ProductForm with:', { editingProduct });
-    return (
-      <div className="space-y-6">
-        <ProductForm
-          product={editingProduct || undefined}
-          onSubmit={handleFormSubmit}
-          onCancel={handleFormCancel}
-        />
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
-            <p className="text-gray-600">Gerencie seu catálogo de produtos</p>
-          </div>
-        </div>
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando produtos...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
+      <Dialog open={showForm} onOpenChange={open => { if (!open) handleFormCancel(); }}>
+        <DialogContent className="max-w-md w-full max-h-[90vh] overflow-y-auto p-0 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
+          </DialogHeader>
+          <ProductForm
+            product={editingProduct || undefined}
+            onSubmit={handleFormSubmit}
+            onCancel={handleFormCancel}
+          />
+        </DialogContent>
+      </Dialog>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
@@ -472,7 +334,7 @@ const ProductManagement = () => {
                             {product.categories?.name || "Sem categoria"}
                           </Badge>
                           <span className="font-bold text-green-600">
-                            R$ {product.price.toFixed(2).replace('.', ',')}
+                            R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
                           </span>
                         </div>
                         
@@ -577,7 +439,7 @@ const ProductManagement = () => {
                           </Badge>
                         </td>
                         <td className="p-3 font-semibold">
-                          R$ {product.price.toFixed(2).replace('.', ',')}
+                          R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
                         </td>
                         <td className="p-3">
                           <span className={`${product.stock < 10 ? 'text-orange-600' : 'text-gray-900'}`}>

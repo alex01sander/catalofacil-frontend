@@ -1,86 +1,74 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import axios from 'axios';
+import { API_URL } from '@/constants/api';
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: any | null;
+  token: string | null;
   loading: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Removed console.log for production security
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    // Recuperar token do localStorage
+    const storedToken = localStorage.getItem('jwt_token');
+    const storedUser = localStorage.getItem('user');
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName || email
-        }
-      }
-    });
-    
-    return { error };
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/signup`, {
+        email,
+        password,
+        fullName
+      });
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.response?.data?.message || 'Erro ao registrar' };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    return { error };
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password // Corrigido: deve ser 'password' e não 'senha'
+      });
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('jwt_token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      return { error: null };
+    } catch (error: any) {
+      return { error: error.response?.data?.message || 'Erro ao fazer login' };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user');
   };
 
   const value = {
     user,
-    session,
+    token,
     loading,
     signUp,
     signIn,
@@ -88,4 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de AuthProvider');
+  }
+  return context;
 };

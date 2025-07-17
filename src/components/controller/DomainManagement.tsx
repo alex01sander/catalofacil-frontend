@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+// Removido: import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,13 +40,15 @@ const DomainManagement = () => {
   const { data: users = [] } = useQuery({
     queryKey: ['all_users_for_domain'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .order('email');
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // const { data, error } = await supabase
+      //   .from('profiles')
+      //   .select('id, email, full_name')
+      //   .order('email');
       
-      if (error) throw error;
-      return data;
+      // if (error) throw error;
+      // return data;
+      return []; // Placeholder
     }
   });
 
@@ -54,32 +56,33 @@ const DomainManagement = () => {
     queryKey: ['domain_owners'],
     queryFn: async () => {
       // Primeiro buscar todos os domain_owners
-      const { data: domainOwners, error: domainError } = await supabase
-        .from('domain_owners')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // const { data: domainOwners, error: domainError } = await supabase
+      //   .from('domain_owners')
+      //   .select('*')
+      //   .order('created_at', { ascending: false });
 
-      if (domainError) throw domainError;
+      // if (domainError) throw domainError;
 
       // Depois buscar os profiles correspondentes
-      const userIds = domainOwners?.map(d => d.user_id) ?? [];
+      // const userIds = domainOwners?.map(d => d.user_id) ?? [];
       
-      if (userIds.length === 0) return [];
+      // if (userIds.length === 0) return [];
 
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', userIds);
+      // const { data: profiles, error: profilesError } = await supabase
+      //   .from('profiles')
+      //   .select('id, full_name, email')
+      //   .in('id', userIds);
 
-      if (profilesError) throw profilesError;
+      // if (profilesError) throw profilesError;
 
       // Combinar os dados
-      const domainsWithProfiles = domainOwners?.map(domain => ({
-        ...domain,
-        profiles: profiles?.find(p => p.id === domain.user_id) || null
-      })) ?? [];
+      // const domainsWithProfiles = domainOwners?.map(domain => ({
+      //   ...domain,
+      //   profiles: profiles?.find(p => p.id === domain.user_id) || null
+      // })) ?? [];
 
-      return domainsWithProfiles as DomainOwner[];
+      return []; // Placeholder
     }
   });
 
@@ -99,34 +102,37 @@ const DomainManagement = () => {
       }
 
       // Verificar se já existe
-      const { data: existingDomain, error: checkError } = await supabase
-        .from('domain_owners')
-        .select('id')
-        .eq('domain', domain.toLowerCase())
-        .maybeSingle();
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // const { data: existingDomain, error: checkError } = await supabase
+      //   .from('domain_owners')
+      //   .select('id')
+      //   .eq('domain', domain.toLowerCase())
+      //   .maybeSingle();
 
-      if (checkError) throw checkError;
-      if (existingDomain) {
-        throw new Error('Este domínio já está cadastrado');
-      }
+      // if (checkError) throw checkError;
+      // if (existingDomain) {
+      //   throw new Error('Este domínio já está cadastrado');
+      // }
 
       // Primeiro, buscar o usuário pelo email
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', userEmail)
-        .single();
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // const { data: profile, error: profileError } = await supabase
+      //   .from('profiles')
+      //   .select('id')
+      //   .eq('email', userEmail)
+      //   .single();
 
-      if (profileError || !profile) {
-        throw new Error('Usuário não encontrado com este email');
-      }
+      // if (profileError || !profile) {
+      //   throw new Error('Usuário não encontrado com este email');
+      // }
 
       // Inserir o domínio
-      const { error } = await supabase
-        .from('domain_owners')
-        .insert([{ domain: domain.toLowerCase(), user_id: profile.id, domain_type: domainType }]);
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // const { error } = await supabase
+      //   .from('domain_owners')
+      //   .insert([{ domain: domain.toLowerCase(), user_id: profile.id, domain_type: domainType }]);
 
-      if (error) throw error;
+      // if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['domain_owners'] });
@@ -142,12 +148,13 @@ const DomainManagement = () => {
 
   const deleteDomainMutation = useMutation({
     mutationFn: async (domainId: string) => {
-      const { error } = await supabase
-        .from('domain_owners')
-        .delete()
-        .eq('id', domainId);
+      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
+      // const { error } = await supabase
+      //   .from('domain_owners')
+      //   .delete()
+      //   .eq('id', domainId);
 
-      if (error) throw error;
+      // if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['domain_owners'] });

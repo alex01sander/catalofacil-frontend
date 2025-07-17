@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Tag, Check, X, Upload, ImageIcon, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_URL } from "@/constants/api";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Category {
   id: string;
@@ -30,107 +32,47 @@ const CategoryManagement = () => {
   const [editingImage, setEditingImage] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // Fetch categories from database
+  // Fetch categories from backend
   const fetchCategories = async () => {
     if (!user) return;
-    
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching categories:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao carregar categorias",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Get product counts for each category
-      const categoriesWithCounts = await Promise.all(
-        (data || []).map(async (category) => {
-          const { count } = await supabase
-            .from('products')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', category.id);
-          
-          return {
-            ...category,
-            productCount: count || 0
-          };
-        })
-      );
-
-      setCategories(categoriesWithCounts);
+      const res = await axios.get(`${API_URL}/categorias`);
+      setCategories(res.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      toast({ title: "Erro", description: "Erro ao carregar categorias", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) {
-      fetchCategories();
-    }
+    if (user) fetchCategories();
   }, [user]);
 
   const addCategory = async () => {
     if (!newCategory.trim() || !user) return;
-
     try {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-      // Obter o store_id atual
-      const { data: storeData, error: storeError } = await supabase.rpc('get_current_store');
-      
-      if (storeError) {
-        console.error('Error getting current store:', storeError);
-        toast({
-          title: "Erro",
-          description: "Erro ao identificar a loja atual",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('categories')
-        .insert([{
-          user_id: user.id,
-          store_id: storeData,
-          name: newCategory.trim(),
-          color: randomColor,
-          image: newCategoryImage || null
-        }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error adding category:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao criar categoria",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setCategories(prev => [...prev, { ...data, productCount: 0 }]);
+      const res = await axios.post(`${API_URL}/categorias`, {
+        user_id: user.id,
+        name: newCategory.trim(),
+        color: randomColor,
+        image: newCategoryImage || null
+      });
+      setCategories(prev => [...prev, { ...res.data, productCount: 0 }]);
       setNewCategory("");
       setNewCategoryImage("");
-      toast({
-        title: "Categoria criada",
-        description: `Categoria "${newCategory}" criada com sucesso!`
-      });
+      toast({ title: "Categoria criada", description: `Categoria \"${newCategory}\" criada com sucesso!` });
+      // Abrir edição automaticamente para a nova categoria
+      setEditingCategory(res.data.id);
+      setEditingName(res.data.name);
+      setEditingImage(res.data.image || "");
     } catch (error) {
       console.error('Error adding category:', error);
+      toast({ title: "Erro", description: "Erro ao criar categoria", variant: "destructive" });
     }
   };
 
@@ -142,40 +84,21 @@ const CategoryManagement = () => {
 
   const saveEdit = async () => {
     if (!editingName.trim() || !user || !editingCategory) return;
-
     try {
-      const { error } = await supabase
-        .from('categories')
-        .update({
-          name: editingName.trim(),
-          image: editingImage || null
-        })
-        .eq('id', editingCategory);
-
-      if (error) {
-        console.error('Error updating category:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao atualizar categoria",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setCategories(prev => prev.map(cat => 
-        cat.id === editingCategory 
+      await axios.put(`${API_URL}/categorias/${editingCategory}`, {
+        name: editingName.trim(),
+        image: editingImage || null
+      });
+      setCategories(prev => prev.map(cat =>
+        cat.id === editingCategory
           ? { ...cat, name: editingName.trim(), image: editingImage }
           : cat
       ));
-
-      toast({
-        title: "Categoria atualizada",
-        description: "Categoria atualizada com sucesso!"
-      });
+      toast({ title: "Categoria atualizada", description: "Categoria atualizada com sucesso!" });
     } catch (error) {
       console.error('Error updating category:', error);
+      toast({ title: "Erro", description: "Erro ao atualizar categoria", variant: "destructive" });
     }
-
     setEditingCategory(null);
     setEditingName("");
     setEditingImage("");
@@ -193,31 +116,14 @@ const CategoryManagement = () => {
 
   const deleteCategory = async (categoryId: string) => {
     if (!user) return;
-
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', categoryId);
-
-      if (error) {
-        console.error('Error deleting category:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao remover categoria",
-          variant: "destructive"
-        });
-        return;
-      }
-
+      await axios.delete(`${API_URL}/categorias/${categoryId}`);
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
       setDeleteConfirm(null);
-      toast({
-        title: "Categoria removida",
-        description: "Categoria removida com sucesso!"
-      });
+      toast({ title: "Categoria removida", description: "Categoria removida com sucesso!" });
     } catch (error) {
       console.error('Error deleting category:', error);
+      toast({ title: "Erro", description: "Erro ao remover categoria", variant: "destructive" });
     }
   };
 
@@ -343,26 +249,33 @@ const CategoryManagement = () => {
                   <Label className="text-sm font-medium">Imagem da categoria</Label>
                   <div className="mt-2 space-y-3">
                     <Input 
-                      placeholder="Cole o link de uma imagem ou anexe um arquivo" 
+                      placeholder="Cole o link de uma imagem" 
                       value={newCategoryImage} 
                       onChange={(e) => setNewCategoryImage(e.target.value)} 
                       className="h-12"
                     />
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">ou</span>
                       <Input 
                         type="file" 
                         accept="image/*" 
-                        onChange={(e) => handleImageUpload(e)} 
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const fileExt = file.name.split('.').pop();
+                            const fileName = `categories/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                            const { data, error } = await supabase.storage.from('store-assets').upload(fileName, file);
+                            if (!error) {
+                              const { data: { publicUrl } } = supabase.storage.from('store-assets').getPublicUrl(fileName);
+                              setNewCategoryImage(publicUrl);
+                            }
+                          }
+                        }} 
                         className="hidden" 
-                        id="new-category-image-upload" 
+                        id="category-image-upload" 
                       />
-                      <Label 
-                        htmlFor="new-category-image-upload" 
-                        className="flex items-center gap-2 cursor-pointer bg-muted hover:bg-muted/80 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                      >
+                      <Label htmlFor="category-image-upload" className="flex items-center gap-2 cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md transition-colors">
                         <Upload className="h-4 w-4" />
-                        Anexar arquivo
+                        <span>Anexar imagem</span>
                       </Label>
                     </div>
                   </div>
@@ -380,16 +293,16 @@ const CategoryManagement = () => {
                     />
                   </div>
                 )}
-                <Button 
-                  onClick={addCategory} 
-                  className="w-full h-12 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white shadow-lg text-base font-medium"
-                  disabled={!newCategory.trim()}
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Criar Categoria
-                </Button>
               </div>
             </div>
+            <Button 
+              onClick={addCategory} 
+              className="w-full h-12 mt-6 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white shadow-lg text-base font-medium"
+              disabled={!newCategory.trim()}
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Criar Categoria
+            </Button>
           </CardContent>
         </Card>
 

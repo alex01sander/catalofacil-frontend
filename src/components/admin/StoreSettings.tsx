@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, Save, Eye, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStoreSettings } from "@/contexts/StoreSettingsContext";
+import axios from 'axios';
+import { API_URL } from '@/constants/api';
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from "@/contexts/ThemeContext";
 import { 
   validateStoreName, 
@@ -18,6 +20,8 @@ import {
   validateFileUpload,
   sanitizeText 
 } from "@/utils/validation";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 
 const RecommendedDimensions = ({ title, dimensions, description }: { title: string; dimensions: string; description: string }) => (
   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
@@ -48,25 +52,23 @@ const StoreSettings = () => {
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [uploading, setUploading] = useState(false);
+  const [whatsappError, setWhatsappError] = useState('');
 
   useEffect(() => {
     setFormSettings(settings);
   }, [settings]);
 
   const uploadFile = async (file: File, bucket: string, folder: string = '') => {
+    // Mantém upload via Supabase Storage
     const fileExt = file.name.split('.').pop();
     const fileName = `${user?.id}/${folder}${Date.now()}.${fileExt}`;
-    
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, file);
-
     if (error) throw error;
-
     const { data: { publicUrl } } = supabase.storage
       .from(bucket)
       .getPublicUrl(fileName);
-
     return publicUrl;
   };
 
@@ -263,8 +265,8 @@ const StoreSettings = () => {
               <Label htmlFor="storeName" className="text-sm font-medium">Nome da Loja</Label>
               <Input
                 id="storeName"
-                value={formSettings.store_name}
-                onChange={(e) => handleTextInput('store_name', e.target.value)}
+                value={formSettings.store_name || ""}
+                onChange={e => setFormSettings(prev => ({ ...prev, store_name: e.target.value }))}
                 placeholder="Nome da sua loja"
                 className={`mt-1 ${errors.store_name ? 'border-red-500' : ''}`}
                 maxLength={100}
@@ -272,20 +274,11 @@ const StoreSettings = () => {
               {errors.store_name && <p className="text-red-500 text-sm mt-1">{errors.store_name}</p>}
             </div>
             <div>
-              <Label htmlFor="storeSubtitle" className="text-sm font-medium">Subtítulo da Loja</Label>
-              <Input
-                id="storeSubtitle"
-                value={formSettings.store_subtitle || ''}
-                onChange={(e) => handleTextInput('store_subtitle', e.target.value)}
-                placeholder="Ex: Produtos Incríveis"
-              />
-            </div>
-            <div>
               <Label htmlFor="storeDescription" className="text-sm font-medium">Descrição da Loja</Label>
               <Textarea
                 id="storeDescription"
-                value={formSettings.store_description}
-                onChange={(e) => handleTextInput('store_description', e.target.value)}
+                value={formSettings.store_description || ""}
+                onChange={e => setFormSettings(prev => ({ ...prev, store_description: e.target.value }))}
                 placeholder="Descrição que aparece na loja"
                 rows={3}
                 className={`mt-1 resize-none ${errors.store_description ? 'border-red-500' : ''}`}
@@ -297,19 +290,43 @@ const StoreSettings = () => {
               <Label htmlFor="instagramUrl" className="text-sm font-medium">Instagram da Loja</Label>
               <Input
                 id="instagramUrl"
-                value={formSettings.instagram_url || ''}
+                value={formSettings.instagram_url || ""}
                 onChange={(e) => handleTextInput('instagram_url', e.target.value)}
                 placeholder="https://instagram.com/sualoja"
               />
             </div>
             <div>
               <Label htmlFor="whatsappNumber" className="text-sm font-medium">WhatsApp da Loja</Label>
-              <Input
-                id="whatsappNumber"
+              <PhoneInput
+                country={'br'}
                 value={formSettings.whatsapp_number || ''}
-                onChange={(e) => handleTextInput('whatsapp_number', e.target.value)}
-                placeholder="5511999999999"
+                onChange={phone => {
+                  setFormSettings(prev => ({ ...prev, whatsapp_number: phone }));
+                  if (whatsappError) setWhatsappError("");
+                }}
+                inputProps={{
+                  name: 'whatsapp',
+                  required: true,
+                  id: 'whatsappNumber'
+                }}
+                masks={{ br: '(..) .....-....' }}
+                onlyCountries={['br']}
+                placeholder="(99) 99999-9999"
+                inputClass={errors.whatsapp_number || whatsappError ? 'border-red-500' : ''}
+                specialLabel=""
+                disableDropdown={true}
+                onBlur={() => {
+                  // Validação simples: 13 dígitos (ex: 5511999999999)
+                  if (!/^55\d{11}$/.test(formSettings.whatsapp_number || '')) {
+                    setWhatsappError('Número inválido. Exemplo: (99) 99999-9999');
+                  } else {
+                    setWhatsappError('');
+                  }
+                }}
               />
+              {(errors.whatsapp_number || whatsappError) && (
+                <p className="text-red-500 text-sm mt-1">{errors.whatsapp_number || whatsappError}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -329,7 +346,7 @@ const StoreSettings = () => {
               <Label htmlFor="mobileLogoUrl" className="text-sm font-medium">URL da Logo</Label>
               <Input
                 id="mobileLogoUrl"
-                value={formSettings.mobile_logo || ''}
+                value={formSettings.mobile_logo || ""}
                 onChange={(e) => handleUrlInput('mobile_logo', e.target.value)}
                 placeholder="https://exemplo.com/logo.png"
                 className={`mt-1 text-sm ${errors.mobile_logo ? 'border-red-500' : ''}`}
@@ -385,7 +402,7 @@ const StoreSettings = () => {
               <Label htmlFor="desktopBannerUrl" className="text-sm font-medium">URL do Banner</Label>
               <Input
                 id="desktopBannerUrl"
-                value={formSettings.desktop_banner || ''}
+                value={formSettings.desktop_banner || ""}
                 onChange={(e) => handleUrlInput('desktop_banner', e.target.value)}
                 placeholder="https://exemplo.com/banner.png"
                 className="mt-1 text-sm"
@@ -443,7 +460,7 @@ const StoreSettings = () => {
                 <Label htmlFor="mobileBannerUrl" className="text-xs text-gray-600">URL da Imagem</Label>
                 <Input
                   id="mobileBannerUrl"
-                  value={formSettings.mobile_banner_image || ''}
+                  value={formSettings.mobile_banner_image || ""}
                   onChange={(e) => handleUrlInput('mobile_banner_image', e.target.value)}
                   placeholder="https://exemplo.com/banner.png"
                   className="mt-1 text-sm"

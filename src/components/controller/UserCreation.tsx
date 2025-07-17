@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import axios from 'axios';
+import { API_URL } from '@/constants/api';
 
 const UserCreation = () => {
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -18,34 +19,18 @@ const UserCreation = () => {
   const queryClient = useQueryClient();
 
   const createUserMutation = useMutation({
-    mutationFn: async ({ email, password, fullName, makeControllerAdmin }: { 
-      email: string; 
-      password: string; 
-      fullName: string; 
+    mutationFn: async ({ email, password, fullName, makeControllerAdmin }: {
+      email: string;
+      password: string;
+      fullName: string;
       makeControllerAdmin: boolean;
     }) => {
-      console.log('Tentando criar usuário:', { email, fullName, makeControllerAdmin });
-      
-      // Chamar a edge function para criar o usuário
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email,
-          password,
-          fullName,
-          makeControllerAdmin
-        }
+      const { data } = await axios.post(`${API_URL}/users`, {
+        email,
+        password,
+        fullName,
+        makeControllerAdmin
       });
-
-      if (error) {
-        console.error('Erro ao criar usuário:', error);
-        throw error;
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao criar usuário');
-      }
-
-      console.log('Usuário criado com sucesso:', data);
       return data;
     },
     onSuccess: () => {
@@ -58,7 +43,6 @@ const UserCreation = () => {
       toast.success("Usuário criado com sucesso!");
     },
     onError: (error: any) => {
-      console.error('Erro ao criar usuário:', error);
       toast.error(error.message || "Erro ao criar usuário");
     }
   });

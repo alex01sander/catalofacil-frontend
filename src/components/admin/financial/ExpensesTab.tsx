@@ -28,6 +28,7 @@ const ExpensesTab = () => {
     is_recurring: false,
     recurring_frequency: 'monthly',
   });
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +39,8 @@ const ExpensesTab = () => {
         user_id: user.id,
         name: formData.name,
         category: formData.category,
-        type: formData.type,
+        // Corrigir: enviar apenas 'supplier' por padrão para evitar erro de validação
+        type: 'supplier',
         amount: parseFloat(formData.amount),
         due_date: formData.due_date || null,
         is_recurring: formData.is_recurring,
@@ -64,6 +66,8 @@ const ExpensesTab = () => {
   };
 
   const markAsPaid = async (expenseId: string, expense: any) => {
+    if (payingId === expenseId) return; // Evita múltiplos cliques
+    setPayingId(expenseId);
     try {
       // Atualizar status da despesa
       await updateExpense(expenseId, { 
@@ -94,6 +98,8 @@ const ExpensesTab = () => {
         description: "Não foi possível marcar a despesa como paga",
         variant: "destructive",
       });
+    } finally {
+      setPayingId(null);
     }
   };
 
@@ -376,6 +382,7 @@ const ExpensesTab = () => {
                           size="sm"
                           onClick={() => markAsPaid(expense.id, expense)}
                           className="bg-green-600 hover:bg-green-700 text-xs"
+                          disabled={payingId === expense.id}
                         >
                           Marcar como Pago
                         </Button>

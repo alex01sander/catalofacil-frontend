@@ -4,13 +4,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, DollarSign, FileText, Phone } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import axios from 'axios';
+import { API_URL } from '@/constants/api';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuth } from '@/contexts/AuthContext';
 
-type CreditAccount = Tables<'credit_accounts'>;
-type CreditTransaction = Tables<'credit_transactions'>;
+type CreditAccount = {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  total_debt: number;
+  // Outros campos que podem existir em CreditAccount
+};
+
+type CreditTransaction = {
+  id: string;
+  credit_account_id: string;
+  type: 'debt' | 'payment';
+  amount: number;
+  date: string;
+  description?: string;
+  // Outros campos que podem existir em CreditTransaction
+};
 
 interface ClientHistoryModalProps {
   isOpen: boolean;
@@ -21,6 +37,7 @@ interface ClientHistoryModalProps {
 const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps) => {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const { token } = useAuth();
 
   useEffect(() => {
     if (client && isOpen) {
@@ -33,13 +50,14 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('credit_transactions')
-        .select('*')
-        .eq('credit_account_id', client.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const { data } = await axios.get(
+        `${API_URL}/credit-transactions?credit_account_id=${client.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setTransactions(data || []);
     } catch (error) {
       console.error('Erro ao buscar histórico:', error);

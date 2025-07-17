@@ -9,16 +9,25 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Users, DollarSign, Search, FileDown, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFinancial } from "@/contexts/FinancialContext";
-import { Tables } from "@/integrations/supabase/types";
 import ClientHistoryModal from "./ClientHistoryModal";
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+import axios from 'axios'; // Added axios import
+import { API_URL } from '@/constants/api';
+import { useAuth } from '@/contexts/AuthContext';
 
-type CreditAccount = Tables<'credit_accounts'>;
+type CreditAccount = {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  total_debt: number;
+  created_at: string;
+};
 
 const CreditTab = () => {
   const { toast } = useToast();
-  const { data, addCreditTransaction } = useFinancial();
+  const { data, addCreditTransaction, refreshData } = useFinancial();
+  const { token } = useAuth();
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState<CreditAccount | null>(null);
   const [showClientHistory, setShowClientHistory] = useState(false);
@@ -33,6 +42,33 @@ const CreditTab = () => {
     description: '',
     payment_method: 'pix' as 'pix' | 'cash' | 'card',
   });
+  const [selectedProducts, setSelectedProducts] = useState<{ product_id: string, quantity: number }[]>([]);
+  const [productToAdd, setProductToAdd] = useState('');
+  const [quantityToAdd, setQuantityToAdd] = useState(1);
+
+  // Função para atualizar produtos selecionados
+  const handleProductChange = (productId: string, quantity: number) => {
+    setSelectedProducts((prev) => {
+      const exists = prev.find(p => p.product_id === productId);
+      if (exists) {
+        return prev.map(p => p.product_id === productId ? { ...p, quantity } : p);
+      } else {
+        return [...prev, { product_id: productId, quantity }];
+      }
+    });
+  };
+
+  // Calcular valor total dos produtos selecionados
+  const totalValue = selectedProducts.reduce((sum, item) => {
+    const prod = data.products.find(p => p.id === item.product_id);
+    return sum + (prod ? Number(prod.price) * item.quantity : 0);
+  }, 0);
+
+  useEffect(() => {
+    if (formData.type === 'debt') {
+      setFormData(f => ({ ...f, amount: totalValue.toString() }));
+    }
+  }, [selectedProducts, formData.type]);
 
   const accounts = data.creditAccounts;
   const filteredAccounts = accounts.filter(account => 
@@ -42,18 +78,35 @@ const CreditTab = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       const amount = parseFloat(formData.amount);
-      
       if (formData.is_new_customer) {
-        // Criar nova conta usando o contexto
-        await addCreditTransaction('', formData.type, amount, formData.description);
+        // 1. Cria o cliente
+        const res = await axios.post(
+          `${API_URL}/credit-accounts`,
+          {
+            customer_name: formData.customer_name,
+            customer_phone: formData.customer_phone,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const creditAccountId = res.data.id;
+        // Atualiza lista após cadastro
+        await refreshData();
+        // 2. Só registra a transação se valor > 0
+        if (amount > 0) {
+          await addCreditTransaction(creditAccountId, formData.type, amount, formData.description);
+        } else {
+          toast({ title: 'Atenção', description: 'O valor do débito deve ser maior que zero para registrar dívida.', variant: 'destructive' });
+        }
       } else {
-        // Usar conta existente
+        // Cliente já existe, só registra a transação
         await addCreditTransaction(formData.existing_customer_id, formData.type, amount, formData.description);
       }
-      
       setShowTransactionForm(false);
       setFormData({
         is_new_customer: true,
@@ -65,8 +118,12 @@ const CreditTab = () => {
         description: '',
         payment_method: 'pix',
       });
-      
-    } catch (error) {
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 400 && error.response.data?.error?.includes('telefone')) {
+        toast({ title: 'Erro', description: error.response.data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro', description: 'Erro ao processar operação', variant: 'destructive' });
+      }
       console.error('Erro ao processar operação:', error);
     }
   };
@@ -215,96 +272,89 @@ const CreditTab = () => {
       {/* Formulário Moderno */}
       {showTransactionForm && (
         <Card className="shadow-xl border-orange-200">
-          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b">
-            <CardTitle className="text-xl flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                <Plus className="h-5 w-5 text-orange-600" />
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b py-2 px-4">
+            <CardTitle className="text-lg flex items-center gap-3">
+              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                <Plus className="h-4 w-4 text-orange-600" />
               </div>
               Nova Operação do Crediário
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Tipo de Operação com Cards */}
-              <div className="space-y-3">
-                <Label className="text-base font-medium">Tipo de Operação</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card 
-                    className={`cursor-pointer transition-all ${formData.type === 'debt' 
-                      ? 'border-red-500 bg-red-50' 
-                      : 'border-muted hover:border-red-300'
-                    }`}
-                    onClick={() => setFormData({...formData, type: 'debt'})}
-                  >
-                    <CardContent className="p-4 text-center">
-                      <div className="text-2xl mb-2">📝</div>
-                      <h3 className="font-medium">Novo Débito</h3>
-                      <p className="text-sm text-muted-foreground">Cliente ficou devendo</p>
-                    </CardContent>
-                  </Card>
-                  <Card 
-                    className={`cursor-pointer transition-all ${formData.type === 'payment' 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-muted hover:border-green-300'
-                    }`}
-                    onClick={() => setFormData({...formData, type: 'payment'})}
-                  >
-                    <CardContent className="p-4 text-center">
-                      <div className="text-2xl mb-2">💰</div>
-                      <h3 className="font-medium">Pagamento</h3>
-                      <p className="text-sm text-muted-foreground">Cliente pagou</p>
-                    </CardContent>
-                  </Card>
-                </div>
+          <CardContent className="p-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Tipo de Operação */}
+              <div className="grid grid-cols-2 gap-2">
+                <Card 
+                  className={`cursor-pointer transition-all py-2 px-2 ${formData.type === 'debt' 
+                    ? 'border-red-500 bg-red-50' 
+                    : 'border-muted hover:border-red-300'
+                  }`}
+                  onClick={() => setFormData({...formData, type: 'debt'})}
+                >
+                  <CardContent className="p-2 text-center">
+                    <div className="text-lg mb-1">📝</div>
+                    <h3 className="font-medium text-base">Novo Débito</h3>
+                    <p className="text-xs text-muted-foreground">Cliente ficou devendo</p>
+                  </CardContent>
+                </Card>
+                <Card 
+                  className={`cursor-pointer transition-all py-2 px-2 ${formData.type === 'payment' 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-muted hover:border-green-300'
+                  }`}
+                  onClick={() => setFormData({...formData, type: 'payment'})}
+                >
+                  <CardContent className="p-2 text-center">
+                    <div className="text-lg mb-1">💰</div>
+                    <h3 className="font-medium text-base">Pagamento</h3>
+                    <p className="text-xs text-muted-foreground">Cliente pagou</p>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Cliente */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <Switch
-                    id="customer-type"
-                    checked={formData.is_new_customer}
-                    onCheckedChange={(checked) => 
-                      setFormData({...formData, is_new_customer: checked})
-                    }
-                  />
-                  <Label htmlFor="customer-type" className="font-medium">
-                    {formData.is_new_customer ? "👤 Cliente novo" : "📋 Cliente existente"}
-                  </Label>
-                </div>
+              <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
+                <Switch
+                  id="customer-type"
+                  checked={formData.is_new_customer}
+                  onCheckedChange={(checked) => setFormData({...formData, is_new_customer: checked})}
+                />
+                <Label htmlFor="customer-type" className="font-medium text-sm">
+                  {formData.is_new_customer ? "👤 Cliente novo" : "📋 Cliente existente"}
+                </Label>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {formData.is_new_customer ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <>
                     <div>
-                      <Label htmlFor="customer_name">Nome do Cliente</Label>
+                      <Label htmlFor="customer_name" className="text-xs">Nome do Cliente</Label>
                       <Input
                         value={formData.customer_name}
                         onChange={(e) => setFormData({...formData, customer_name: e.target.value})}
                         placeholder="Digite o nome completo"
-                        className="h-11"
+                        className="h-9 text-sm"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="customer_phone">WhatsApp</Label>
+                      <Label htmlFor="customer_phone" className="text-xs">WhatsApp</Label>
                       <Input
                         value={formData.customer_phone}
                         onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
                         placeholder="(11) 99999-9999"
-                        className="h-11"
+                        className="h-9 text-sm"
                       />
                     </div>
-                  </div>
+                  </>
                 ) : (
-                  <div>
-                    <Label htmlFor="existing_customer">Selecionar Cliente</Label>
+                  <div className="col-span-2">
+                    <Label htmlFor="existing_customer" className="text-xs">Selecionar Cliente</Label>
                     <Select 
                       value={formData.existing_customer_id} 
-                      onValueChange={(value) => 
-                        setFormData({...formData, existing_customer_id: value})
-                      }
+                      onValueChange={(value) => setFormData({...formData, existing_customer_id: value})}
                     >
-                      <SelectTrigger className="h-11">
+                      <SelectTrigger className="h-9 text-sm">
                         <SelectValue placeholder="Escolha o cliente da lista" />
                       </SelectTrigger>
                       <SelectContent>
@@ -327,30 +377,85 @@ const CreditTab = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Produtos */}
+              {formData.type === 'debt' && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Produtos</Label>
+                  <div className="flex gap-2 items-end">
+                    <Select value={productToAdd} onValueChange={setProductToAdd}>
+                      <SelectTrigger className="w-40 h-9 text-sm">
+                        <SelectValue placeholder="Selecione um produto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.products.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name} (R$ {Number(product.price).toFixed(2)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={data.products.find(p => p.id === productToAdd)?.stock || 99}
+                      value={quantityToAdd}
+                      onChange={e => setQuantityToAdd(Number(e.target.value))}
+                      className="w-16 h-9 text-sm"
+                      placeholder="Qtd"
+                      disabled={!productToAdd}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        if (!productToAdd) return;
+                        handleProductChange(productToAdd, quantityToAdd);
+                        setProductToAdd('');
+                        setQuantityToAdd(1);
+                      }}
+                      disabled={!productToAdd}
+                    >Adicionar</Button>
+                  </div>
+                  {selectedProducts.length > 0 && (
+                    <ul className="mt-1 space-y-1">
+                      {selectedProducts.map(item => {
+                        const prod = data.products.find(p => p.id === item.product_id);
+                        if (!prod) return null;
+                        return (
+                          <li key={item.product_id} className="flex items-center gap-2 text-sm">
+                            <span>{prod.name} (Qtd: {item.quantity}) - R$ {(Number(prod.price) * item.quantity).toFixed(2)}</span>
+                            <Button type="button" size="sm" variant="destructive" onClick={() => setSelectedProducts(prev => prev.filter(p => p.product_id !== item.product_id))}>Remover</Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">Total: <b>R$ {totalValue.toFixed(2)}</b></div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
-                  <Label htmlFor="amount">💵 Valor</Label>
+                  <Label htmlFor="amount" className="text-xs">💵 Valor</Label>
                   <Input
                     type="number"
                     step="0.01"
                     value={formData.amount}
                     onChange={(e) => setFormData({...formData, amount: e.target.value})}
                     placeholder="0,00"
-                    className="h-11 text-lg"
+                    className="h-9 text-sm"
                     required
+                    disabled={formData.type === 'debt'}
                   />
                 </div>
-
                 {formData.type === 'payment' && (
                   <div>
-                    <Label htmlFor="payment_method">Forma de Pagamento</Label>
+                    <Label htmlFor="payment_method" className="text-xs">Forma de Pagamento</Label>
                     <Select 
                       value={formData.payment_method} 
-                      onValueChange={(value: 'pix' | 'cash' | 'card') => 
-                        setFormData({...formData, payment_method: value})
-                      }
+                      onValueChange={(value: 'pix' | 'cash' | 'card') => setFormData({...formData, payment_method: value})}
                     >
-                      <SelectTrigger className="h-11">
+                      <SelectTrigger className="h-9 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -364,30 +469,20 @@ const CreditTab = () => {
               </div>
 
               <div>
-                <Label htmlFor="description">📝 Descrição</Label>
+                <Label htmlFor="description" className="text-xs">📝 Descrição</Label>
                 <Input
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   placeholder="Ex: Compra de produtos, Parcela do mês..."
-                  className="h-11"
+                  className="h-9 text-sm"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  type="submit" 
-                  className="flex-1 h-12 text-base bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                >
-                  {formData.type === 'debt' ? '📝 Registrar Débito' : '💰 Confirmar Pagamento'}
+              <div className="flex gap-2 justify-end mt-2">
+                <Button type="submit" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow h-10 px-6 text-base" size="sm">
+                  {formData.type === 'debt' ? 'Registrar Débito' : 'Registrar Pagamento'}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowTransactionForm(false)}
-                  className="px-8 h-12"
-                >
-                  Cancelar
-                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowTransactionForm(false)} className="h-10 px-4 text-base">Cancelar</Button>
               </div>
             </form>
           </CardContent>
@@ -459,7 +554,7 @@ const CreditTab = () => {
                           variant={Number(account.total_debt) > 0 ? "destructive" : "default"} 
                           className="text-xs"
                         >
-                          {Number(account.total_debt) > 0 ? '⚠️ Em débito' : '✅ Em dia'}
+                          {Number(account.total_debt) > 0 ? 'Aguardando pagamento' : 'Quitado'}
                         </Badge>
                       </div>
                     </div>

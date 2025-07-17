@@ -10,6 +10,10 @@ import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart } from "lucide
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const CashFlowTab = () => {
   const { toast } = useToast();
@@ -44,6 +48,8 @@ const CashFlowTab = () => {
       payment_method: 'cash',
       date: new Date().toISOString().split('T')[0],
     });
+    // Atualiza dashboard e caixa
+    window.location.reload();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,12 +219,29 @@ const CashFlowTab = () => {
 
                 <div>
                   <Label htmlFor="date">Data</Label>
-                  <Input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    required
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={"w-full justify-start text-left font-normal" + (!formData.date ? " text-muted-foreground" : "")}
+                      >
+                        {formData.date
+                          ? format(new Date(formData.date), "dd/MM/yyyy", { locale: ptBR })
+                          : "Escolha a data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.date ? new Date(formData.date) : undefined}
+                        onSelect={(date) => {
+                          setFormData({ ...formData, date: date ? date.toISOString().split('T')[0] : '' });
+                        }}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
@@ -322,14 +345,31 @@ const CashFlowTab = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="date">Data da Venda</Label>
-                  <Input
-                    type="date"
-                    value={saleData.date}
-                    onChange={(e) => setSaleData({...saleData, date: e.target.value})}
-                    required
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="date">Data da Venda *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={"w-full justify-start text-left font-normal" + (!saleData.date ? " text-muted-foreground" : "")}
+                      >
+                        {saleData.date
+                          ? format(new Date(saleData.date), "dd/MM/yyyy", { locale: ptBR })
+                          : "Escolha a data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={saleData.date ? new Date(saleData.date) : undefined}
+                        onSelect={(date) => {
+                          setSaleData({ ...saleData, date: date ? date.toISOString().split('T')[0] : '' });
+                        }}
+                        locale={ptBR}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 

@@ -1,56 +1,40 @@
 
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Category {
-  id: string;
-  name: string;
-  image?: string;
-}
+import { useState, useEffect, useMemo } from "react";
+import axios from "axios";
+import { API_URL } from "@/constants/api";
 
 export const useOptimizedCategories = (enabled = true) => {
-  const fetchCategories = async (): Promise<Category[]> => {
-    // RLS policy já filtra por domínio usando get_current_domain_owner()
-    const { data, error } = await supabase
-      .from('categories')
-      .select('id, name, image')
-      .order('created_at', { ascending: true });
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    if (error) {
-      console.error('Error fetching categories:', error);
-      throw error;
-    }
+  useEffect(() => {
+    if (!enabled) return;
+    setLoading(true);
+    setError(null);
+    axios.get(`${API_URL}/categorias`)
+      .then(res => {
+        setCategories(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err);
+        setLoading(false);
+      });
+  }, [enabled]);
 
-    return data || [];
-  };
-
-  const {
-    data: fetchedCategories = [],
-    isLoading,
-    error
-  } = useQuery({
-    queryKey: ['categories-domain', window.location.host],
-    queryFn: fetchCategories,
-    enabled: enabled,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-  });
-
-  const categories = useMemo(() => {
-    return [
-      {
-        id: "todos",
-        name: "Todos",
-        image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=80&fit=crop&crop=center"
-      },
-      ...fetchedCategories
-    ];
-  }, [fetchedCategories]);
+  const allCategories = useMemo(() => [
+    {
+      id: "todos",
+      name: "Todos",
+      image: "https://static.vecteezy.com/ti/vetor-gratis/p1/453289-vitrine-de-brinquedos-vetor.jpg"
+    },
+    ...categories
+  ], [categories]);
 
   return {
-    categories,
-    loading: isLoading,
+    categories: allCategories,
+    loading,
     error
   };
 };

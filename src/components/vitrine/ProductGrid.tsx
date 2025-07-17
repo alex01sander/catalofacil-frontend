@@ -1,29 +1,44 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import ProductModal from "./ProductModal";
-import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { Box } from "lucide-react";
+import axios from "axios";
+import { API_URL } from "@/constants/api";
+import { useAuth } from '@/contexts/AuthContext';
+
 interface ProductGridProps {
   searchTerm: string;
   selectedCategory: string;
 }
-const ProductGrid = memo(({
-  searchTerm,
-  selectedCategory
-}: ProductGridProps) => {
-  const {
-    products,
-    loading,
-    error
-  } = useOptimizedProducts({
-    searchTerm,
-    selectedCategory,
-    publicView: true
-  });
-  const [selectedProduct, setSelectedProduct] = useState(null);
+
+const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: ProductGridProps & { publicView?: boolean }) => {
+  const { token } = useAuth();
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const handleViewDetails = product => {
-    console.log('Ver detalhes do produto:', product.name);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    if (!publicView && !token) {
+      setLoading(false);
+      return;
+    }
+    const headers = publicView ? {} : { Authorization: `Bearer ${token}` };
+    axios.get(`${API_URL}/produtos`, { headers })
+      .then(res => {
+        setProducts(res.data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Erro ao carregar produtos. Tente novamente.");
+        setLoading(false);
+      });
+  }, [searchTerm, selectedCategory, publicView, token]);
+
+  const handleViewDetails = (product: any) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
   };
@@ -35,13 +50,13 @@ const ProductGrid = memo(({
     return <section className="py-8 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({
-            length: 8
-          }).map((_, index) => <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse">
                 <div className="aspect-square bg-gray-200 rounded-lg mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              </div>)}
+              </div>
+            ))}
           </div>
         </div>
       </section>;
@@ -49,7 +64,7 @@ const ProductGrid = memo(({
   if (error) {
     return <section className="py-8 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="text-gray-600">Erro ao carregar produtos. Tente novamente.</p>
+          <p className="text-gray-600">{error}</p>
         </div>
       </section>;
   }
@@ -67,7 +82,18 @@ const ProductGrid = memo(({
       <section className="px-4 bg-gray-50 py-px">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map(product => <ProductCard key={product.id} product={product} onViewDetails={() => handleViewDetails(product)} />)}
+            {products
+              .filter(product => product.is_active)
+              .filter(product =>
+                !selectedCategory || selectedCategory === 'todos' || product.category_id === selectedCategory
+              )
+              .map(product => (
+                <ProductCard 
+                  key={product.id}
+                  product={product}
+                  onViewDetails={() => handleViewDetails(product)}
+                />
+              ))}
           </div>
         </div>
       </section>

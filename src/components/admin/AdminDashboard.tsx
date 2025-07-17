@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { useOptimizedCategories } from "@/hooks/useOptimizedCategories";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import axios from 'axios';
+import { API_URL } from '@/constants/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { useFinancial } from "@/contexts/FinancialContext";
 
 const AdminDashboard = () => {
@@ -32,36 +33,29 @@ const AdminDashboard = () => {
   const [suggestedPrice, setSuggestedPrice] = useState(0);
   const [profitAmount, setProfitAmount] = useState(0);
 
+  // Novos estados para simulação dupla
+  const [markupResult, setMarkupResult] = useState({ price: 0, profit: 0 });
+  const [marginResult, setMarginResult] = useState({ price: 0, profit: 0 });
+
   // Buscar pedidos do usuário
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return;
-      
       try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('store_owner_id', user.id);
-        
-        if (error) {
-          console.error('Erro ao buscar pedidos:', error);
-        } else {
-          setOrders(data || []);
-        }
+        const { data } = await axios.get(`${API_URL}/pedidos?store_owner_id=${user.id}`);
+        setOrders(data || []);
       } catch (error) {
         console.error('Erro ao buscar pedidos:', error);
       } finally {
         setOrdersLoading(false);
       }
     };
-
     fetchOrders();
   }, [user]);
 
   // Calcular estatísticas reais combinando pedidos e vendas do contexto financeiro
-  const totalRevenueOrders = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-  const totalRevenueSales = financialData.sales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
-  const totalRevenue = totalRevenueOrders + totalRevenueSales + financialData.totalIncome;
+  // Receita total = apenas entradas do caixa (evita duplicidade)
+  const totalRevenue = financialData.totalIncome;
   
   const totalProducts = products.filter(p => p.is_active).length;
   const totalOrders = orders.length + financialData.sales.length;
@@ -152,18 +146,23 @@ const AdminDashboard = () => {
     if (cost === 0) {
       setSuggestedPrice(0);
       setProfitAmount(0);
+      setMarkupResult({ price: 0, profit: 0 });
+      setMarginResult({ price: 0, profit: 0 });
       return;
     }
 
-    // Custo total
     const totalCost = cost + taxes + expenses;
-    // Preço sugerido baseado na margem de lucro
-    const finalPrice = totalCost / (1 - (margin / 100));
-    // Lucro líquido
-    const profit = finalPrice - totalCost;
-
-    setSuggestedPrice(finalPrice);
-    setProfitAmount(profit);
+    // Markup: preço = custo * (1 + markup)
+    const markupPrice = totalCost * (1 + (margin / 100));
+    const markupProfit = markupPrice - totalCost;
+    // Margem: preço = custo / (1 - margem)
+    const marginPercent = margin / 100;
+    const marginPrice = marginPercent >= 1 ? 0 : totalCost / (1 - marginPercent);
+    const marginProfit = marginPrice - totalCost;
+    setSuggestedPrice(marginPrice); // Mantém compatibilidade antiga
+    setProfitAmount(marginProfit);
+    setMarkupResult({ price: markupPrice, profit: markupProfit });
+    setMarginResult({ price: marginPrice, profit: marginProfit });
   };
 
   const handleSimulationChange = (field: string, value: number) => {
@@ -175,16 +174,23 @@ const AdminDashboard = () => {
 
   // Atividades recentes baseadas nos dados reais do contexto financeiro
   const recentActivities = [
-    ...orders.slice(0, 2).map(order => ({
-      action: "Nova venda realizada",
-      product: `Pedido #${order.id.slice(0, 8)}`,
-      time: new Date(order.created_at).toLocaleDateString('pt-BR')
-    })),
-    ...financialData.sales.slice(0, 2).map(sale => ({
-      action: "Venda registrada",
-      product: sale.product_name,
-      time: new Date(sale.created_at).toLocaleDateString('pt-BR')
-    })),
+    ...orders.slice(0, 2).map(order => {
+      // Quantidade de itens
+      const qtdItens = order.order_items && order.order_items.length ? `${order.order_items.length} ${order.order_items.length === 1 ? 'item' : 'itens'}` : '1 item';
+      return {
+        action: "Nova venda realizada",
+        product: `Pedido #${order.id.slice(0, 8)} — ${qtdItens} — R$ ${Number(order.total_amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})} — Cliente: ${order.customer_name}`,
+        time: new Date(order.created_at).toLocaleDateString('pt-BR')
+      };
+    }),
+    ...financialData.sales.slice(0, 2).map(sale => {
+      // Para vendas manuais, mostrar produto, valor e cliente (se houver)
+      return {
+        action: "Venda registrada",
+        product: `${sale.product_name} — R$ ${Number(sale.total_price).toLocaleString('pt-BR', {minimumFractionDigits: 2})} — Cliente: ${sale.customer_name || '-'}`,
+        time: new Date(sale.created_at).toLocaleDateString('pt-BR')
+      };
+    }),
     ...financialData.cashFlow.slice(0, 2).map(entry => ({
       action: entry.type === 'income' ? "Entrada registrada" : "Despesa registrada",
       product: entry.description,
@@ -204,31 +210,29 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 px-2 md:px-8 py-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          📊 Dashboard
-        </h1>
-        <p className="text-muted-foreground">Visão geral completa do seu negócio</p>
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent tracking-tight">📊 Dashboard</h1>
+        <p className="text-lg text-muted-foreground mt-1">Visão geral completa do seu negócio</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className="shadow-lg border-l-4 border-l-primary">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card key={index} className="shadow-sm border border-border bg-background/80 hover:shadow-lg transition-all">
+            <CardContent className="p-6 flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className={`text-sm font-medium ${stat.color}`}>{stat.change}</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">{stat.title}</p>
+                  <p className="text-xl font-bold text-foreground leading-tight break-all min-w-0">{stat.value}</p>
+                  <p className={`text-xs font-medium ${stat.color}`}>{stat.change}</p>
                 </div>
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   index === 0 ? 'bg-green-100' : 
                   index === 1 ? 'bg-blue-100' :
                   index === 2 ? 'bg-purple-100' : 'bg-orange-100'
                 }`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                  <stat.icon className={`h-7 w-7 ${stat.color}`} />
                 </div>
               </div>
             </CardContent>
@@ -237,11 +241,11 @@ const AdminDashboard = () => {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Sales Chart */}
-        <Card className="shadow-lg border-l-4 border-l-blue-500">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
-            <CardTitle className="flex items-center gap-2 text-xl">
+        <Card className="shadow-sm border border-border bg-background/80">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b rounded-t-xl">
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold">
               <TrendingUp className="h-5 w-5 text-blue-600" />
               📈 Vendas dos Últimos 6 Meses
             </CardTitle>
@@ -252,54 +256,31 @@ const AdminDashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value) => [`R$ ${value}`, 'Vendas']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="vendas" 
-                  stroke="#8B5CF6" 
-                  strokeWidth={3}
-                  dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
-                />
+                <Tooltip formatter={(value) => [`R$ ${value}`, 'Vendas']} />
+                <Line type="monotone" dataKey="vendas" stroke="#6366f1" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Category Chart */}
-        <Card className="shadow-lg border-l-4 border-l-purple-500">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b">
-            <CardTitle className="flex items-center gap-2 text-xl">
+        {/* Category Pie Chart */}
+        <Card className="shadow-sm border border-border bg-background/80">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b rounded-t-xl">
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold">
               <Package className="h-5 w-5 text-purple-600" />
-              🏷️ Produtos por Categoria
+              📦 Produtos por Categoria
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              {categoryData.length > 0 ? (
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <p>Nenhuma categoria com produtos encontrada</p>
-                </div>
-              )}
+              <PieChart>
+                <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+                  {categoryData.map((entry, idx) => (
+                    <Cell key={`cell-${idx}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value, name) => [`${value}%`, name]} />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -396,51 +377,25 @@ const AdminDashboard = () => {
             <div className="space-y-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-900 mb-3">Resultados da Simulação</h4>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-white rounded border">
-                    <span className="text-sm text-gray-600">Preço Sugerido:</span>
-                    <span className="font-bold text-lg text-green-600">
-                      R$ {suggestedPrice.toFixed(2)}
-                    </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Markup */}
+                  <div className="p-3 bg-white rounded border flex flex-col gap-2">
+                    <span className="text-sm text-gray-600 font-medium">Preço por Markup</span>
+                    <span className="font-bold text-lg text-blue-600">R$ {markupResult.price.toFixed(2)}</span>
+                    <span className="text-xs text-gray-500">Lucro: R$ {markupResult.profit.toFixed(2)}</span>
+                    <span className="text-xs text-gray-500">Fórmula: custo × (1 + markup)</span>
                   </div>
-
-                  <div className="flex justify-between items-center p-3 bg-white rounded border">
-                    <span className="text-sm text-gray-600">Lucro Líquido:</span>
-                    <span className="font-bold text-purple-600">
-                      R$ {profitAmount.toFixed(2)}
-                    </span>
+                  {/* Margem de Lucro */}
+                  <div className="p-3 bg-white rounded border flex flex-col gap-2">
+                    <span className="text-sm text-gray-600 font-medium">Preço por Margem de Lucro</span>
+                    <span className="font-bold text-lg text-green-600">R$ {marginResult.price.toFixed(2)}</span>
+                    <span className="text-xs text-gray-500">Lucro: R$ {marginResult.profit.toFixed(2)}</span>
+                    <span className="text-xs text-gray-500">Fórmula: custo ÷ (1 - margem)</span>
                   </div>
-
-                  {priceSimulation.currentPrice > 0 && (
-                    <div className="flex justify-between items-center p-3 bg-white rounded border">
-                      <span className="text-sm text-gray-600">Preço Atual:</span>
-                      <span className="font-bold text-blue-600">
-                        R$ {priceSimulation.currentPrice.toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-
-                  {suggestedPrice > 0 && priceSimulation.currentPrice > 0 && (
-                    <div className="p-3 bg-white rounded border">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-600">Comparação:</span>
-                        <span className={`font-bold ${
-                          suggestedPrice > priceSimulation.currentPrice 
-                            ? 'text-red-600' 
-                            : 'text-green-600'
-                        }`}>
-                          {suggestedPrice > priceSimulation.currentPrice ? '+' : ''}
-                          R$ {(suggestedPrice - priceSimulation.currentPrice).toFixed(2)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        {suggestedPrice > priceSimulation.currentPrice 
-                          ? 'Preço sugerido acima do mercado' 
-                          : 'Preço sugerido competitivo'}
-                      </p>
-                    </div>
-                  )}
+                </div>
+                <div className="mt-4 text-xs text-gray-700 bg-blue-50 rounded p-3">
+                  <strong>O que é Markup?</strong> Markup é o percentual aplicado sobre o custo para formar o preço de venda. Exemplo: 50% de markup em R$ 12 resulta em preço de R$ 18.<br/>
+                  <strong>O que é Margem de Lucro?</strong> Margem é o percentual de lucro sobre o preço final. Exemplo: 50% de margem em R$ 12 resulta em preço de R$ 24.
                 </div>
               </div>
 
@@ -476,29 +431,29 @@ const AdminDashboard = () => {
       </Card>
 
       {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Atividade Recente</CardTitle>
+      <Card className="shadow-sm border border-border bg-background/80">
+        <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100 border-b rounded-t-xl">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Calculator className="h-5 w-5 text-orange-600" />
+            🕒 Atividades Recentes
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {recentActivities.length > 0 ? (
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <ul className="divide-y divide-border">
+            {recentActivities.length === 0 ? (
+              <li className="py-6 text-center text-muted-foreground">Nenhuma atividade recente</li>
+            ) : (
+              recentActivities.map((activity, idx) => (
+                <li key={idx} className="py-4 flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-600">{activity.product}</p>
+                    <p className="font-medium text-foreground">{activity.action}</p>
+                    <p className="text-sm text-muted-foreground">{activity.product}</p>
                   </div>
-                  <span className="text-sm text-gray-500">{activity.time}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-lg font-medium mb-2">Nenhuma atividade recente</p>
-              <p className="text-sm">Suas atividades aparecerão aqui conforme você usar o sistema</p>
-            </div>
-          )}
+                  <span className="text-xs text-muted-foreground">{activity.time}</span>
+                </li>
+              ))
+            )}
+          </ul>
         </CardContent>
       </Card>
     </div>

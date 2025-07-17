@@ -10,9 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { X, Upload, Trash2, GripVertical, Info } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
-import { supabase } from "@/integrations/supabase/client";
+import axios from 'axios';
+import { API_URL } from '@/constants/api';
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface Product {
   id?: string;
@@ -61,6 +64,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [showRequiredFieldsMsg, setShowRequiredFieldsMsg] = useState(false);
   
   const [formData, setFormData] = useState<Omit<Product, 'id'>>({
     name: product?.name || "",
@@ -77,46 +81,23 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const [costPrice, setCostPrice] = useState(0);
   const [marginPercent, setMarginPercent] = useState(0);
   const [suggestedPrice, setSuggestedPrice] = useState(0);
+  const [calcMethod, setCalcMethod] = useState<'margin' | 'markup'>('margin');
 
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>(product?.images || []);
 
   console.log('ProductForm state:', { formData, images, loadingCategories });
 
-  // Fetch categories from database
+  // Buscar categorias do backend
   const fetchCategories = async () => {
-    console.log('Fetching categories for current domain');
-    
-    if (!user) {
-      console.log('No user found, setting loading to false');
-      setLoadingCategories(false);
-      return;
-    }
-    
+    setLoadingCategories(true);
     try {
-      setLoadingCategories(true);
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching categories:', error);
-        toast({
-          title: "Erro ao carregar categorias",
-          description: "Não foi possível carregar as categorias.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Categories fetched:', data);
-      setCategories(data || []);
+      const res = await axios.get(`${API_URL}/categorias`);
+      setCategories(res.data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
       toast({
-        title: "Erro inesperado",
-        description: "Erro inesperado ao carregar categorias.",
+        title: "Erro ao carregar categorias",
+        description: "Não foi possível carregar as categorias.",
         variant: "destructive",
       });
     } finally {
@@ -127,14 +108,19 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   // Cálculo automático do preço sugerido baseado na margem
   useEffect(() => {
     if (costPrice > 0 && marginPercent > 0) {
-      const calculated = costPrice * (1 + marginPercent / 100);
+      let calculated = 0;
+      if (calcMethod === 'margin') {
+        calculated = costPrice / (1 - marginPercent / 100);
+      } else {
+        calculated = costPrice * (1 + marginPercent / 100);
+      }
       setSuggestedPrice(calculated);
       setFormData(prev => ({
         ...prev,
         price: calculated
       }));
     }
-  }, [costPrice, marginPercent]);
+  }, [costPrice, marginPercent, calcMethod]);
 
   useEffect(() => {
     console.log('useEffect triggered for fetchCategories');
@@ -143,6 +129,12 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Validação dos campos obrigatórios
+    if (!formData.name || !formData.price || !formData.category) {
+      setShowRequiredFieldsMsg(true);
+      return;
+    }
+    setShowRequiredFieldsMsg(false);
     console.log('Form submitted with data:', { ...formData, images });
     
     onSubmit({
@@ -159,30 +151,32 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    console.log('Files selected for upload:', files?.length);
-    
     if (files) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = event => {
-          const imageUrl = event.target?.result as string;
-          console.log('Image loaded:', imageUrl.substring(0, 50) + '...');
+      for (const file of Array.from(files)) {
+        // 1. Upload para o Supabase
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+        const { error } = await supabase.storage.from('store-assets').upload(filePath, file);
+        if (error) {
+          toast({ title: 'Erro ao enviar imagem', description: error.message, variant: 'destructive' });
+          continue;
+        }
+        // 2. Obter URL pública
+        const { data } = supabase.storage.from('store-assets').getPublicUrl(filePath);
+        if (data?.publicUrl) {
           setImages(prev => {
-            const newImages = [...prev, imageUrl];
+            const newImages = [...prev, data.publicUrl];
             // Se for a primeira imagem, definir como principal
             if (prev.length === 0) {
-              setFormData(prevForm => ({
-                ...prevForm,
-                image: imageUrl
-              }));
+              setFormData(prevForm => ({ ...prevForm, image: data.publicUrl }));
             }
             return newImages;
           });
-        };
-        reader.readAsDataURL(file);
-      });
+        }
+      }
     }
   };
 
@@ -250,17 +244,14 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   try {
     return (
       <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>
-            {product ? 'Editar Produto' : 'Novo Produto'}
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {showRequiredFieldsMsg && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-3 text-sm">
+                Preencha todos os campos obrigatórios antes de salvar.
+              </div>
+            )}
             {/* Imagens do produto */}
             <div className="space-y-4">
               <Label>Imagens do Produto</Label>
@@ -390,57 +381,46 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
             </div>
 
             {/* Simulação de Margem */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
-              <Label className="text-base font-semibold">Simulação de Margem</Label>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border rounded-lg p-4 bg-blue-50 mt-4">
+              <h4 className="font-semibold mb-2">Simulação de Preço</h4>
+              <RadioGroup value={calcMethod} onValueChange={v => setCalcMethod(v as 'margin' | 'markup')} className="flex gap-6 mb-4">
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="margin" id="margin" />
+                  <label htmlFor="margin" className="text-sm">Margem de Lucro</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="markup" id="markup" />
+                  <label htmlFor="markup" className="text-sm">Markup</label>
+                </div>
+              </RadioGroup>
+              <div className="grid grid-cols-3 gap-4 items-end">
                 <div>
-                  <Label htmlFor="costPrice">Preço de Custo (R$)</Label>
-                  <Input
-                    id="costPrice"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={costPrice || ""}
-                    onChange={(e) => setCostPrice(parseFloat(e.target.value) || 0)}
-                    placeholder="0,00"
-                  />
+                  <Label>Preço de Custo (R$)</Label>
+                  <Input type="number" step="0.01" value={costPrice || ''} onChange={e => setCostPrice(parseFloat(e.target.value) || 0)} />
                 </div>
                 <div>
-                  <Label htmlFor="marginPercent">Margem Desejada (%)</Label>
-                  <Input
-                    id="marginPercent"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="1000"
-                    value={marginPercent || ""}
-                    onChange={(e) => setMarginPercent(parseFloat(e.target.value) || 0)}
-                    placeholder="0"
-                  />
+                  <Label>{calcMethod === 'margin' ? 'Margem Desejada (%)' : 'Markup (%)'}</Label>
+                  <Input type="number" step="0.01" value={marginPercent || ''} onChange={e => setMarginPercent(parseFloat(e.target.value) || 0)} />
                 </div>
                 <div>
-                  <Label htmlFor="suggestedPrice">Preço Sugerido (R$)</Label>
-                  <Input
-                    id="suggestedPrice"
-                    type="number"
-                    step="0.01"
-                    value={suggestedPrice.toFixed(2)}
-                    readOnly
-                    className="bg-green-50 border-green-200"
-                  />
+                  <Label>Preço Sugerido (R$)</Label>
+                  <Input type="number" step="0.01" value={suggestedPrice.toFixed(2)} readOnly className="bg-green-50 border-green-200" />
                 </div>
               </div>
-              
               {costPrice > 0 && marginPercent > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                  <p className="text-sm text-blue-800">
-                    <strong>Resumo:</strong> Com custo de R$ {costPrice.toFixed(2)} e margem de {marginPercent}%, 
-                    o preço sugerido é R$ {suggestedPrice.toFixed(2)} 
-                    (lucro de R$ {(suggestedPrice - costPrice).toFixed(2)})
-                  </p>
+                <div className="bg-blue-100 border border-blue-200 rounded p-3 mt-3 text-sm text-blue-800">
+                  <strong>Resumo:</strong> Com custo de R$ {costPrice.toFixed(2)} e {calcMethod === 'margin' ? `margem de ${marginPercent}%` : `markup de ${marginPercent}%`}, o preço sugerido é R$ {suggestedPrice.toFixed(2)} (lucro de R$ {(suggestedPrice - costPrice).toFixed(2)})<br/>
+                  <span className="block mt-1 text-xs text-blue-700">
+                    {calcMethod === 'margin'
+                      ? 'Fórmula: Preço = Custo ÷ (1 - Margem)'
+                      : 'Fórmula: Preço = Custo × (1 + Markup)'}
+                  </span>
                 </div>
               )}
+              <div className="mt-2 text-xs text-gray-600">
+                <strong>O que é Margem?</strong> Percentual de lucro sobre o preço final.<br/>
+                <strong>O que é Markup?</strong> Percentual aplicado sobre o custo para formar o preço de venda.
+              </div>
             </div>
 
             {/* Preço Final */}

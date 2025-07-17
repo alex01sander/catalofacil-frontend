@@ -50,11 +50,11 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
       <div className={`${isMobile ? 'space-y-4' : 'grid md:grid-cols-2 gap-8'}`}>
         {/* Image Gallery */}
         <div className="space-y-4">
-          <div className={`${isMobile ? 'aspect-[4/3]' : 'aspect-square'} rounded-lg overflow-hidden bg-white`}>
+          <div className="aspect-video rounded-lg overflow-hidden bg-white flex items-center justify-center">
             <img
               src={allImages[selectedImage] || product.image}
               alt={product.name}
-              className={`w-full h-full ${isMobile ? 'object-contain' : 'object-cover'}`}
+              className="w-full h-full object-contain"
             />
           </div>
           
@@ -100,7 +100,7 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-green-600`}>
-                R$ {product.price.toFixed(2).replace('.', ',')}
+                R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
               </span>
               <span className="text-sm text-gray-500">
                 {product.stock} em estoque

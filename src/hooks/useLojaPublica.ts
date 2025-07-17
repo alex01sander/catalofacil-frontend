@@ -1,78 +1,27 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { API_URL } from "@/constants/api";
 
-interface Produto {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  is_active: boolean;
-  image: string | null;
-  images: string[];
-  category_id: string | null;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Categoria {
-  id: string;
-  name: string;
-  color: string | null;
-  image: string | null;
-  user_id: string;
-  created_at: string | null;
-  updated_at: string | null;
-  store_id: string | null;
-}
-
-export function useLojaPublica() {
+export function useLojaPublica(slug?: string) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const domain = window.location.hostname;
-
-      // 1. Buscar o dono do domínio
-      const { data: dono, error: erroDono } = await supabase
-        .from('domain_owners')
-        .select('user_id')
-        .eq('domain', domain)
-        .maybeSingle();
-
-      if (!dono?.user_id || erroDono) {
-        setLoading(false);
-        return;
+      // Buscar produtos públicos
+      if (slug) {
+        const prodsRes = await axios.get(`${API_URL}/site/${slug}`);
+        setProdutos(prodsRes.data.products || []);
+      } else {
+        setProdutos([]);
       }
-
-      setUserId(dono.user_id);
-
-      // 2. Buscar produtos públicos
-      const { data: prods } = await supabase
-        .from('products')
-        .select('*')
-        .eq('user_id', dono.user_id)
-        .eq('is_active', true);
-
-      setProdutos(prods || []);
-
-      // 3. Buscar categorias públicas
-      const { data: cats } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', dono.user_id);
-
-      setCategorias(cats || []);
       setLoading(false);
     };
-
     load();
-  }, []);
+  }, [slug]);
 
   return { userId, produtos, categorias, loading };
 } 
