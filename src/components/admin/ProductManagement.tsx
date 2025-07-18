@@ -59,7 +59,7 @@ const ProductManagement = () => {
     }
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/produtos`, {
+      const res = await axios.get(`${API_URL}/products`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       setProducts(res.data || []);
@@ -110,7 +110,7 @@ const ProductManagement = () => {
     try {
       if (editingProduct) {
         // Update existing product
-        await axios.put(`${API_URL}/produtos/${editingProduct.id}`, {
+        await axios.put(`${API_URL}/products/${editingProduct.id}`, {
           name: productData.name,
           price: productData.price,
           description: productData.description,
@@ -123,7 +123,7 @@ const ProductManagement = () => {
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
         // Create new product
-        await axios.post(`${API_URL}/produtos`, {
+        await axios.post(`${API_URL}/products`, {
           user_id: user.id,
           name: productData.name,
           price: productData.price,
@@ -155,7 +155,7 @@ const ProductManagement = () => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
     try {
-      await axios.put(`${API_URL}/produtos/${productId}`, { is_active: !product.is_active });
+      await axios.put(`${API_URL}/products/${productId}`, { is_active: !product.is_active });
       toast({ title: "Status atualizado", description: "Status do produto atualizado com sucesso!" });
       fetchProducts();
     } catch (error) {
@@ -171,7 +171,7 @@ const ProductManagement = () => {
   const deleteProduct = async (productId: string) => {
     if (!user) return;
     try {
-      await axios.delete(`${API_URL}/produtos/${productId}`);
+      await axios.delete(`${API_URL}/products/${productId}`);
       toast({ title: "Produto removido", description: "Produto removido com sucesso!" });
       setShowDeleteConfirm(null);
       fetchProducts();

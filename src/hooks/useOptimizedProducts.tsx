@@ -25,7 +25,7 @@ export const useOptimizedProducts = ({
     }
     setLoading(true);
     const headers = publicView ? {} : { Authorization: `Bearer ${token}` };
-    axios.get(`${API_URL}/produtos`, { headers })
+    axios.get(`${API_URL}/products`, { headers })
       .then(res => {
         let filtered = res.data;
         if (selectedCategory && selectedCategory !== 'todos') {

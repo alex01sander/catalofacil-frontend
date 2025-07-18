@@ -69,7 +69,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         axios.get(`${API_URL}/credit-accounts`, { headers }),
         axios.get(`${API_URL}/despesas`, { headers }),
         axios.get(`${API_URL}/vendas`, { headers }),
-        axios.get(`${API_URL}/produtos`, { headers })
+        axios.get(`${API_URL}/products`, { headers })
       ]);
       const cashFlow = cashFlowRes.data || [];
       const creditAccounts = creditRes.data || [];

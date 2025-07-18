@@ -15,7 +15,7 @@ export function usePublicStoreData() {
       try {
         const storeRes = await axios.get(`${API_URL}/storeSettings`);
         setStoreData(storeRes.data || null);
-        const prodsRes = await axios.get(`${API_URL}/produtos`);
+        const prodsRes = await axios.get(`${API_URL}/products`);
         setProducts(prodsRes.data || []);
       } catch (err) {
         setError('Erro ao carregar dados públicos da loja');

@@ -27,7 +27,7 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
       return;
     }
     const headers = publicView ? {} : { Authorization: `Bearer ${token}` };
-    axios.get(`${API_URL}/produtos`, { headers })
+    axios.get(`${API_URL}/products`, { headers })
       .then(res => {
         setProducts(res.data);
         setLoading(false);

@@ -121,7 +121,7 @@ const OrderManagement = () => {
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
-          await axios.put(`${API_URL}/produtos/${item.product_id}`, { stock: product.stock - item.quantity });
+          await axios.put(`${API_URL}/products/${item.product_id}`, { stock: product.stock - item.quantity });
         }
       }
       // Adicionar ao financeiro
