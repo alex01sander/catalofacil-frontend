@@ -12,6 +12,7 @@ export const useOptimizedCategories = (enabled = true) => {
 
   useEffect(() => {
     if (!enabled || !token) return;
+    console.log('Token antes de buscar categorias:', token);
     setLoading(true);
     setError(null);
     axios.get(`${API_URL}/categorias`, { headers: { Authorization: `Bearer ${token}` } })
