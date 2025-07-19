@@ -189,9 +189,23 @@ const StoreSettings = () => {
       return;
     }
 
+    // Garantir todos os campos obrigatórios
+    const payload = {
+      ...formSettings,
+      store_name: formSettings.store_name || '',
+      store_description: formSettings.store_description || '',
+      store_subtitle: formSettings.store_subtitle || '',
+      instagram_url: formSettings.instagram_url || '',
+      whatsapp_number: formSettings.whatsapp_number || '',
+      mobile_logo: formSettings.mobile_logo ?? null,
+      desktop_banner: formSettings.desktop_banner ?? null,
+      mobile_banner_color: formSettings.mobile_banner_color || 'verde',
+      mobile_banner_image: formSettings.mobile_banner_image ?? null,
+    };
+    console.log('Payload enviado para /storeSettings:', payload);
+
     try {
-      await updateSettings(formSettings);
-      
+      await updateSettings(payload);
       toast({
         title: "Configurações salvas!",
         description: "As alterações foram aplicadas na loja.",
