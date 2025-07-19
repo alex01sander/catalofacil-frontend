@@ -94,13 +94,11 @@ const LoginComponent = () => {
     }
     setLoading(true);
     try {
-      const {
-        error
-      } = await signIn(email, password);
+      const { error } = await signIn(email, password);
       if (error) {
         toast({
           title: "Erro no login",
-          description: error.message,
+          description: typeof error === 'string' ? error : error.message || 'Erro desconhecido',
           variant: "destructive"
         });
       } else {
@@ -110,10 +108,11 @@ const LoginComponent = () => {
         });
         navigate('/admin');
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erro no login:', error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro inesperado",
+        description: error?.message || "Ocorreu um erro inesperado",
         variant: "destructive"
       });
     } finally {

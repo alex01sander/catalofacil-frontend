@@ -2,6 +2,33 @@ export const API_URL = "https://catalofacil-backend.onrender.com";
 import axios from "axios";
 import { useAuth } from '@/contexts/AuthContext';
 
+// Configurar interceptors globais do axios
+axios.interceptors.request.use(
+  (config) => {
+    console.log('Requisição sendo feita:', config.method?.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    console.error('Erro na requisição:', error);
+    return Promise.reject(error);
+  }
+);
+
+axios.interceptors.response.use(
+  (response) => {
+    console.log('Resposta recebida:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error('Erro na resposta:', error);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Dados:', error.response.data);
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Exemplo de chamada protegida (para uso em componentes ou hooks)
 export async function testProtectedProductsApi() {
   const { token } = useAuth();
