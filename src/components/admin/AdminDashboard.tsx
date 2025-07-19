@@ -41,7 +41,10 @@ const AdminDashboard = () => {
   // Buscar pedidos do usuário
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user || !user.token) return;
+      if (!user || !user.token) {
+        setOrdersLoading(false);
+        return;
+      }
       try {
         const { data } = await api.get(`${API_URL}/pedidos?store_owner_id=${user.id}`);
         setOrders(data || []);
