@@ -1,73 +1,115 @@
-# Welcome to your Lovable project
+# Catálogo Digital – Produção
 
-## Project info
+## Sobre o Projeto
 
-**URL**: https://lovable.dev/projects/bf526e07-19a7-4fd4-9fd3-ceaeb335da7e
+Catálogo digital moderno para pequenos negócios. Gerencie produtos, vendas e apresente sua loja online de forma profissional.
 
-## How can I edit this code?
+- **Frontend:** React + Vite + TypeScript + shadcn-ui + Tailwind CSS
+- **Backend:** (API externa, configure a URL via variável de ambiente)
+- **Deploy:** Vercel (HTTPS automático, cache headers otimizados)
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## Como rodar em produção
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bf526e07-19a7-4fd4-9fd3-ceaeb335da7e) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### 1. Instale as dependências
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
 ```
 
-**Edit a file directly in GitHub**
+### 2. Configure as variáveis de ambiente
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Crie um arquivo `.env.production` na raiz do projeto com:
 
-**Use GitHub Codespaces**
+```
+VITE_API_URL=https://catalofacil-backend.onrender.com
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 3. Gere a build de produção
 
-## What technologies are used for this project?
+```sh
+npm run build
+```
 
-This project is built with:
+### 4. Faça o deploy (Vercel)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- O deploy no Vercel é automático ao fazer push na branch `main`.
+- HTTPS é habilitado automaticamente.
+- Cache headers já estão configurados em `vercel.json`.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/bf526e07-19a7-4fd4-9fd3-ceaeb335da7e) and click on Share -> Publish.
+## SEO e Acessibilidade
 
-## Can I connect a custom domain to my Lovable project?
+- **Meta tags essenciais** e Open Graph configurados em `index.html`
+- **Favicon:** `public/favicon.ico`
+- **robots.txt:** `public/robots.txt`
+- **Responsivo e acessível:** navegação por teclado, contraste, imagens com `alt`
+- **Lazy loading:** rotas principais carregadas sob demanda
+- **Otimização de imagens:** automática no build via `vite-plugin-imagemin`
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Cache headers (Vercel)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Exemplo de configuração em `vercel.json`:
+
+```json
+{
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/favicon.ico",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Redirecionamento SPA
+
+Arquivo `public/_redirects` para garantir SPA no Vercel/Netlify:
+
+```
+/*    /index.html   200
+```
+
+---
+
+## Segurança
+
+- Nenhum segredo sensível exposto no frontend.
+- Token JWT removido do localStorage no logout.
+- Mensagens de erro amigáveis, sem vazar detalhes técnicos.
+
+---
+
+## Dicas finais
+
+- Teste acessibilidade com Lighthouse ou axe.
+- Adicione domínio customizado no Vercel para produção.
+- Para monitoramento de erros, considere Sentry ou LogRocket.
+
+---
