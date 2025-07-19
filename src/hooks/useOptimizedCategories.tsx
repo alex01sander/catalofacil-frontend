@@ -11,7 +11,7 @@ export const useOptimizedCategories = (enabled = true) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('Token no hook useOptimizedCategories:', token);
+    console.log('Token no hook useOptimizedCategories:', token, 'authLoading:', authLoading);
     if (authLoading) {
       setLoading(true);
       return;
