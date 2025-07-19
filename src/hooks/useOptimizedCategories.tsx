@@ -5,33 +5,47 @@ import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useOptimizedCategories = (enabled = true) => {
-  const { token, loading: authLoading } = useAuth();
+  const { token, loading: authLoading, user } = useAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('Token no hook useOptimizedCategories:', token, 'authLoading:', authLoading);
+    console.log('Token no hook useOptimizedCategories:', token, 'authLoading:', authLoading, 'user:', user);
+    
     if (authLoading) {
       setLoading(true);
       return;
     }
-    if (!enabled || !token) {
+    
+    // Se não está habilitado, para de carregar
+    if (!enabled) {
       setLoading(false);
       return;
     }
+    
+    // Se há usuário logado (AdminDashboard), faz a requisição mesmo sem token explícito
+    // O interceptor do axiosInstance vai adicionar o token automaticamente
+    if (!user && !token) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
+    
     api.get(`/categorias`)
       .then(res => {
+        console.log('Categorias carregadas com sucesso:', res.data);
         setCategories(res.data);
         setLoading(false);
       })
       .catch(err => {
+        console.error('Erro ao carregar categorias:', err);
         setError(err);
         setLoading(false);
       });
-  }, [enabled, token, authLoading]);
+  }, [enabled, token, authLoading, user]);
 
   const allCategories = useMemo(() => [
     {

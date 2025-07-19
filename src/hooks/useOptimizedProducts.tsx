@@ -5,7 +5,7 @@ import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useOptimizedProducts = (categoryId = null, enabled = true) => {
-  const { token, loading: authLoading } = useAuth();
+  const { token, loading: authLoading, user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,25 +15,39 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       setLoading(true);
       return;
     }
-    if (!enabled || !token) {
+    
+    // Se não está habilitado, para de carregar
+    if (!enabled) {
       setLoading(false);
       return;
     }
+    
+    // Se há usuário logado (AdminDashboard), faz a requisição mesmo sem token explícito
+    // O interceptor do axiosInstance vai adicionar o token automaticamente
+    if (!user && !token) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
+    
     const url = categoryId && categoryId !== "todos" 
       ? `/products?category_id=${categoryId}` 
       : "/products";
+      
     api.get(url)
       .then(res => {
+        console.log('Produtos carregados com sucesso:', res.data);
         setProducts(res.data);
         setLoading(false);
       })
       .catch(err => {
+        console.error('Erro ao carregar produtos:', err);
         setError(err);
         setLoading(false);
       });
-  }, [categoryId, enabled, token, authLoading]);
+  }, [categoryId, enabled, token, authLoading, user]);
 
   const filteredProducts = useMemo(() => {
     if (!categoryId || categoryId === "todos") {
