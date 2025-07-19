@@ -106,7 +106,7 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
-    if (!user) return;
+    if (!user || !user.token) return;
     try {
       if (editingProduct) {
         // Update existing product
@@ -151,7 +151,7 @@ const ProductManagement = () => {
   };
 
   const toggleProductStatus = async (productId: string) => {
-    if (!user) return;
+    if (!user || !user.token) return;
     const product = products.find(p => p.id === productId);
     if (!product) return;
     try {
@@ -169,7 +169,7 @@ const ProductManagement = () => {
   };
 
   const deleteProduct = async (productId: string) => {
-    if (!user) return;
+    if (!user || !user.token) return;
     try {
       await axios.delete(`${API_URL}/products/${productId}`);
       toast({ title: "Produto removido", description: "Produto removido com sucesso!" });

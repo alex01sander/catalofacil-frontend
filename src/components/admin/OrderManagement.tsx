@@ -102,6 +102,7 @@ const OrderManagement = () => {
 
   // Confirmar pedido
   const confirmOrder = async (order: Order) => {
+    if (!user || !user.token) return;
     try {
       // Verificar estoque
       const stockIssues = [];
@@ -146,6 +147,7 @@ const OrderManagement = () => {
 
   // Cancelar pedido
   const cancelOrder = async (orderId: string) => {
+    if (!user || !user.token) return;
     try {
       await axios.put(`${API_URL}/pedidos/${orderId}`, { status: 'cancelled' }, { headers: { Authorization: `Bearer ${user.token}` } });
       toast.success('Pedido cancelado');
@@ -164,7 +166,7 @@ const OrderManagement = () => {
 
   // Salvar edições
   const saveOrderEdits = async () => {
-    if (!editingOrder) return;
+    if (!editingOrder || !user || !user.token) return;
     try {
       // Calcular novo total
       const newTotal = editingItems.reduce((sum, item) => sum + item.total_price, 0);

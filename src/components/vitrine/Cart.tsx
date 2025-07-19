@@ -69,6 +69,7 @@ const Cart = () => {
         payload.customer_email = formData.address;
       }
       // Enviar pedido
+      if (!token) throw new Error('Usuário não autenticado');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const { data: order } = await axios.post(`${API_URL}/pedidos`, payload, { headers });
       // 2. WhatsApp
