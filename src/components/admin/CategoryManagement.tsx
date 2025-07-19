@@ -60,12 +60,23 @@ const CategoryManagement = () => {
     try {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      const res = await api.post(`${API_URL}/categorias`, {
+      
+      const payload = {
         user_id: user.id,
         name: newCategory.trim(),
         color: randomColor,
         image: newCategoryImage || null
-      });
+      };
+      
+      console.log('=== ADICIONAR CATEGORIA ===');
+      console.log('Payload sendo enviado:', payload);
+      console.log('User:', user);
+      console.log('URL:', `${API_URL}/categorias`);
+      
+      const res = await api.post(`${API_URL}/categorias`, payload);
+      
+      console.log('✅ Resposta do servidor:', res.data);
+      
       setCategories(prev => [...prev, { ...res.data, productCount: 0 }]);
       setNewCategory("");
       setNewCategoryImage("");
@@ -75,7 +86,9 @@ const CategoryManagement = () => {
       setEditingName(res.data.name);
       setEditingImage(res.data.image || "");
     } catch (error) {
-      console.error('Error adding category:', error);
+      console.error('❌ Error adding category:', error);
+      console.error('❌ Detalhes do erro:', error.response?.data);
+      console.error('❌ Status:', error.response?.status);
       toast({ title: "Erro", description: "Erro ao criar categoria", variant: "destructive" });
     }
   };
