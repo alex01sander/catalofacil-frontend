@@ -5,14 +5,21 @@ import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useOptimizedCategories = (enabled = true) => {
-  const { token } = useAuth();
+  const { token, loading: authLoading } = useAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!enabled || !token) return;
-    console.log('Token antes de buscar categorias:', token);
+    console.log('Token no hook useOptimizedCategories:', token);
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!enabled || !token) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     axios.get(`${API_URL}/categorias`, { headers: { Authorization: `Bearer ${token}` } })
@@ -24,7 +31,7 @@ export const useOptimizedCategories = (enabled = true) => {
         setError(err);
         setLoading(false);
       });
-  }, [enabled, token]);
+  }, [enabled, token, authLoading]);
 
   const allCategories = useMemo(() => [
     {
