@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx';
 import axios from 'axios'; // Added axios import
 import { API_URL } from '@/constants/api';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/services/api';
 
 type CreditAccount = {
   id: string;
@@ -82,7 +83,7 @@ const CreditTab = () => {
       const amount = parseFloat(formData.amount);
       if (formData.is_new_customer) {
         // 1. Cria o cliente
-        const res = await axios.post(
+        const res = await api.post(
           `${API_URL}/credit-accounts`,
           {
             customer_name: formData.customer_name,

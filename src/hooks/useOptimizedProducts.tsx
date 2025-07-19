@@ -1,52 +1,50 @@
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, useMemo } from "react";
+import api from "@/services/api";
 import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 
-export const useOptimizedProducts = ({
-  searchTerm = '',
-  selectedCategory = 'todos',
-  enabled = true,
-  publicView = false,
-  token: propToken = null
-} = {}) => {
-  const { token: contextToken } = useAuth();
-  const token = propToken || contextToken;
+export const useOptimizedProducts = (categoryId = null, enabled = true) => {
+  const { token, loading: authLoading } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!enabled) return;
-    if (!publicView && !token) {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!enabled || !token) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    const headers = publicView ? {} : { Authorization: `Bearer ${token}` };
-    axios.get(`${API_URL}/products`, { headers })
+    setError(null);
+    const url = categoryId && categoryId !== "todos" 
+      ? `/products?category_id=${categoryId}` 
+      : "/products";
+    api.get(url)
       .then(res => {
-        let filtered = res.data;
-        if (selectedCategory && selectedCategory !== 'todos') {
-          filtered = filtered.filter(p => p.category_id === selectedCategory);
-        }
-        if (searchTerm.trim()) {
-          filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        }
-        setProducts(filtered);
+        setProducts(res.data);
         setLoading(false);
       })
       .catch(err => {
         setError(err);
         setLoading(false);
       });
-  }, [searchTerm, selectedCategory, enabled, token, publicView]);
+  }, [categoryId, enabled, token, authLoading]);
+
+  const filteredProducts = useMemo(() => {
+    if (!categoryId || categoryId === "todos") {
+      return products;
+    }
+    return products.filter(product => product.category_id === categoryId);
+  }, [products, categoryId]);
 
   return {
-    products,
+    products: filteredProducts,
     loading,
-    error,
-    refetch: () => {},
+    error
   };
 };

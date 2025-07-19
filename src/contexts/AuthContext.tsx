@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import axios from 'axios';
 import { API_URL } from '@/constants/api';
+import api from '@/services/api';
 
 interface AuthContextType {
   user: any | null;
@@ -50,13 +50,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
       console.log('Tentando fazer registro com:', { email, fullName });
-      const response = await axios.post(`${API_URL}/auth/signup`, {
+      setLoading(true);
+      const response = await api.post(`${API_URL}/auth/signup`, {
         email,
         password,
         fullName
       });
       
       console.log('Resposta do registro:', response);
+      if (response.data.token) {
+        localStorage.setItem('jwt_token', response.data.token);
+        setUser(response.data);
+        // setAuthenticated(true); // This line was not in the new_code, so it's removed.
+      }
       return { error: null };
     } catch (error: any) {
       console.error('Erro no registro:', error);
@@ -74,13 +80,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       return { error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
       console.log('Tentando fazer login com:', { email, password: '***' });
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      setLoading(true);
+      const response = await api.post(`${API_URL}/auth/login`, {
         email,
         password
       });
@@ -121,6 +130,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       return { error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 

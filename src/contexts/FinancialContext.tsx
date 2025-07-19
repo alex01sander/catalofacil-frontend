@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { API_URL } from '@/constants/api';
+import api from '@/services/api';
 
 interface FinancialData {
   cashFlow: any[];
@@ -65,11 +66,11 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
-        axios.get(`${API_URL}/fluxo-caixa`, { headers }),
-        axios.get(`${API_URL}/credit-accounts`, { headers }),
-        axios.get(`${API_URL}/despesas`, { headers }),
-        axios.get(`${API_URL}/vendas`, { headers }),
-        axios.get(`${API_URL}/products`, { headers })
+        api.get(`${API_URL}/fluxo-caixa`),
+        api.get(`${API_URL}/credit-accounts`),
+        api.get(`${API_URL}/despesas`),
+        api.get(`${API_URL}/vendas`),
+        api.get(`${API_URL}/products`)
       ]);
       const cashFlow = cashFlowRes.data || [];
       const creditAccounts = creditRes.data || [];
@@ -111,7 +112,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         date: new Date(entry.date).toISOString(),
       };
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.post(`${API_URL}/fluxo-caixa`, payload, { headers });
+      const res = await api.post(`${API_URL}/fluxo-caixa`, payload);
       setData(prev => ({
         ...prev,
         cashFlow: [res.data, ...prev.cashFlow],
@@ -133,7 +134,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       // Remover campos duplicados e garantir apenas um user_id
       const payload = { ...expense, user_id: user.id };
       delete payload["userId"];
-      const res = await axios.post(`${API_URL}/despesas`, payload, { headers });
+      const res = await api.post(`${API_URL}/despesas`, payload);
       setData(prev => ({ ...prev, expenses: [res.data, ...prev.expenses] }));
       toast({ title: 'Sucesso', description: 'Despesa adicionada com sucesso!' });
     } catch (error) {
@@ -146,7 +147,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !token) return;
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.put(`${API_URL}/despesas/${id}`, updates, { headers });
+      const res = await api.put(`${API_URL}/despesas/${id}`, updates);
       setData(prev => ({
         ...prev,
         expenses: prev.expenses.map(exp => exp.id === id ? res.data : exp)
@@ -176,9 +177,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         status: 'completed',
         store_id: selectedProduct.store_id || null
       };
-      const res = await axios.post(`${API_URL}/vendas`, payload, { headers });
+      const res = await api.post(`${API_URL}/vendas`, payload);
       // Lançar também no fluxo de caixa
-      await axios.post(`${API_URL}/fluxo-caixa`, {
+      await api.post(`${API_URL}/fluxo-caixa`, {
         user_id: user?.id,
         store_id: payload.store_id,
         type: 'income',
@@ -187,7 +188,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         amount: payload.total_price,
         date: payload.sale_date,
         payment_method: saleData.payment_method || 'cash'
-      }, { headers });
+      });
       await refreshData();
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {
@@ -204,12 +205,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.post(`${API_URL}/credit-transactions`, {
+      const res = await api.post(`${API_URL}/credit-transactions`, {
         credit_account_id: accountId,
         type,
         amount,
         description: description || ''
-      }, { headers });
+      });
       setData(prev => ({ ...prev, creditAccounts: prev.creditAccounts })); // Atualização real pode ser feita via refreshData
       toast({ title: 'Sucesso', description: `${type === 'debt' ? 'Débito' : 'Pagamento'} registrado com sucesso!` });
     } catch (error: any) {

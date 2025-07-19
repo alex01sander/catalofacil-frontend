@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff, Check, X, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
+import api from '@/services/api';
 import { useAuth } from "@/contexts/AuthContext";
 import ProductForm from "./ProductForm";
 import { API_URL } from "@/constants/api";
@@ -59,9 +59,7 @@ const ProductManagement = () => {
     }
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/products`, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
+      const res = await api.get(`${API_URL}/products`);
       setProducts(res.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -110,7 +108,7 @@ const ProductManagement = () => {
     try {
       if (editingProduct) {
         // Update existing product
-        await axios.put(`${API_URL}/products/${editingProduct.id}`, {
+        await api.put(`${API_URL}/products/${editingProduct.id}`, {
           name: productData.name,
           price: productData.price,
           description: productData.description,
@@ -123,7 +121,7 @@ const ProductManagement = () => {
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
         // Create new product
-        await axios.post(`${API_URL}/products`, {
+        await api.post(`${API_URL}/products`, {
           user_id: user.id,
           name: productData.name,
           price: productData.price,
@@ -155,7 +153,7 @@ const ProductManagement = () => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
     try {
-      await axios.put(`${API_URL}/products/${productId}`, { is_active: !product.is_active });
+      await api.put(`${API_URL}/products/${productId}`, { is_active: !product.is_active });
       toast({ title: "Status atualizado", description: "Status do produto atualizado com sucesso!" });
       fetchProducts();
     } catch (error) {
@@ -171,7 +169,7 @@ const ProductManagement = () => {
   const deleteProduct = async (productId: string) => {
     if (!user || !user.token) return;
     try {
-      await axios.delete(`${API_URL}/products/${productId}`);
+      await api.delete(`${API_URL}/products/${productId}`);
       toast({ title: "Produto removido", description: "Produto removido com sucesso!" });
       setShowDeleteConfirm(null);
       fetchProducts();

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { cn } from "@/lib/utils";
 import { API_URL } from "@/constants/api";
+import api from '@/services/api';
 
 
 interface OrderItem {
@@ -87,14 +88,17 @@ const OrderManagement = () => {
   }, [user]);
 
   const fetchOrders = async () => {
-    if (!user || !user.token) return;
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/pedidos`, { headers: { Authorization: `Bearer ${user.token}` } });
+      const res = await api.get('/pedidos');
       setOrders(res.data || []);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
-      toast.error('Erro ao carregar pedidos');
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar pedidos",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -117,12 +121,12 @@ const OrderManagement = () => {
         return;
       }
       // Atualizar status do pedido
-      await axios.put(`${API_URL}/pedidos/${order.id}`, { status: 'confirmed' }, { headers: { Authorization: `Bearer ${user.token}` } });
+      await api.put(`/pedidos/${order.id}`, { status: 'confirmed' });
       // Atualizar estoque
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
-          await axios.put(`${API_URL}/products/${item.product_id}`, { stock: product.stock - item.quantity });
+          await api.put(`/products/${item.product_id}`, { stock: product.stock - item.quantity });
         }
       }
       // Adicionar ao financeiro
@@ -149,7 +153,7 @@ const OrderManagement = () => {
   const cancelOrder = async (orderId: string) => {
     if (!user || !user.token) return;
     try {
-      await axios.put(`${API_URL}/pedidos/${orderId}`, { status: 'cancelled' }, { headers: { Authorization: `Bearer ${user.token}` } });
+      await api.put(`/pedidos/${orderId}`, { status: 'cancelled' });
       toast.success('Pedido cancelado');
       await fetchOrders();
     } catch (error) {
@@ -171,7 +175,7 @@ const OrderManagement = () => {
       // Calcular novo total
       const newTotal = editingItems.reduce((sum, item) => sum + item.total_price, 0);
       // Atualizar pedido
-      await axios.put(`${API_URL}/pedidos/${editingOrder.id}`, { total_amount: newTotal }, { headers: { Authorization: `Bearer ${user.token}` } });
+      await api.put(`/pedidos/${editingOrder.id}`, { total_amount: newTotal });
       // Deletar itens antigos e inserir novos (idealmente backend faz isso em uma rota específica)
       // Aqui, para simplificação, apenas atualiza o pedido
       toast.success('Pedido atualizado com sucesso!');

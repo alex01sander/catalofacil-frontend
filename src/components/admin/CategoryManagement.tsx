@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Tag, Check, X, Upload, ImageIcon, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import api from '@/services/api';
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/constants/api";
 import { supabase } from '@/integrations/supabase/client';
@@ -37,11 +37,15 @@ const CategoryManagement = () => {
     if (!user || !user.token) return;
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/categorias`, { headers: { Authorization: `Bearer ${user.token}` } });
+      const res = await api.get(`${API_URL}/categorias`);
       setCategories(res.data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast({ title: "Erro", description: "Erro ao carregar categorias", variant: "destructive" });
+      console.error('Erro ao buscar categorias:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar categorias",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -56,12 +60,12 @@ const CategoryManagement = () => {
     try {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      const res = await axios.post(`${API_URL}/categorias`, {
+      const res = await api.post(`${API_URL}/categorias`, {
         user_id: user.id,
         name: newCategory.trim(),
         color: randomColor,
         image: newCategoryImage || null
-      }, { headers: { Authorization: `Bearer ${user.token}` } });
+      });
       setCategories(prev => [...prev, { ...res.data, productCount: 0 }]);
       setNewCategory("");
       setNewCategoryImage("");
@@ -85,10 +89,10 @@ const CategoryManagement = () => {
   const saveEdit = async () => {
     if (!editingName.trim() || !user || !user.token || !editingCategory) return;
     try {
-      await axios.put(`${API_URL}/categorias/${editingCategory}`, {
+      await api.put(`${API_URL}/categorias/${editingCategory}`, {
         name: editingName.trim(),
         image: editingImage || null
-      }, { headers: { Authorization: `Bearer ${user.token}` } });
+      });
       setCategories(prev => prev.map(cat =>
         cat.id === editingCategory
           ? { ...cat, name: editingName.trim(), image: editingImage }
@@ -117,7 +121,7 @@ const CategoryManagement = () => {
   const deleteCategory = async (categoryId: string) => {
     if (!user || !user.token) return;
     try {
-      await axios.delete(`${API_URL}/categorias/${categoryId}`, { headers: { Authorization: `Bearer ${user.token}` } });
+      await api.delete(`${API_URL}/categorias/${categoryId}`);
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
       setDeleteConfirm(null);
       toast({ title: "Categoria removida", description: "Categoria removida com sucesso!" });

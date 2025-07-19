@@ -11,6 +11,7 @@ import axios from 'axios';
 import { API_URL } from '@/constants/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinancial } from "@/contexts/FinancialContext";
+import api from '@/services/api';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -42,7 +43,7 @@ const AdminDashboard = () => {
     const fetchOrders = async () => {
       if (!user || !user.token) return;
       try {
-        const { data } = await axios.get(`${API_URL}/pedidos?store_owner_id=${user.id}`, { headers: { Authorization: `Bearer ${user.token}` } });
+        const { data } = await api.get(`${API_URL}/pedidos?store_owner_id=${user.id}`);
         setOrders(data || []);
       } catch (error) {
         console.error('Erro ao buscar pedidos:', error);

@@ -5,6 +5,7 @@ import { Box } from "lucide-react";
 import axios from "axios";
 import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/services/api';
 
 interface ProductGridProps {
   searchTerm: string;
@@ -27,7 +28,7 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
       return;
     }
     const headers = publicView ? {} : { Authorization: `Bearer ${token}` };
-    axios.get(`${API_URL}/products`, { headers })
+    api.get(`${API_URL}/products`, { headers })
       .then(res => {
         setProducts(res.data);
         setLoading(false);

@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, DollarSign, FileText, Phone } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { CalendarDays, DollarSign, FileText, Phone } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '@/constants/api';
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 type CreditAccount = {
   id: string;
@@ -38,6 +40,7 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (client && isOpen) {
@@ -48,19 +51,17 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
   const fetchTransactions = async () => {
     if (!client) return;
     
-    setLoading(true);
     try {
-      const { data } = await axios.get(
-        `${API_URL}/credit-transactions?credit_account_id=${client.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      setLoading(true);
+      const { data } = await api.get(`/credit-accounts/${client.id}/transactions`);
       setTransactions(data || []);
     } catch (error) {
-      console.error('Erro ao buscar histórico:', error);
+      console.error('Erro ao buscar histórico do cliente:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar histórico do cliente",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

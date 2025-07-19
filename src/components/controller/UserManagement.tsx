@@ -11,6 +11,7 @@ import { Users, Search, Edit } from "lucide-react";
 import UserCreation from "./UserCreation";
 import EditUserModal from "./EditUserModal";
 import { API_URL } from "@/constants/api";
+import api from '@/services/api';
 
 interface UserProfile {
   id: string;
@@ -30,10 +31,10 @@ const UserManagement = () => {
     queryKey: ['active_users'],
     queryFn: async () => {
       // Buscar todos os profiles do backend
-      const profilesRes = await axios.get(`${API_URL}/profiles`);
+      const profilesRes = await api.get(`${API_URL}/profiles`);
       const profiles = profilesRes.data;
       // Buscar todos os domínios do backend
-      const domainsRes = await axios.get(`${API_URL}/domainOwners`);
+      const domainsRes = await api.get(`${API_URL}/domainOwners`);
       const domainOwners = domainsRes.data;
       // Combinar os dados
       const usersWithDomains = profiles?.map((profile: any) => ({

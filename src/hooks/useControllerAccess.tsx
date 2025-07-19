@@ -1,31 +1,34 @@
 
-import { useQuery } from "@tanstack/react-query";
-import axios from 'axios';
-import { API_URL } from '@/constants/api';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/services/api';
 
 export const useControllerAccess = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const [isController, setIsController] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const { data: isControllerAdmin = false, isLoading } = useQuery({
-    queryKey: ['controller_access', user?.id],
-    queryFn: async () => {
-      if (!user || !token) return false;
-      try {
-        const { data } = await axios.get(`${API_URL}/controller-admins/${user.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        return !!data.isControllerAdmin;
-      } catch {
-        return false;
+  useEffect(() => {
+    const checkControllerAccess = async () => {
+      if (!user?.id) {
+        setIsController(false);
+        setLoading(false);
+        return;
       }
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-  });
 
-  return {
-    isControllerAdmin,
-    loading: isLoading,
-  };
+      try {
+        const { data } = await api.get(`/controller-admins/${user.id}`);
+        setIsController(!!data);
+      } catch (error) {
+        console.error('Erro ao verificar acesso de controller:', error);
+        setIsController(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkControllerAccess();
+  }, [user?.id]);
+
+  return { isController, loading };
 };

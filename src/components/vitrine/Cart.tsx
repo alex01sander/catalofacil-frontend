@@ -13,6 +13,7 @@ import { API_URL } from '@/constants/api';
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreSettings } from "@/contexts/StoreSettingsContext";
+import api from '@/services/api';
 
 const Cart = () => {
   const {
@@ -71,7 +72,7 @@ const Cart = () => {
       // Enviar pedido
       if (!token) throw new Error('Usuário não autenticado');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const { data: order } = await axios.post(`${API_URL}/pedidos`, payload, { headers });
+      const { data: order } = await api.post(`${API_URL}/pedidos`, payload, { headers });
       // 2. WhatsApp
       // Garantir que o número está no formato internacional (apenas dígitos)
       const whatsappNumber = (settings.whatsapp_number || "5511999999999").replace(/\D/g, "");

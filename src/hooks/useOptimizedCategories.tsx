@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import api from "@/services/api";
 import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -22,7 +22,7 @@ export const useOptimizedCategories = (enabled = true) => {
     }
     setLoading(true);
     setError(null);
-    axios.get(`${API_URL}/categorias`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get(`/categorias`)
       .then(res => {
         setCategories(res.data);
         setLoading(false);

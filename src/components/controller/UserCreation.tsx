@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from 'react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import axios from 'axios';
 import { API_URL } from '@/constants/api';
+import api from '@/services/api';
 
 const UserCreation = () => {
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -25,7 +26,7 @@ const UserCreation = () => {
       fullName: string;
       makeControllerAdmin: boolean;
     }) => {
-      const { data } = await axios.post(`${API_URL}/users`, {
+      const { data } = await api.post(`${API_URL}/users`, {
         email,
         password,
         fullName,
