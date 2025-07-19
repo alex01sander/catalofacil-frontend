@@ -16,7 +16,7 @@ import api from '@/services/api';
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { products, loading: productsLoading } = useOptimizedProducts();
-  const { categories } = useOptimizedCategories();
+  const { categories, loading: categoriesLoading } = useOptimizedCategories();
   const { data: financialData } = useFinancial();
   
   const [orders, setOrders] = useState([]);
@@ -199,7 +199,7 @@ const AdminDashboard = () => {
     }))
   ].slice(0, 4); // Limitar a 4 atividades
 
-  if (productsLoading || ordersLoading || financialData.isLoading) {
+  if (productsLoading || categoriesLoading || ordersLoading || financialData.isLoading) {
     return (
       <div className="space-y-6">
         <div>

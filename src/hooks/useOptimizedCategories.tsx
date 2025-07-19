@@ -34,14 +34,27 @@ export const useOptimizedCategories = (enabled = true) => {
     setLoading(true);
     setError(null);
     
+    console.log('Fazendo requisição para /categorias...');
+    
     api.get(`/categorias`)
       .then(res => {
+        console.log('Resposta completa do servidor:', res);
+        console.log('Tipo de res.data:', typeof res.data);
+        console.log('res.data é array?', Array.isArray(res.data));
         console.log('Categorias carregadas com sucesso:', res.data);
-        setCategories(res.data);
+        
+        // Verificar se res.data é um array válido
+        if (Array.isArray(res.data)) {
+          setCategories(res.data);
+        } else {
+          console.error('res.data não é um array:', res.data);
+          setCategories([]);
+        }
         setLoading(false);
       })
       .catch(err => {
         console.error('Erro ao carregar categorias:', err);
+        console.error('Detalhes do erro:', err.response?.data);
         setError(err);
         setLoading(false);
       });
