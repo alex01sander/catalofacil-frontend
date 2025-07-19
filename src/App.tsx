@@ -11,11 +11,13 @@ import { CartProvider } from "@/contexts/CartContext";
 import { FinancialProvider } from "@/contexts/FinancialContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ControllerProtectedRoute from "@/components/ControllerProtectedRoute";
-import Index from "./pages/Index";
-import Admin from "./pages/Admin";
-import Controller from "./pages/Controller";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
+import { Suspense, lazy } from "react";
+
+const Index = lazy(() => import("./pages/Index"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Controller = lazy(() => import("./pages/Controller"));
+const Auth = lazy(() => import("./pages/Auth"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,29 +47,31 @@ function App() {
               <StoreSettingsProvider>
                 <ThemeProvider>
                   <CartProvider>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route
-                        path="/admin/*"
-                        element={
-                          <ProtectedRoute>
-                            <Admin />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/controller/*"
-                        element={
-                          <ProtectedRoute>
-                            <ControllerProtectedRoute>
-                              <Controller />
-                            </ControllerProtectedRoute>
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <Suspense fallback={<div style={{padding: 40, textAlign: 'center'}}>Carregando página...</div>}>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route
+                          path="/admin/*"
+                          element={
+                            <ProtectedRoute>
+                              <Admin />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/controller/*"
+                          element={
+                            <ProtectedRoute>
+                              <ControllerProtectedRoute>
+                                <Controller />
+                              </ControllerProtectedRoute>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
                   </CartProvider>
                 </ThemeProvider>
               </StoreSettingsProvider>
