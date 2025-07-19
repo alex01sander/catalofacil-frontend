@@ -1,4 +1,4 @@
-export const API_URL = "https://catalofacil-backend.onrender.com";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 import axios from "axios";
 import { useAuth } from '@/contexts/AuthContext';
 
