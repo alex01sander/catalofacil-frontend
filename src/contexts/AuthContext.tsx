@@ -43,6 +43,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
+  useEffect(() => {
+    console.log('Token carregado no AuthContext:', token);
+  }, [token]);
+
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
       console.log('Tentando fazer registro com:', { email, fullName });
