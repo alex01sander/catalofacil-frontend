@@ -40,9 +40,9 @@ const AdminDashboard = () => {
   // Buscar pedidos do usuário
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user) return;
+      if (!user || !user.token) return;
       try {
-        const { data } = await axios.get(`${API_URL}/pedidos?store_owner_id=${user.id}`);
+        const { data } = await axios.get(`${API_URL}/pedidos?store_owner_id=${user.id}`, { headers: { Authorization: `Bearer ${user.token}` } });
         setOrders(data || []);
       } catch (error) {
         console.error('Erro ao buscar pedidos:', error);

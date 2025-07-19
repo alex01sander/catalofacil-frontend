@@ -2,17 +2,19 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { API_URL } from "@/constants/api";
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useOptimizedCategories = (enabled = true) => {
+  const { token } = useAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !token) return;
     setLoading(true);
     setError(null);
-    axios.get(`${API_URL}/categorias`)
+    axios.get(`${API_URL}/categorias`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => {
         setCategories(res.data);
         setLoading(false);
@@ -21,7 +23,7 @@ export const useOptimizedCategories = (enabled = true) => {
         setError(err);
         setLoading(false);
       });
-  }, [enabled]);
+  }, [enabled, token]);
 
   const allCategories = useMemo(() => [
     {

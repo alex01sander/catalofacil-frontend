@@ -92,7 +92,8 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const fetchCategories = async () => {
     setLoadingCategories(true);
     try {
-      const res = await axios.get(`${API_URL}/categorias`);
+      const headers = user && user.token ? { Authorization: `Bearer ${user.token}` } : {};
+      const res = await axios.get(`${API_URL}/categorias`, { headers });
       setCategories(res.data || []);
     } catch (error) {
       toast({

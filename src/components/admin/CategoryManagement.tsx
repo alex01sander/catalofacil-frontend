@@ -34,10 +34,10 @@ const CategoryManagement = () => {
 
   // Fetch categories from backend
   const fetchCategories = async () => {
-    if (!user) return;
+    if (!user || !user.token) return;
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/categorias`);
+      const res = await axios.get(`${API_URL}/categorias`, { headers: { Authorization: `Bearer ${user.token}` } });
       setCategories(res.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -52,7 +52,7 @@ const CategoryManagement = () => {
   }, [user]);
 
   const addCategory = async () => {
-    if (!newCategory.trim() || !user) return;
+    if (!newCategory.trim() || !user || !user.token) return;
     try {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -61,7 +61,7 @@ const CategoryManagement = () => {
         name: newCategory.trim(),
         color: randomColor,
         image: newCategoryImage || null
-      });
+      }, { headers: { Authorization: `Bearer ${user.token}` } });
       setCategories(prev => [...prev, { ...res.data, productCount: 0 }]);
       setNewCategory("");
       setNewCategoryImage("");
@@ -83,12 +83,12 @@ const CategoryManagement = () => {
   };
 
   const saveEdit = async () => {
-    if (!editingName.trim() || !user || !editingCategory) return;
+    if (!editingName.trim() || !user || !user.token || !editingCategory) return;
     try {
       await axios.put(`${API_URL}/categorias/${editingCategory}`, {
         name: editingName.trim(),
         image: editingImage || null
-      });
+      }, { headers: { Authorization: `Bearer ${user.token}` } });
       setCategories(prev => prev.map(cat =>
         cat.id === editingCategory
           ? { ...cat, name: editingName.trim(), image: editingImage }
@@ -115,9 +115,9 @@ const CategoryManagement = () => {
   };
 
   const deleteCategory = async (categoryId: string) => {
-    if (!user) return;
+    if (!user || !user.token) return;
     try {
-      await axios.delete(`${API_URL}/categorias/${categoryId}`);
+      await axios.delete(`${API_URL}/categorias/${categoryId}`, { headers: { Authorization: `Bearer ${user.token}` } });
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
       setDeleteConfirm(null);
       toast({ title: "Categoria removida", description: "Categoria removida com sucesso!" });

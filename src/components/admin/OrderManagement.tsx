@@ -87,10 +87,10 @@ const OrderManagement = () => {
   }, [user]);
 
   const fetchOrders = async () => {
-    if (!user) return;
+    if (!user || !user.token) return;
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/pedidos`);
+      const res = await axios.get(`${API_URL}/pedidos`, { headers: { Authorization: `Bearer ${user.token}` } });
       setOrders(res.data || []);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
@@ -116,7 +116,7 @@ const OrderManagement = () => {
         return;
       }
       // Atualizar status do pedido
-      await axios.put(`${API_URL}/pedidos/${order.id}`, { status: 'confirmed' });
+      await axios.put(`${API_URL}/pedidos/${order.id}`, { status: 'confirmed' }, { headers: { Authorization: `Bearer ${user.token}` } });
       // Atualizar estoque
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
@@ -147,7 +147,7 @@ const OrderManagement = () => {
   // Cancelar pedido
   const cancelOrder = async (orderId: string) => {
     try {
-      await axios.put(`${API_URL}/pedidos/${orderId}`, { status: 'cancelled' });
+      await axios.put(`${API_URL}/pedidos/${orderId}`, { status: 'cancelled' }, { headers: { Authorization: `Bearer ${user.token}` } });
       toast.success('Pedido cancelado');
       await fetchOrders();
     } catch (error) {
@@ -169,7 +169,7 @@ const OrderManagement = () => {
       // Calcular novo total
       const newTotal = editingItems.reduce((sum, item) => sum + item.total_price, 0);
       // Atualizar pedido
-      await axios.put(`${API_URL}/pedidos/${editingOrder.id}`, { total_amount: newTotal });
+      await axios.put(`${API_URL}/pedidos/${editingOrder.id}`, { total_amount: newTotal }, { headers: { Authorization: `Bearer ${user.token}` } });
       // Deletar itens antigos e inserir novos (idealmente backend faz isso em uma rota específica)
       // Aqui, para simplificação, apenas atualiza o pedido
       toast.success('Pedido atualizado com sucesso!');

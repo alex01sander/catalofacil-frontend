@@ -23,7 +23,7 @@ const Cart = () => {
     totalPrice,
     clearCart
   } = useCart();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { settings } = useStoreSettings();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
@@ -69,7 +69,8 @@ const Cart = () => {
         payload.customer_email = formData.address;
       }
       // Enviar pedido
-      const { data: order } = await axios.post(`${API_URL}/pedidos`, payload);
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const { data: order } = await axios.post(`${API_URL}/pedidos`, payload, { headers });
       // 2. WhatsApp
       // Garantir que o número está no formato internacional (apenas dígitos)
       const whatsappNumber = (settings.whatsapp_number || "5511999999999").replace(/\D/g, "");
