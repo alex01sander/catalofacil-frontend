@@ -62,7 +62,17 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const fetchAllData = async () => {
-    if (!user || !token) return;
+    console.log('=== FinancialContext fetchAllData ===');
+    console.log('user:', user);
+    console.log('token:', token);
+    
+    if (!user || !token) {
+      console.log('❌ Sem usuário ou token, saindo...');
+      return;
+    }
+    
+    console.log('✅ Iniciando busca de dados financeiros...');
+    
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
@@ -72,6 +82,14 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         api.get(`${API_URL}/vendas`),
         api.get(`${API_URL}/products`)
       ]);
+      
+      console.log('✅ Dados financeiros carregados com sucesso');
+      console.log('cashFlow:', cashFlowRes.data);
+      console.log('creditAccounts:', creditRes.data);
+      console.log('expenses:', expensesRes.data);
+      console.log('sales:', salesRes.data);
+      console.log('products:', productsRes.data);
+      
       const cashFlow = cashFlowRes.data || [];
       const creditAccounts = creditRes.data || [];
       const expenses = expensesRes.data || [];
@@ -80,6 +98,8 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const totalIncome = cashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.total_debt), 0);
+      
+      console.log('✅ Definindo dados e parando loading');
       setData({
         cashFlow,
         creditAccounts,
@@ -93,12 +113,14 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         isLoading: false,
       });
     } catch (error) {
-      console.error('Erro ao buscar dados financeiros:', error);
+      console.error('❌ Erro ao buscar dados financeiros:', error);
+      console.log('✅ Parando loading mesmo com erro');
       setData(prev => ({ ...prev, isLoading: false }));
     }
   };
 
   const refreshData = async () => {
+    console.log('🔄 RefreshData chamado');
     setData(prev => ({ ...prev, isLoading: true }));
     await fetchAllData();
   };
@@ -220,10 +242,21 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log('=== FinancialContext useEffect ===');
+    console.log('user:', user);
+    console.log('data.isLoading:', data.isLoading);
+    
     if (user) {
+      console.log('✅ Usuário encontrado, buscando dados...');
       fetchAllData();
+    } else {
+      console.log('❌ Sem usuário, não buscando dados');
     }
   }, [user]);
+
+  console.log('=== FinancialContext RETURN ===');
+  console.log('data.isLoading:', data.isLoading);
+  console.log('data:', data);
 
   const value = {
     data,
