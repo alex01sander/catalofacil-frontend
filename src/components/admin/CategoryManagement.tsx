@@ -34,7 +34,7 @@ const CategoryManagement = () => {
 
   // Fetch categories from backend
   const fetchCategories = async () => {
-    if (!user || !user.token) return;
+    if (!user) return;
     try {
       setLoading(true);
       const res = await api.get(`${API_URL}/categorias`);
@@ -56,7 +56,7 @@ const CategoryManagement = () => {
   }, [user]);
 
   const addCategory = async () => {
-    if (!newCategory.trim() || !user || !user.token) return;
+    if (!newCategory.trim() || !user) return;
     try {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -87,7 +87,7 @@ const CategoryManagement = () => {
   };
 
   const saveEdit = async () => {
-    if (!editingName.trim() || !user || !user.token || !editingCategory) return;
+    if (!editingName.trim() || !user || !editingCategory) return;
     try {
       await api.put(`${API_URL}/categorias/${editingCategory}`, {
         name: editingName.trim(),
@@ -119,7 +119,7 @@ const CategoryManagement = () => {
   };
 
   const deleteCategory = async (categoryId: string) => {
-    if (!user || !user.token) return;
+    if (!user) return;
     try {
       await api.delete(`${API_URL}/categorias/${categoryId}`);
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
