@@ -43,14 +43,15 @@ export const useOptimizedCategories = (enabled = true) => {
         console.log('res.data é array?', Array.isArray(res.data));
         console.log('Categorias carregadas com sucesso:', res.data);
         
-        // Verificar se res.data é um array válido
+        // Tratar tanto array vazio quanto array com dados
         if (Array.isArray(res.data)) {
           setCategories(res.data);
+          setLoading(false); // Sempre parar loading quando receber resposta válida
         } else {
           console.error('res.data não é um array:', res.data);
           setCategories([]);
+          setLoading(false);
         }
-        setLoading(false);
       })
       .catch(err => {
         console.error('Erro ao carregar categorias:', err);

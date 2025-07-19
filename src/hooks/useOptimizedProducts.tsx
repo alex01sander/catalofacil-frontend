@@ -39,8 +39,16 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
     api.get(url)
       .then(res => {
         console.log('Produtos carregados com sucesso:', res.data);
-        setProducts(res.data);
-        setLoading(false);
+        
+        // Tratar tanto array vazio quanto array com dados
+        if (Array.isArray(res.data)) {
+          setProducts(res.data);
+          setLoading(false); // Sempre parar loading quando receber resposta válida
+        } else {
+          console.error('res.data não é um array:', res.data);
+          setProducts([]);
+          setLoading(false);
+        }
       })
       .catch(err => {
         console.error('Erro ao carregar produtos:', err);
