@@ -61,8 +61,9 @@ const CategoryManagement = () => {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
       
+      // Tentar diferentes formatos do user_id
       const payload = {
-        user_id: String(user.id),
+        user_id: user.id, // Tentar sem conversão primeiro
         name: newCategory.trim(),
         color: randomColor,
         image: newCategoryImage || null
@@ -70,7 +71,8 @@ const CategoryManagement = () => {
       
       console.log('=== ADICIONAR CATEGORIA ===');
       console.log('Payload sendo enviado:', payload);
-      console.log('User ID:', user.id);
+      console.log('User ID (original):', user.id);
+      console.log('User ID (tipo):', typeof user.id);
       console.log('User completo:', user);
       console.log('URL:', `${API_URL}/categorias`);
       console.log('Token disponível:', !!user.token);
@@ -93,7 +95,14 @@ const CategoryManagement = () => {
       console.error('❌ Status:', error.response?.status);
       console.error('❌ Headers:', error.response?.headers);
       console.error('❌ Config:', error.config);
-      toast({ title: "Erro", description: "Erro ao criar categoria", variant: "destructive" });
+      
+      // Mensagem mais específica baseada no erro
+      let errorMessage = "Erro ao criar categoria";
+      if (error.response?.data?.details?.code === 'P2003') {
+        errorMessage = "Usuário não encontrado no banco de dados. Faça login novamente.";
+      }
+      
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
     }
   };
 
