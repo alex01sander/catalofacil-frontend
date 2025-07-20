@@ -99,6 +99,8 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
+    alert('handleFormSubmit chamado!');
+    console.log('handleFormSubmit chamado!', productData, user);
     if (!user || !user.token) return;
     try {
       if (editingProduct) {
@@ -133,7 +135,6 @@ const ProductManagement = () => {
       setEditingProduct(null);
       fetchProducts();
     } catch (error) {
-      console.error('Error saving product:', error);
       toast({ title: "Erro inesperado", description: "Erro inesperado ao salvar produto.", variant: "destructive" });
     }
   };
