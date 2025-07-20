@@ -78,6 +78,11 @@ const CategoryManagement = () => {
       console.log('User completo:', user);
       console.log('URL:', `${API_URL}/categorias`);
       console.log('Token disponível:', !!user.token);
+      console.log('Token completo:', user.token);
+      
+      // Verificar se o token está sendo enviado corretamente
+      const storedToken = localStorage.getItem('jwt_token');
+      console.log('Token do localStorage:', storedToken);
       
       const payload = {
         user_id: user.id,
@@ -87,8 +92,17 @@ const CategoryManagement = () => {
       };
       
       console.log('Payload sendo enviado:', payload);
+      console.log('Headers da requisição:', api.defaults.headers);
       
-      const res = await api.post(`${API_URL}/categorias`, payload);
+      // Tentar enviar com headers explícitos
+      const headers = {
+        'Authorization': `Bearer ${storedToken}`,
+        'Content-Type': 'application/json'
+      };
+      
+      console.log('Headers explícitos:', headers);
+      
+      const res = await api.post(`${API_URL}/categorias`, payload, { headers });
       
       console.log('✅ Resposta do servidor:', res.data);
       
@@ -106,13 +120,16 @@ const CategoryManagement = () => {
       console.error('❌ Status:', error.response?.status);
       console.error('❌ Headers:', error.response?.headers);
       console.error('❌ Config:', error.config);
+      console.error('❌ Request headers:', error.config?.headers);
       
       // Mensagem mais específica baseada no erro
       let errorMessage = "Erro ao criar categoria";
       if (error.response?.data?.details?.code === 'P2003') {
         console.error('❌ Erro P2003 - Usuário não existe no banco');
-        forceLogout();
-        return;
+        console.error('❌ User ID sendo enviado:', user.id);
+        console.error('❌ Token sendo enviado:', user.token);
+        console.error('❌ Verifique se o backend está usando o mesmo banco de dados');
+        errorMessage = "Problema de sincronização com o banco. Tente fazer logout e login novamente.";
       }
       
       toast({ title: "Erro", description: errorMessage, variant: "destructive" });
