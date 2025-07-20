@@ -127,6 +127,8 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    alert('handleSubmit chamado!');
+    console.log('handleSubmit chamado!');
     // Validação dos campos obrigatórios
     if (!formData.name || !formData.price || !formData.category) {
       setShowRequiredFieldsMsg(true);
