@@ -181,18 +181,15 @@ const ProductManagement = () => {
 
   return (
     <div className="space-y-6">
-      <Dialog open={showForm} onOpenChange={open => { if (!open) handleFormCancel(); }}>
-        <DialogContent className="max-w-md w-full max-h-[90vh] overflow-y-auto p-0 sm:p-6">
-          <DialogHeader>
-            <DialogTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
-          </DialogHeader>
+      {showForm && (
+        <div className="my-8">
           <ProductForm
             product={editingProduct || undefined}
             onSubmit={handleFormSubmit}
             onCancel={handleFormCancel}
           />
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
