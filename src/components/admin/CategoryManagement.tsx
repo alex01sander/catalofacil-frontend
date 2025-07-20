@@ -21,8 +21,8 @@ interface Category {
 }
 
 const CategoryManagement = () => {
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCategory, setNewCategory] = useState("");
@@ -31,6 +31,17 @@ const CategoryManagement = () => {
   const [editingName, setEditingName] = useState("");
   const [editingImage, setEditingImage] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Função para forçar logout
+  const forceLogout = () => {
+    console.log('🚨 Forçando logout devido a erro de autenticação');
+    signOut();
+    toast({ 
+      title: "Sessão Expirada", 
+      description: "Você foi desconectado. Faça login novamente.", 
+      variant: "destructive" 
+    });
+  };
 
   // Fetch categories from backend
   const fetchCategories = async () => {
@@ -61,21 +72,32 @@ const CategoryManagement = () => {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
       
-      // Tentar diferentes formatos do user_id
-      const payload = {
-        user_id: user.id, // Tentar sem conversão primeiro
-        name: newCategory.trim(),
-        color: randomColor,
-        image: newCategoryImage || null
-      };
-      
       console.log('=== ADICIONAR CATEGORIA ===');
-      console.log('Payload sendo enviado:', payload);
       console.log('User ID (original):', user.id);
       console.log('User ID (tipo):', typeof user.id);
       console.log('User completo:', user);
       console.log('URL:', `${API_URL}/categorias`);
       console.log('Token disponível:', !!user.token);
+      
+      // Verificar se o usuário existe no banco primeiro
+      try {
+        console.log('🔍 Verificando se usuário existe no banco...');
+        const userCheck = await api.get(`${API_URL}/auth/me`);
+        console.log('✅ Usuário autenticado:', userCheck.data);
+      } catch (authError) {
+        console.error('❌ Erro na autenticação:', authError.response?.data);
+        forceLogout();
+        return;
+      }
+      
+      const payload = {
+        user_id: user.id,
+        name: newCategory.trim(),
+        color: randomColor,
+        image: newCategoryImage || null
+      };
+      
+      console.log('Payload sendo enviado:', payload);
       
       const res = await api.post(`${API_URL}/categorias`, payload);
       
@@ -99,7 +121,9 @@ const CategoryManagement = () => {
       // Mensagem mais específica baseada no erro
       let errorMessage = "Erro ao criar categoria";
       if (error.response?.data?.details?.code === 'P2003') {
-        errorMessage = "Usuário não encontrado no banco de dados. Faça login novamente.";
+        console.error('❌ Erro P2003 - Usuário não existe no banco');
+        forceLogout();
+        return;
       }
       
       toast({ title: "Erro", description: errorMessage, variant: "destructive" });
