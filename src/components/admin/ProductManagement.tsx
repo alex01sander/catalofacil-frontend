@@ -306,7 +306,7 @@ const ProductManagement = () => {
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
                       <img
-                        src={product.image}
+                        src={product.image || 'https://via.placeholder.com/100'}
                         alt={product.name}
                         className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                       />
@@ -415,7 +415,7 @@ const ProductManagement = () => {
                         <td className="p-3">
                           <div className="flex items-center space-x-3">
                             <img
-                              src={product.image}
+                              src={product.image || 'https://via.placeholder.com/100'}
                               alt={product.name}
                               className="w-12 h-12 rounded-lg object-cover"
                             />
