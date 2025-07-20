@@ -79,17 +79,6 @@ const CategoryManagement = () => {
       console.log('URL:', `${API_URL}/categorias`);
       console.log('Token disponível:', !!user.token);
       
-      // Verificar se o usuário existe no banco primeiro
-      try {
-        console.log('🔍 Verificando se usuário existe no banco...');
-        const userCheck = await api.get(`${API_URL}/auth/me`);
-        console.log('✅ Usuário autenticado:', userCheck.data);
-      } catch (authError) {
-        console.error('❌ Erro na autenticação:', authError.response?.data);
-        forceLogout();
-        return;
-      }
-      
       const payload = {
         user_id: user.id,
         name: newCategory.trim(),
