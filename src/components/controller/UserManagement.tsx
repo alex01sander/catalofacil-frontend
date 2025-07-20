@@ -62,7 +62,7 @@ const UserManagement = () => {
   }
 
   if (error) {
-    console.error('Erro na query de usuários:', error);
+    // console.error('Erro na query de usuários:', error);
   }
 
   return (

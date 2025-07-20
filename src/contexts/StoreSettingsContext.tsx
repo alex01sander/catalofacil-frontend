@@ -31,7 +31,6 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       const fetchedSettings = await fetchStoreSettings(user);
       setSettings(fetchedSettings);
     } catch (error) {
-      console.error('Error loading store settings:', error);
       setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false);
@@ -45,7 +44,6 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
     } catch (error) {
-      console.error('Error updating store settings:', error);
       throw error;
     }
   };

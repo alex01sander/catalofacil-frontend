@@ -59,7 +59,6 @@ const RecommendedDimensions = () => (
 );
 
 const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
-  console.log('ProductForm render with product:', product);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -86,8 +85,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
 
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>(product?.images || []);
-
-  console.log('ProductForm state:', { formData, images, loadingCategories });
 
   // Buscar categorias do backend
   const fetchCategories = async () => {
@@ -125,7 +122,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   }, [costPrice, marginPercent, calcMethod]);
 
   useEffect(() => {
-    console.log('useEffect triggered for fetchCategories');
     fetchCategories();
   }, [user]);
 
@@ -137,7 +133,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
       return;
     }
     setShowRequiredFieldsMsg(false);
-    console.log('Form submitted with data:', { ...formData, images });
     
     onSubmit({
       ...formData,
@@ -146,7 +141,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   const handleInputChange = (field: keyof typeof formData, value: any) => {
-    console.log(`Field ${field} changed to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -183,7 +177,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   const addImageFromUrl = () => {
-    console.log('Adding image from URL:', imageUrl);
     if (imageUrl.trim()) {
       setImages(prev => {
         const newImages = [...prev, imageUrl.trim()];
@@ -201,7 +194,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   const removeImage = (index: number) => {
-    console.log('Removing image at index:', index);
     const imageToRemove = images[index];
     setImages(prev => prev.filter((_, i) => i !== index));
     
@@ -223,7 +215,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   };
 
   const setMainImage = (imageUrl: string) => {
-    console.log('Setting main image:', imageUrl.substring(0, 50) + '...');
     setFormData(prev => ({
       ...prev,
       image: imageUrl
@@ -233,15 +224,12 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    console.log('Drag ended:', result);
     const items = Array.from(images);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
     setImages(items);
   };
-
-  console.log('About to render ProductForm UI');
 
   try {
     return (
@@ -515,7 +503,6 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
       </Card>
     );
   } catch (error) {
-    console.error('Error rendering ProductForm:', error);
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <h3 className="text-red-800 font-semibold">Erro ao carregar formulário</h3>

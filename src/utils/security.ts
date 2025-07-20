@@ -176,7 +176,6 @@ export const logSecurityEvent = (event: Omit<SecurityEvent, 'timestamp' | 'userA
   }
   
   // In production, this should be sent to a logging service
-  console.warn('Security Event:', securityEvent);
 };
 
 export const getSecurityEvents = (): SecurityEvent[] => {

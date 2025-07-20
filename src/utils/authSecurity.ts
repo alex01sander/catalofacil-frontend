@@ -103,7 +103,7 @@ export const logSecurityEvent = (event: Omit<SecurityEvent, 'timestamp' | 'userA
   
   // In development, log to console
   if (process.env.NODE_ENV === 'development') {
-    console.warn('Security Event:', securityEvent);
+    // console.warn('Security Event:', securityEvent); // Removed
   }
   
   // In production, this should be sent to a security monitoring service
@@ -117,7 +117,7 @@ export const logSecurityEvent = (event: Omit<SecurityEvent, 'timestamp' | 'userA
     }
     sessionStorage.setItem('security_events', JSON.stringify(events));
   } catch (error) {
-    console.error('Failed to log security event:', error);
+    // console.error('Failed to log security event:', error); // Removed
   }
 };
 

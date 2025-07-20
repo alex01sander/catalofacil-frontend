@@ -26,7 +26,6 @@ export const fetchStoreSettings = async (user: User | null): Promise<StoreSettin
       return defaultSettings;
     }
   } catch (error) {
-    console.error('Error fetching store settings:', error);
     return defaultSettings;
   }
 };
@@ -51,7 +50,6 @@ export const updateStoreSettings = async (
     if (error?.response?.data?.details?.code === 'P2025') {
       await axios.post(`${API_URL}/storeSettings`, { ...newSettings, user_id: user.id });
     } else {
-      console.error('Error updating store settings:', error);
       throw error;
     }
   }

@@ -20,7 +20,6 @@ export const useControllerAccess = () => {
         const { data } = await api.get(`/controller-admins/${user.id}`);
         setIsController(!!data);
       } catch (error) {
-        console.error('Erro ao verificar acesso de controller:', error);
         setIsController(false);
       } finally {
         setLoading(false);

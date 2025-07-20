@@ -183,8 +183,6 @@ const ProductManagement = () => {
     setShowDeleteConfirm(null);
   };
 
-  console.log('ProductManagement render - showForm:', showForm, 'editingProduct:', editingProduct);
-
   return (
     <div className="space-y-6">
       <Dialog open={showForm} onOpenChange={open => { if (!open) handleFormCancel(); }}>
