@@ -77,11 +77,6 @@ const ProductManagement = () => {
     if (user && user.token) fetchProducts();
   }, [user]);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.categories?.name && product.categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   const handleAddProduct = () => {
     setEditingProduct(null);
     setShowForm(true);
@@ -308,7 +303,7 @@ const ProductManagement = () => {
           {/* Mobile Product Cards */}
           <div className="block md:hidden">
             <div className="space-y-4">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <Card key={product.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
@@ -417,7 +412,7 @@ const ProductManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProducts.map((product) => (
+                    {products.map((product) => (
                       <tr key={product.id} className="border-b hover:bg-gray-50">
                         <td className="p-3">
                           <div className="flex items-center space-x-3">
