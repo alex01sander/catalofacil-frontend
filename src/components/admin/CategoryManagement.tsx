@@ -62,7 +62,7 @@ const CategoryManagement = () => {
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
       
       const payload = {
-        user_id: user.id,
+        user_id: String(user.id),
         name: newCategory.trim(),
         color: randomColor,
         image: newCategoryImage || null
@@ -70,8 +70,10 @@ const CategoryManagement = () => {
       
       console.log('=== ADICIONAR CATEGORIA ===');
       console.log('Payload sendo enviado:', payload);
-      console.log('User:', user);
+      console.log('User ID:', user.id);
+      console.log('User completo:', user);
       console.log('URL:', `${API_URL}/categorias`);
+      console.log('Token disponível:', !!user.token);
       
       const res = await api.post(`${API_URL}/categorias`, payload);
       
@@ -89,6 +91,8 @@ const CategoryManagement = () => {
       console.error('❌ Error adding category:', error);
       console.error('❌ Detalhes do erro:', error.response?.data);
       console.error('❌ Status:', error.response?.status);
+      console.error('❌ Headers:', error.response?.headers);
+      console.error('❌ Config:', error.config);
       toast({ title: "Erro", description: "Erro ao criar categoria", variant: "destructive" });
     }
   };
