@@ -12,6 +12,7 @@ import { FinancialProvider } from "@/contexts/FinancialContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ControllerProtectedRoute from "@/components/ControllerProtectedRoute";
 import { Suspense, lazy } from "react";
+import { StoreProvider } from "@/contexts/StoreSettingsContext";
 
 const Index = lazy(() => import("./pages/Index"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -37,49 +38,51 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <FinancialProvider>
-              <StoreSettingsProvider>
-                <ThemeProvider>
-                  <CartProvider>
-                    <Suspense fallback={<div style={{padding: 40, textAlign: 'center'}}>Carregando página...</div>}>
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/auth" element={<Auth />} />
-                        <Route
-                          path="/admin/*"
-                          element={
-                            <ProtectedRoute>
-                              <Admin />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/controller/*"
-                          element={
-                            <ProtectedRoute>
-                              <ControllerProtectedRoute>
-                                <Controller />
-                              </ControllerProtectedRoute>
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
-                  </CartProvider>
-                </ThemeProvider>
-              </StoreSettingsProvider>
-            </FinancialProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <StoreProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <FinancialProvider>
+                <StoreSettingsProvider>
+                  <ThemeProvider>
+                    <CartProvider>
+                      <Suspense fallback={<div style={{padding: 40, textAlign: 'center'}}>Carregando página...</div>}>
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/auth" element={<Auth />} />
+                          <Route
+                            path="/admin/*"
+                            element={
+                              <ProtectedRoute>
+                                <Admin />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/controller/*"
+                            element={
+                              <ProtectedRoute>
+                                <ControllerProtectedRoute>
+                                  <Controller />
+                                </ControllerProtectedRoute>
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
+                    </CartProvider>
+                  </ThemeProvider>
+                </StoreSettingsProvider>
+              </FinancialProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </StoreProvider>
   );
 }
 

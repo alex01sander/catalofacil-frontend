@@ -179,6 +179,9 @@ const ProductManagement = () => {
     setShowDeleteConfirm(null);
   };
 
+  // Adicionar log antes do map de produtos
+  console.log('Array de produtos para renderizar:', products);
+
   return (
     <div className="space-y-6">
       {showForm && (

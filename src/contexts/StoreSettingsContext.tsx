@@ -3,8 +3,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { StoreSettings, StoreSettingsContextType } from '@/types/storeSettings';
 import { defaultSettings } from '@/constants/storeSettings';
 import { fetchStoreSettings, updateStoreSettings } from '@/hooks/useStoreSettingsLogic';
+import api from "@/services/api";
+import { getStoreSlug } from "@/utils/getStoreSlug";
 
 const StoreSettingsContext = createContext<StoreSettingsContextType | undefined>(undefined);
+
+// CONTEXTO DA LOJA PÚBLICA
+const StoreContext = createContext(null);
 
 export const useStoreSettings = () => {
   const context = useContext(StoreSettingsContext);
@@ -12,6 +17,28 @@ export const useStoreSettings = () => {
     throw new Error('useStoreSettings must be used within a StoreSettingsProvider');
   }
   return context;
+};
+
+export const useStore = () => useContext(StoreContext);
+
+export const StoreProvider = ({ children }) => {
+  const [store, setStore] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const slug = getStoreSlug();
+
+  useEffect(() => {
+    if (!slug) return;
+    setLoading(true);
+    api.get(`/site/public/${slug}`)
+      .then(res => setStore(res.data))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  return (
+    <StoreContext.Provider value={{ store, slug, loading }}>
+      {children}
+    </StoreContext.Provider>
+  );
 };
 
 interface StoreSettingsProviderProps {
@@ -23,6 +50,7 @@ export const StoreSettingsProvider = ({ children }: StoreSettingsProviderProps) 
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const slug = getStoreSlug();
 
   const loadSettings = async () => {
     try {
