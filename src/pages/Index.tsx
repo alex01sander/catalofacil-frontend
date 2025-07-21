@@ -62,18 +62,22 @@ const Index = () => {
             {/* Logo Circle */}
             <div className="flex justify-center mb-4">
               <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30">
-                {store?.mobile_logo && <img alt={`${store?.store_name} Logo`} className="w-full h-full object-cover" src={store?.mobile_logo} />}
+                {store?.mobile_logo ? (
+                  <img alt={`${store?.store_name || 'Logo da loja'}`} className="w-full h-full object-cover" src={store?.mobile_logo} />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-300">Sem logo</div>
+                )}
               </div>
             </div>
             
             {/* Store Name */}
             <h1 className="text-xl font-bold mb-2">
-              {store?.store_name}
+              {store?.store_name || 'Nome da loja não cadastrado'}
             </h1>
             
             {/* Store Description */}
             <p className="text-sm text-white/90 mb-6 px-4 leading-relaxed whitespace-pre-line">
-              {store?.store_description}
+              {store?.store_description || 'Descrição da loja não cadastrada.'}
             </p>
             
             {/* Instagram and WhatsApp Icons */}
