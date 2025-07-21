@@ -12,7 +12,7 @@ import axios from 'axios';
 import { API_URL } from '@/constants/api';
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useStoreSettings } from "@/contexts/StoreSettingsContext";
+import { useStore } from "@/contexts/StoreSettingsContext";
 import api from '@/services/api';
 
 const Cart = () => {
@@ -25,7 +25,7 @@ const Cart = () => {
     clearCart
   } = useCart();
   const { user, token } = useAuth();
-  const { settings } = useStoreSettings();
+  const { store } = useStore();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
@@ -75,7 +75,7 @@ const Cart = () => {
       const { data: order } = await api.post(`${API_URL}/pedidos`, payload, { headers });
       // 2. WhatsApp
       // Garantir que o número está no formato internacional (apenas dígitos)
-      const whatsappNumber = (settings.whatsapp_number || "5511999999999").replace(/\D/g, "");
+      const whatsappNumber = (store.whatsapp_number || "5511999999999").replace(/\D/g, "");
       const orderSummary = items.map(item => `• ${item.name} — Qtd: ${item.quantity} — R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
       const paymentMethodText = {
         pix: 'PIX',

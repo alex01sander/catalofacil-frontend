@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useStoreSettings } from "@/contexts/StoreSettingsContext";
+import { useStore } from "@/contexts/StoreSettingsContext";
 import { useOptimizedCategories } from "@/hooks/useOptimizedCategories";
 import Header from "@/components/vitrine/Header";
 import HeroBanner from "@/components/vitrine/HeroBanner";
@@ -14,22 +14,22 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const {
-    settings: storeSettings,
-    loading: settingsLoading
-  } = useStoreSettings();
+    store,
+    loading: storeLoading
+  } = useStore();
   const {
     categories,
     loading: categoriesLoading
   } = useOptimizedCategories();
-  const loading = settingsLoading || categoriesLoading;
+  const loading = storeLoading || categoriesLoading;
   const handleWhatsAppClick = () => {
-    const phoneNumber = storeSettings.whatsapp_number || "5511999999999";
+    const phoneNumber = store?.whatsapp_number || "5511999999999";
     const message = "Olá! Gostaria de saber mais sobre os produtos da loja.";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
   const handleInstagramClick = () => {
-    window.open(storeSettings.instagram_url || 'https://instagram.com/', '_blank');
+    window.open(store?.instagram_url || 'https://instagram.com/', '_blank');
   };
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -45,8 +45,8 @@ const Index = () => {
       {/* Mobile-first Layout */}
       <div className="block md:hidden">
         {/* Hero Section with Logo and Brand */}
-        <section className={`text-white px-4 py-8 rounded-b-3xl relative overflow-hidden ${storeSettings.mobile_banner_image ? 'bg-white' : `bg-gradient-to-br ${storeSettings.mobile_banner_color === 'verde' ? 'from-green-400 via-green-500 to-green-600' : storeSettings.mobile_banner_color === 'roxo' ? 'from-purple-600 via-purple-700 to-purple-800' : storeSettings.mobile_banner_color === 'azul' ? 'from-blue-500 via-blue-600 to-blue-700' : storeSettings.mobile_banner_color === 'rosa' ? 'from-pink-500 via-pink-600 to-pink-700' : storeSettings.mobile_banner_color === 'laranja' ? 'from-orange-500 via-orange-600 to-orange-700' : storeSettings.mobile_banner_color === 'violeta' ? 'from-violet-600 via-violet-700 to-violet-800' : 'from-green-400 via-green-500 to-green-600'}`}`} style={storeSettings.mobile_banner_image ? {
-        backgroundImage: `url('${storeSettings.mobile_banner_image}')`,
+        <section className={`text-white px-4 py-8 rounded-b-3xl relative overflow-hidden ${store?.mobile_banner_image ? 'bg-white' : `bg-gradient-to-br ${store?.mobile_banner_color === 'verde' ? 'from-green-400 via-green-500 to-green-600' : store?.mobile_banner_color === 'roxo' ? 'from-purple-600 via-purple-700 to-purple-800' : store?.mobile_banner_color === 'azul' ? 'from-blue-500 via-blue-600 to-blue-700' : store?.mobile_banner_color === 'rosa' ? 'from-pink-500 via-pink-600 to-pink-700' : store?.mobile_banner_color === 'laranja' ? 'from-orange-500 via-orange-600 to-orange-700' : store?.mobile_banner_color === 'violeta' ? 'from-violet-600 via-violet-700 to-violet-800' : 'from-green-400 via-green-500 to-green-600'}`}`} style={store?.mobile_banner_image ? {
+        backgroundImage: `url('${store.mobile_banner_image}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -59,18 +59,18 @@ const Index = () => {
             {/* Logo Circle */}
             <div className="flex justify-center mb-4">
               <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30">
-                {storeSettings.mobile_logo && <img alt={`${storeSettings.store_name} Logo`} className="w-full h-full object-cover" src={storeSettings.mobile_logo} />}
+                {store?.mobile_logo && <img alt={`${store?.store_name} Logo`} className="w-full h-full object-cover" src={store?.mobile_logo} />}
               </div>
             </div>
             
             {/* Store Name */}
             <h1 className="text-xl font-bold mb-2">
-              {storeSettings.store_name}
+              {store?.store_name}
             </h1>
             
             {/* Store Description */}
             <p className="text-sm text-white/90 mb-6 px-4 leading-relaxed whitespace-pre-line">
-              {storeSettings.store_description}
+              {store?.store_description}
             </p>
             
             {/* Instagram and WhatsApp Icons */}

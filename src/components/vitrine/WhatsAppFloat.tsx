@@ -1,11 +1,11 @@
 import { MessageCircle } from "lucide-react";
-import { useStoreSettings } from "@/contexts/StoreSettingsContext";
+import { useStore } from "@/contexts/StoreSettingsContext";
 
 const WhatsAppFloat = () => {
-  const { settings } = useStoreSettings();
+  const { store } = useStore();
 
   const handleWhatsAppClick = () => {
-    const phoneNumber = settings.whatsapp_number || "5511999999999";
+    const phoneNumber = store?.whatsapp_number || "5511999999999";
     const message = "Olá! Gostaria de saber mais sobre os produtos da loja.";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
