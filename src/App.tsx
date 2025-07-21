@@ -46,37 +46,37 @@ function App() {
           <BrowserRouter>
             <AuthProvider>
               <FinancialProvider>
-                <StoreSettingsProvider>
-                  <ThemeProvider>
-                    <CartProvider>
-                      <Suspense fallback={<div style={{padding: 40, textAlign: 'center'}}>Carregando página...</div>}>
-                        <Routes>
-                          <Route path="/" element={<Index />} />
-                          <Route path="/auth" element={<Auth />} />
-                          <Route
-                            path="/admin/*"
-                            element={
-                              <ProtectedRoute>
+                <ThemeProvider>
+                  <CartProvider>
+                    <Suspense fallback={<div style={{padding: 40, textAlign: 'center'}}>Carregando página...</div>}>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route
+                          path="/admin/*"
+                          element={
+                            <ProtectedRoute>
+                              <StoreSettingsProvider>
                                 <Admin />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/controller/*"
-                            element={
-                              <ProtectedRoute>
-                                <ControllerProtectedRoute>
-                                  <Controller />
-                                </ControllerProtectedRoute>
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Suspense>
-                    </CartProvider>
-                  </ThemeProvider>
-                </StoreSettingsProvider>
+                              </StoreSettingsProvider>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/controller/*"
+                          element={
+                            <ProtectedRoute>
+                              <ControllerProtectedRoute>
+                                <Controller />
+                              </ControllerProtectedRoute>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </CartProvider>
+                </ThemeProvider>
               </FinancialProvider>
             </AuthProvider>
           </BrowserRouter>
