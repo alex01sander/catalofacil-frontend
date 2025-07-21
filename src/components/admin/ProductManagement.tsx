@@ -418,9 +418,10 @@ const ProductManagement = () => {
                         <td className="p-3">
                           <div className="flex items-center space-x-3">
                             <img
-                              src={product.image || 'https://via.placeholder.com/100'}
+                              src={product.image || (product.images && product.images[0]) || '/img/no-image.png'}
                               alt={product.name}
                               className="w-12 h-12 rounded-lg object-cover"
+                              onError={e => e.currentTarget.src = '/img/no-image.png'}
                             />
                             <span className="font-medium">{product.name}</span>
                           </div>

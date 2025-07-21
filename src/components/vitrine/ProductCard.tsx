@@ -45,9 +45,10 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
     <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
       <div className="relative overflow-hidden cursor-pointer" onClick={handleViewDetails}>
         <img
-          src={product.image || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop"}
+          src={product.image || (product.images && product.images[0]) || '/img/no-image.png'}
           alt={product.name}
           className="w-full h-40 md:h-56 object-contain bg-white group-hover:scale-105 transition-transform duration-300"
+          onError={e => e.currentTarget.src = '/img/no-image.png'}
         />
         {product.stock < 10 && (
           <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-orange-500 text-xs">

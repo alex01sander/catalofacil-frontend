@@ -52,9 +52,10 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
         <div className="space-y-4">
           <div className="aspect-video rounded-lg overflow-hidden bg-white flex items-center justify-center">
             <img
-              src={allImages[selectedImage] || product.image}
+              src={allImages[selectedImage] || product.image || '/img/no-image.png'}
               alt={product.name}
               className="w-full h-full object-contain"
+              onError={e => e.currentTarget.src = '/img/no-image.png'}
             />
           </div>
           
