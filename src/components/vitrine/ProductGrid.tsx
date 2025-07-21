@@ -6,6 +6,8 @@ import axios from "axios";
 import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
+import { usePublicProducts } from "@/hooks/usePublicProducts";
+import { useStore } from "@/contexts/StoreSettingsContext";
 
 interface ProductGridProps {
   searchTerm: string;
@@ -13,31 +15,29 @@ interface ProductGridProps {
 }
 
 const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: ProductGridProps & { publicView?: boolean }) => {
-  const { token } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Novo: hook para produtos públicos
+  const { store, slug } = useStore();
+  const publicProducts = usePublicProducts(slug);
+
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    if (!publicView && !token) {
-      setLoading(false);
+    if (publicView) {
+      setLoading(publicProducts.loading);
+      setProducts(publicProducts.products);
+      setError(null);
       return;
     }
-    const headers = publicView ? {} : { Authorization: `Bearer ${token}` };
-    api.get(`${API_URL}/products`, { headers })
-      .then(res => {
-        setProducts(res.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Erro ao carregar produtos. Tente novamente.");
-        setLoading(false);
-      });
-  }, [searchTerm, selectedCategory, publicView, token]);
+    // Aqui você pode manter a lógica autenticada se necessário
+    // Exemplo:
+    // setLoading(true);
+    // setError(null);
+    // api.get(`${API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } }) ...
+  }, [searchTerm, selectedCategory, publicView, publicProducts]);
 
   const handleViewDetails = (product: any) => {
     setSelectedProduct(product);
