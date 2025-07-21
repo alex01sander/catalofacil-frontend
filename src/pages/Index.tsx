@@ -48,8 +48,8 @@ const Index = () => {
       {/* Mobile-first Layout */}
       <div className="block md:hidden">
         {/* Hero Section with Logo and Brand */}
-        <section className={`text-white px-4 py-8 rounded-b-3xl relative overflow-hidden ${store?.mobile_banner_image ? 'bg-white' : `bg-gradient-to-br ${store?.mobile_banner_color === 'verde' ? 'from-green-400 via-green-500 to-green-600' : store?.mobile_banner_color === 'roxo' ? 'from-purple-600 via-purple-700 to-purple-800' : store?.mobile_banner_color === 'azul' ? 'from-blue-500 via-blue-600 to-blue-700' : store?.mobile_banner_color === 'rosa' ? 'from-pink-500 via-pink-600 to-pink-700' : store?.mobile_banner_color === 'laranja' ? 'from-orange-500 via-orange-600 to-orange-700' : store?.mobile_banner_color === 'violeta' ? 'from-violet-600 via-violet-700 to-violet-800' : 'from-green-400 via-green-500 to-green-600'}`}`} style={store?.mobile_banner_image ? {
-        backgroundImage: `url('${store.mobile_banner_image}')`,
+        <section className={`text-white px-4 py-8 rounded-b-3xl relative overflow-hidden ${store?.banner_url ? 'bg-white' : `bg-gradient-to-br from-green-400 via-green-500 to-green-600`}`} style={store?.banner_url ? {
+        backgroundImage: `url('${store.banner_url}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -62,8 +62,8 @@ const Index = () => {
             {/* Logo Circle */}
             <div className="flex justify-center mb-4">
               <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30">
-                {store?.mobile_logo ? (
-                  <img alt={`${store?.store_name || 'Logo da loja'}`} className="w-full h-full object-cover" src={store?.mobile_logo} />
+                {store?.logo_url ? (
+                  <img alt={`${store?.name || 'Logo da loja'}`} className="w-full h-full object-cover" src={store?.logo_url} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300">Sem logo</div>
                 )}
@@ -72,12 +72,12 @@ const Index = () => {
             
             {/* Store Name */}
             <h1 className="text-xl font-bold mb-2">
-              {store?.store_name || 'Nome da loja não cadastrado'}
+              {store?.name || 'Nome da loja não cadastrado'}
             </h1>
             
             {/* Store Description */}
             <p className="text-sm text-white/90 mb-6 px-4 leading-relaxed whitespace-pre-line">
-              {store?.store_description || 'Descrição da loja não cadastrada.'}
+              {store?.description || 'Descrição da loja não cadastrada.'}
             </p>
             
             {/* Instagram and WhatsApp Icons */}
