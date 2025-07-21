@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import axios from 'axios';
 import { API_URL } from '@/constants/api';
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
 import { useStore } from "@/contexts/StoreSettingsContext";
 import api from '@/services/api';
 
@@ -24,7 +23,6 @@ const Cart = () => {
     totalPrice,
     clearCart
   } = useCart();
-  const { user, token } = useAuth();
   const { store } = useStore();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
@@ -51,7 +49,7 @@ const Cart = () => {
     try {
       // Montar payload conforme schema do Prisma
       const payload: any = {
-        store_owner_id: user?.id,
+        store_owner_id: null, // Não há usuário autenticado, então store_owner_id é null
         customer_name: formData.name,
         customer_phone: formData.phone,
         total_amount: totalPrice,
@@ -70,9 +68,7 @@ const Cart = () => {
         payload.customer_email = formData.address;
       }
       // Enviar pedido
-      if (!token) throw new Error('Usuário não autenticado');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const { data: order } = await api.post(`${API_URL}/pedidos`, payload, { headers });
+      const { data: order } = await api.post(`${API_URL}/pedidos`, payload);
       // 2. WhatsApp
       // Garantir que o número está no formato internacional (apenas dígitos)
       const whatsappNumber = (store.whatsapp_number || "5511999999999").replace(/\D/g, "");
