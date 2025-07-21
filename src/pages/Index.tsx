@@ -39,6 +39,8 @@ const Index = () => {
         </div>
       </div>;
   }
+  console.log('[Index] store:', store);
+  console.log('[Index] categories:', categories);
   return <div className="min-h-screen bg-gray-50">
       <Header />
       

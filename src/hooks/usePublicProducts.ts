@@ -8,8 +8,12 @@ export function usePublicProducts(slug: string) {
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
+    console.log('[usePublicProducts] slug:', slug);
     api.get(`/site/public/${slug}/products`)
-      .then(res => setProducts(res.data))
+      .then(res => {
+        console.log('[usePublicProducts] Produtos públicos recebidos:', res.data);
+        setProducts(res.data);
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 

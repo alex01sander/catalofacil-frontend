@@ -29,8 +29,12 @@ export const StoreProvider = ({ children }) => {
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
+    console.log('[StoreProvider] slug detectado:', slug);
     api.get(`/site/public/${slug}`)
-      .then(res => setStore(res.data))
+      .then(res => {
+        console.log('[StoreProvider] Dados públicos da loja recebidos:', res.data);
+        setStore(res.data);
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 
