@@ -11,6 +11,7 @@ import api from '@/services/api';
 import { useAuth } from "@/contexts/AuthContext";
 import { API_URL } from "@/constants/api";
 import { supabase } from '@/integrations/supabase/client';
+import { useStore } from "@/contexts/StoreSettingsContext";
 
 interface Category {
   id: string;
@@ -23,6 +24,7 @@ interface Category {
 const CategoryManagement = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { store } = useStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCategory, setNewCategory] = useState("");
@@ -67,7 +69,7 @@ const CategoryManagement = () => {
   }, [user]);
 
   const addCategory = async () => {
-    if (!newCategory.trim() || !user) return;
+    if (!newCategory.trim() || !user || !store?.id) return;
     try {
       const colors = ["#8B5CF6", "#06D6A0", "#F59E0B", "#EF4444", "#3B82F6"];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -85,6 +87,7 @@ const CategoryManagement = () => {
       console.log('Token do localStorage:', storedToken);
       
       const payload = {
+        store_id: store.id,
         user_id: user.id,
         name: newCategory.trim(),
         color: randomColor,

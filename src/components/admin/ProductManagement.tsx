@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ProductForm from "./ProductForm";
 import { API_URL } from "@/constants/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useStore } from "@/contexts/StoreSettingsContext";
 
 // Database Product interface (matches database schema)
 interface Product {
@@ -44,6 +45,7 @@ interface FormProduct {
 const ProductManagement = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { store } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<FormProduct | null>(null);
@@ -99,13 +101,11 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
-    alert('handleFormSubmit chamado!');
-    console.log('handleFormSubmit chamado!', productData, user);
-    if (!user || !user.token) return;
+    if (!user || !user.token || !store?.id) return;
     try {
       if (editingProduct) {
-        // Update existing product
         await api.put(`${API_URL}/products/${editingProduct.id}`, {
+          store_id: store.id,
           name: productData.name,
           price: productData.price,
           description: productData.description,
@@ -117,8 +117,8 @@ const ProductManagement = () => {
         });
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
-        // Create new product
         await api.post(`${API_URL}/products`, {
+          store_id: store.id,
           user_id: user.id,
           name: productData.name,
           price: productData.price,
