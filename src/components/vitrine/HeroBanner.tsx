@@ -3,9 +3,7 @@ import { Instagram, MessageCircle } from "lucide-react";
 import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
 
 const HeroBanner = () => {
-  const {
-    store
-  } = useStore();
+  const { store } = useStore();
   const handleWhatsAppClick = () => {
     window.open(`https://wa.me/${store?.whatsapp_number}?text=${encodeURIComponent("Olá! Gostaria de saber mais sobre os produtos da loja.")}` , "_blank");
   };

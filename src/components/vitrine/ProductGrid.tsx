@@ -22,13 +22,13 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Novo: hook para produtos públicos
-  const { store, slug } = useStore();
-  const publicProducts = usePublicProducts(slug);
+  const { slug } = useStore();
+  const { products: publicProducts, loading: publicLoading } = usePublicProducts(slug);
 
   useEffect(() => {
     if (publicView) {
-      setLoading(publicProducts.loading);
-      setProducts(publicProducts.products);
+      setLoading(publicLoading);
+      setProducts(publicProducts);
       setError(null);
       return;
     }
@@ -37,7 +37,7 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
     // setLoading(true);
     // setError(null);
     // api.get(`${API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } }) ...
-  }, [searchTerm, selectedCategory, publicView, publicProducts]);
+  }, [searchTerm, selectedCategory, publicView, publicProducts, publicLoading]);
 
   const handleViewDetails = (product: any) => {
     setSelectedProduct(product);

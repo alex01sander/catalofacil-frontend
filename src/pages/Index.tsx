@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useStore } from "@/contexts/StoreSettingsContext";
-import { useOptimizedCategories } from "@/hooks/useOptimizedCategories";
+import { usePublicCategories } from "@/hooks/usePublicCategories";
 import Header from "@/components/vitrine/Header";
 import HeroBanner from "@/components/vitrine/HeroBanner";
 import ProductGrid from "@/components/vitrine/ProductGrid";
@@ -15,12 +15,13 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const {
     store,
-    loading: storeLoading
+    loading: storeLoading,
+    slug
   } = useStore();
   const {
     categories,
     loading: categoriesLoading
-  } = useOptimizedCategories();
+  } = usePublicCategories(slug);
   const loading = storeLoading || categoriesLoading;
   const handleWhatsAppClick = () => {
     const phoneNumber = store?.whatsapp_number || "5511999999999";
