@@ -61,7 +61,8 @@ const ProductManagement = () => {
     }
     try {
       setLoading(true);
-      const res = await api.get(`${API_URL}/products`);
+      const params = store?.id ? { params: { store_id: store.id } } : undefined;
+const res = await api.get(`${API_URL}/products`, params);
       setProducts(res.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);

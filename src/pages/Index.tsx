@@ -32,6 +32,22 @@ const Index = () => {
   const handleInstagramClick = () => {
     window.open(store?.instagram_url || 'https://instagram.com/', '_blank');
   };
+  if (!slug) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <p className="text-red-600 text-lg font-semibold">Loja não encontrada.<br/>A URL não contém o identificador (slug) da loja.</p>
+        <p className="mt-2 text-gray-500">Verifique se o endereço está correto ou acesse pelo link oficial da loja.</p>
+      </div>
+    </div>;
+  }
+  if (!store && !loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <p className="text-red-600 text-lg font-semibold">Loja não encontrada.</p>
+        <p className="mt-2 text-gray-500">O identificador da loja informado não existe ou está incorreto.</p>
+      </div>
+    </div>;
+  }
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
