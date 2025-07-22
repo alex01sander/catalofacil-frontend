@@ -84,7 +84,6 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {console.log('Produtos recebidos:', products) || products
-              .filter(product => product.is_active === true || product.isActive === true)
               .filter(product =>
                 !selectedCategory ||
                 selectedCategory === 'todos' ||
