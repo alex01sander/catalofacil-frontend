@@ -11,6 +11,7 @@ import ProductForm from "./ProductForm";
 import { API_URL } from "@/constants/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStore } from "@/contexts/StoreSettingsContext";
+import { useOptimizedProducts } from '@/hooks/useOptimizedProducts';
 
 // Database Product interface (matches database schema)
 interface Product {
@@ -50,35 +51,9 @@ const ProductManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<FormProduct | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Usar hook centralizado para produtos
+  const { products, loading, error } = useOptimizedProducts();
 
-  // Fetch products from backend
-  const fetchProducts = async () => {
-    if (!user || !user.token) {
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      const params = store?.id ? { params: { store_id: store.id } } : undefined;
-const res = await api.get(`${API_URL}/products`, params);
-      setProducts(res.data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast({
-        title: "Erro ao carregar produtos",
-        description: "Não foi possível carregar os produtos.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user && user.token) fetchProducts();
-  }, [user]);
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -134,7 +109,7 @@ const res = await api.get(`${API_URL}/products`, params);
       }
       setShowForm(false);
       setEditingProduct(null);
-      fetchProducts();
+      
     } catch (error) {
       toast({ title: "Erro inesperado", description: "Erro inesperado ao salvar produto.", variant: "destructive" });
     }
@@ -152,7 +127,7 @@ const res = await api.get(`${API_URL}/products`, params);
     try {
       await api.put(`${API_URL}/products/${productId}`, { is_active: !product.is_active });
       toast({ title: "Status atualizado", description: "Status do produto atualizado com sucesso!" });
-      fetchProducts();
+      
     } catch (error) {
       console.error('Error updating product status:', error);
       toast({ title: "Erro ao atualizar status", description: "Não foi possível atualizar o status do produto.", variant: "destructive" });
@@ -169,7 +144,7 @@ const res = await api.get(`${API_URL}/products`, params);
       await api.delete(`${API_URL}/products/${productId}`);
       toast({ title: "Produto removido", description: "Produto removido com sucesso!" });
       setShowDeleteConfirm(null);
-      fetchProducts();
+      
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({ title: "Erro ao remover produto", description: "Não foi possível remover o produto.", variant: "destructive" });
@@ -182,6 +157,9 @@ const res = await api.get(`${API_URL}/products`, params);
 
   // Adicionar log antes do map de produtos
   console.log('Array de produtos para renderizar:', products);
+  if (error) {
+    return <div className="text-red-500">Erro ao carregar produtos: {error.message}</div>;
+  }
 
   return (
     <div className="space-y-6">
