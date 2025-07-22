@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from '@/services/api';
 import { StoreSettings } from '@/types/storeSettings';
 import { defaultSettings } from '@/constants/storeSettings';
 import { User } from '@supabase/supabase-js';
@@ -8,7 +8,7 @@ export const fetchStoreSettings = async (user: User | null): Promise<StoreSettin
   try {
     if (!user) return defaultSettings;
     // Busca pelo user_id
-    const { data } = await axios.get(`${API_URL}/storeSettings?user_id=${user.id}`);
+    const { data } = await api.get(`${API_URL}/storeSettings?user_id=${user.id}`);
     if (data) {
       return {
         id: data.id,
@@ -39,16 +39,16 @@ export const updateStoreSettings = async (
   }
   try {
     // Busca o id real do registro antes de atualizar
-    const { data } = await axios.get(`${API_URL}/storeSettings?user_id=${user.id}`);
+    const { data } = await api.get(`${API_URL}/storeSettings?user_id=${user.id}`);
     if (data && data.id) {
-      await axios.put(`${API_URL}/storeSettings/${data.id}`, newSettings);
+      await api.put(`${API_URL}/storeSettings/${data.id}`, newSettings);
     } else {
-      await axios.post(`${API_URL}/storeSettings`, { ...newSettings, user_id: user.id });
+      await api.post(`${API_URL}/storeSettings`, { ...newSettings, user_id: user.id });
     }
   } catch (error: any) {
     // Se for erro de registro não encontrado (P2025), faz POST para criar
     if (error?.response?.data?.details?.code === 'P2025') {
-      await axios.post(`${API_URL}/storeSettings`, { ...newSettings, user_id: user.id });
+      await api.post(`${API_URL}/storeSettings`, { ...newSettings, user_id: user.id });
     } else {
       throw error;
     }

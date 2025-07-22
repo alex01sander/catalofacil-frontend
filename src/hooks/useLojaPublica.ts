@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from '@/services/api';
 import { API_URL } from "@/constants/api";
 
 export function useLojaPublica(slug?: string) {
@@ -13,7 +13,7 @@ export function useLojaPublica(slug?: string) {
       setLoading(true);
       // Buscar produtos públicos
       if (slug) {
-        const prodsRes = await axios.get(`${API_URL}/site/${slug}`);
+        const prodsRes = await api.get(`${API_URL}/site/${slug}`);
         setProdutos(prodsRes.data.products || []);
       } else {
         setProdutos([]);
