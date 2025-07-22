@@ -10,7 +10,30 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Função para buscar produtos (pode ser chamada sob demanda)
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+    const url = categoryId && categoryId !== "todos" 
+      ? `/products?category_id=${categoryId}` 
+      : "/products";
+    try {
+      const res = await api.get(url);
+      if (Array.isArray(res.data)) {
+        setProducts(res.data);
+      } else {
+        setProducts([]);
+      }
+    } catch (err) {
+      setError(err);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    // Mantém logs de debug
     console.log('=== useOptimizedProducts DEBUG ===');
     console.log('Token:', token);
     console.log('authLoading:', authLoading);
@@ -18,14 +41,20 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
     console.log('enabled:', enabled);
     console.log('categoryId:', categoryId);
     console.log('loading state:', loading);
-    
+
     if (authLoading) {
-      console.log('Auth ainda carregando, aguardando...');
       setLoading(true);
       return;
     }
-    
-    // Se não está habilitado, para de carregar
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+    if (!user && !token) {
+      setLoading(false);
+      return;
+    }
+    fetchProducts();
     if (!enabled) {
       console.log('Hook desabilitado, parando loading');
       setLoading(false);
@@ -100,6 +129,7 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
   return {
     products: filteredProducts,
     loading,
-    error
+    error,
+    refetch: fetchProducts
   };
 };

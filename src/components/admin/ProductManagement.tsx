@@ -52,7 +52,7 @@ const ProductManagement = () => {
   const [editingProduct, setEditingProduct] = useState<FormProduct | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   // Usar hook centralizado para produtos
-  const { products, loading, error } = useOptimizedProducts();
+  const { products, loading, error, refetch } = useOptimizedProducts();
 
 
   const handleAddProduct = () => {
@@ -109,6 +109,7 @@ const ProductManagement = () => {
       }
       setShowForm(false);
       setEditingProduct(null);
+      if (typeof refetch === 'function') refetch();
       
     } catch (error) {
       toast({ title: "Erro inesperado", description: "Erro inesperado ao salvar produto.", variant: "destructive" });
@@ -144,6 +145,7 @@ const ProductManagement = () => {
       await api.delete(`${API_URL}/products/${productId}`);
       toast({ title: "Produto removido", description: "Produto removido com sucesso!" });
       setShowDeleteConfirm(null);
+      if (typeof refetch === 'function') refetch();
       
     } catch (error) {
       console.error('Error deleting product:', error);
