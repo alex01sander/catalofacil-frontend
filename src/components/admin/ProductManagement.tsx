@@ -111,8 +111,13 @@ const ProductManagement = () => {
       setEditingProduct(null);
       if (typeof refetch === 'function') refetch();
       
-    } catch (error) {
-      toast({ title: "Erro inesperado", description: "Erro inesperado ao salvar produto.", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Erro ao salvar produto:", error, error?.response?.data);
+      toast({ 
+        title: "Erro inesperado", 
+        description: error?.response?.data?.error || error?.message || "Erro inesperado ao salvar produto.", 
+        variant: "destructive" 
+      });
     }
   };
 
