@@ -48,7 +48,13 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           src={product.image || (product.images && product.images[0]) || '/img/no-image.png'}
           alt={product.name}
           className="w-full h-40 md:h-56 object-contain bg-white group-hover:scale-105 transition-transform duration-300"
-          onError={e => e.currentTarget.src = '/img/no-image.png'}
+          onError={e => {
+            if (!e.currentTarget.dataset.fallback) {
+              e.currentTarget.src = '/img/no-image.png';
+              e.currentTarget.dataset.fallback = 'true';
+            }
+          }}
+          data-fallback=""
         />
         {product.stock < 10 && (
           <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-orange-500 text-xs">
