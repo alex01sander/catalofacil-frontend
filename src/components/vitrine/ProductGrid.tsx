@@ -83,10 +83,13 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
       <section className="px-4 bg-gray-50 py-px">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products
-              .filter(product => product.is_active)
+            {console.log('Produtos recebidos:', products) || products
+              .filter(product => product.is_active === true || product.isActive === true)
               .filter(product =>
-                !selectedCategory || selectedCategory === 'todos' || product.category_id === selectedCategory
+                !selectedCategory ||
+                selectedCategory === 'todos' ||
+                product.category_id == selectedCategory ||
+                product.category == selectedCategory
               )
               .map(product => (
                 <ProductCard 
