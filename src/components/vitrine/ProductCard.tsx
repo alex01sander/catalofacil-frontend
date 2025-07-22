@@ -44,18 +44,33 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
       <div className="relative overflow-hidden cursor-pointer" onClick={handleViewDetails}>
-        <img
-          src={product.image || (product.images && product.images[0]) || '/img/no-image.png'}
-          alt={product.name}
-          className="w-full h-40 md:h-56 object-contain bg-white group-hover:scale-105 transition-transform duration-300"
-          onError={e => {
-            if (!e.currentTarget.dataset.fallback) {
-              e.currentTarget.src = '/img/no-image.png';
-              e.currentTarget.dataset.fallback = 'true';
-            }
-          }}
-          data-fallback=""
-        />
+        {/**
+         * Corrigido: Usar estado local para controlar src da imagem e evitar loop de fallback
+         */}
+        {(() => {
+          const [imgSrc, setImgSrc] = React.useState(
+            product.image || (product.images && product.images[0]) || '/img/no-image.png'
+          );
+          const [errored, setErrored] = React.useState(false);
+          React.useEffect(() => {
+            setImgSrc(product.image || (product.images && product.images[0]) || '/img/no-image.png');
+            setErrored(false);
+          }, [product.image, product.images]);
+          return (
+            <img
+              src={imgSrc}
+              alt={product.name}
+              className="w-full h-40 md:h-56 object-contain bg-white group-hover:scale-105 transition-transform duration-300"
+              onError={() => {
+                if (!errored) {
+                  setImgSrc('/img/no-image.png');
+                  setErrored(true);
+                }
+              }}
+            />
+          );
+        })()}
+
         {product.stock < 10 && (
           <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-orange-500 text-xs">
             Últimas
