@@ -77,6 +77,7 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
+  console.log('[DEBUG handleFormSubmit] Dados recebidos do ProductForm:', productData);
     if (!user || !user.token || !store?.id) return;
     try {
       if (editingProduct) {
