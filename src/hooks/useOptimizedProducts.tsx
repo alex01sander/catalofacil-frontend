@@ -78,10 +78,18 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
   }, [categoryId, enabled, token, authLoading, user]);
 
   const filteredProducts = useMemo(() => {
-    if (!categoryId || categoryId === "todos") {
-      return products;
-    }
-    return products.filter(product => product.category_id === categoryId);
+    console.log('=== FILTRO DE PRODUTOS DEBUG ===');
+    console.log('categoryId:', categoryId);
+    console.log('products antes do filtro:', products);
+    
+    // REMOVENDO FILTRO TEMPORARIAMENTE PARA DEBUG
+    // if (!categoryId || categoryId === "todos") {
+    //   return products;
+    // }
+    // return products.filter(product => product.category_id === categoryId);
+    
+    console.log('Retornando TODOS os produtos sem filtro para debug');
+    return products;
   }, [products, categoryId]);
 
   console.log('=== HOOK RETURN (PRODUTOS) ===');
