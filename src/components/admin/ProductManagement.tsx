@@ -113,7 +113,16 @@ const ProductManagement = () => {
       if (typeof refetch === 'function') refetch();
       
     } catch (error: any) {
-      console.error("Erro ao salvar produto:", error, error?.response?.data);
+      // Log detalhado para qualquer erro, inclusive erros de rede, CORS ou resposta indefinida
+      console.error('[DEBUG handleFormSubmit][CATCH] Erro ao salvar produto:', error);
+      if (error?.response) {
+        console.error('[DEBUG handleFormSubmit][CATCH] error.response:', error.response);
+        console.error('[DEBUG handleFormSubmit][CATCH] error.response.data:', error.response.data);
+      } else if (error?.request) {
+        console.error('[DEBUG handleFormSubmit][CATCH] error.request:', error.request);
+      } else {
+        console.error('[DEBUG handleFormSubmit][CATCH] error.message:', error.message);
+      }
       toast({ 
         title: "Erro inesperado", 
         description: error?.response?.data?.error || error?.message || "Erro inesperado ao salvar produto.", 
