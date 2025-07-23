@@ -68,6 +68,7 @@ const ProductManagement = () => {
   };
 
   const handleEditProduct = (product: Product) => {
+    console.log('[DEBUG] Botão editar clicado para produto:', product);
     const formProduct: FormProduct = {
       id: product.id,
       name: product.name,
@@ -177,8 +178,7 @@ const ProductManagement = () => {
         console.error('[DEBUG handleFormSubmit][CATCH] error.message:', error.message);
       }
       toast({ 
-        title: "Erro inesperado", 
-        description: error?.response?.data?.error || error?.message || "Erro inesperado ao salvar produto.", 
+        title: "Erro inesperado",         description: error?.response?.data?.error || error?.message || "Erro inesperado ao salvar produto.", 
         variant: "destructive" 
       });
     }
@@ -208,6 +208,7 @@ const ProductManagement = () => {
   };
 
   const deleteProduct = async (productId: string) => {
+    console.log('[DEBUG] Botão excluir clicado para produtoId:', productId);
     if (!user || !user.token) return;
     try {
       await api.delete(`${API_URL}/products/${productId}`);
