@@ -38,13 +38,13 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <StoreProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <StoreProvider>
               <FinancialProvider>
                 <ThemeProvider>
                   <CartProvider>
@@ -78,11 +78,11 @@ function App() {
                   </CartProvider>
                 </ThemeProvider>
               </FinancialProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </StoreProvider>
+            </StoreProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 
