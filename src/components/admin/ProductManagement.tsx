@@ -81,7 +81,8 @@ const ProductManagement = () => {
     if (!user || !user.token || !store?.id) return;
     try {
       if (editingProduct) {
-        await api.put(`${API_URL}/products/${editingProduct.id}`, {
+        console.log('[DEBUG handleFormSubmit] Enviando PUT para:', `${API_URL}/products/${editingProduct.id}`);
+        const response = await api.put(`${API_URL}/products/${editingProduct.id}`, {
           store_id: store.id,
           name: productData.name,
           price: productData.price,
@@ -92,9 +93,11 @@ const ProductManagement = () => {
           image: productData.image,
           images: productData.images || [],
         });
+        console.log('[DEBUG handleFormSubmit] Resposta PUT:', response);
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
-        await api.post(`${API_URL}/products`, {
+        console.log('[DEBUG handleFormSubmit] Enviando POST para:', `${API_URL}/products`);
+        const response = await api.post(`${API_URL}/products`, {
           store_id: store.id,
           user_id: user.id,
           name: productData.name,
@@ -106,6 +109,7 @@ const ProductManagement = () => {
           image: productData.image,
           images: productData.images || [],
         });
+        console.log('[DEBUG handleFormSubmit] Resposta POST:', response);
         toast({ title: "Produto criado", description: "Novo produto adicionado com sucesso!" });
       }
       setShowForm(false);
