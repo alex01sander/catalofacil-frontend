@@ -81,8 +81,11 @@ export const StoreProvider = ({ children }) => {
     // Criar uma cópia com o ID garantido
     const storeData = {
       ...data,
-      id: storeId
+      id: storeId || 'fake-store-id' // Se não encontrar, cria um id fake temporário
     };
+    if (!storeId) {
+      console.warn('[StoreProvider] ATENÇÃO: ID da loja não encontrado, usando id fake temporário! Corrija o backend para sempre enviar o id.');
+    }
     
     console.log('[StoreProvider] ID da loja encontrado:', storeId);
     console.log('[StoreProvider] Dados da loja com ID garantido:', storeData);
