@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { StoreSettings, StoreSettingsContextType } from '@/types/storeSettings';
+import { StoreSettings, StoreSettingsContextType, StoreContextType } from '@/types/storeSettings';
 import { defaultSettings } from '@/constants/storeSettings';
 import { fetchStoreSettings, updateStoreSettings } from '@/hooks/useStoreSettingsLogic';
 import api from "@/services/api";
@@ -9,7 +9,7 @@ import { getStoreSlug } from "@/utils/getStoreSlug";
 const StoreSettingsContext = createContext<StoreSettingsContextType | undefined>(undefined);
 
 // CONTEXTO DA LOJA PÚBLICA
-const StoreContext = createContext(null);
+const StoreContext = createContext<StoreContextType | null>(null);
 
 export const useStoreSettings = () => {
   const context = useContext(StoreSettingsContext);
@@ -27,6 +27,37 @@ export const StoreProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const slug = getStoreSlug();
 
+  // Função para garantir que o objeto store tenha um ID válido
+  const ensureStoreHasId = (data) => {
+    if (!data) return null;
+    
+    console.log('[StoreProvider] Verificando dados da loja para garantir ID:', data);
+    
+    // Verificar todas as possíveis localizações do ID
+    let storeId = data.id || data.store_id;
+    
+    // Verificar se há um objeto store aninhado com ID
+    if (!storeId && data.store && data.store.id) {
+      storeId = data.store.id;
+    }
+    
+    // Verificar se há um objeto settings com store_id
+    if (!storeId && data.settings && data.settings.store_id) {
+      storeId = data.settings.store_id;
+    }
+    
+    // Criar uma cópia com o ID garantido
+    const storeData = {
+      ...data,
+      id: storeId
+    };
+    
+    console.log('[StoreProvider] ID da loja encontrado:', storeId);
+    console.log('[StoreProvider] Dados da loja com ID garantido:', storeData);
+    
+    return storeData;
+  };
+
   useEffect(() => {
     setLoading(true);
     
@@ -36,7 +67,13 @@ export const StoreProvider = ({ children }) => {
       api.get(`/site/public/${slug}`)
         .then(res => {
           console.log('[StoreProvider] Dados públicos da loja recebidos:', res.data);
-          setStore(res.data);
+          // Garantir que o objeto store tenha um id mesmo para lojas públicas
+          const storeData = ensureStoreHasId(res.data);
+          console.log('[StoreProvider] Dados da loja pública formatados:', storeData);
+          setStore(storeData);
+        })
+        .catch(err => {
+          console.error('[StoreProvider] Erro ao buscar loja pública:', err);
         })
         .finally(() => setLoading(false));
     } 
@@ -49,11 +86,11 @@ export const StoreProvider = ({ children }) => {
           if (res.data) {
             console.log('[StoreProvider] Dados da loja do usuário recebidos:', res.data);
             // Garantir que o objeto store tenha um id
-            const storeData = {
-              ...res.data,
-              id: res.data.id || res.data.store_id
-            };
-            console.log('[StoreProvider] Dados da loja formatados:', storeData);
+            const storeData = ensureStoreHasId(res.data);
+            console.log('[StoreProvider] Dados da loja formatados com ID:', storeData);
+            if (!storeData.id) {
+              console.error('[StoreProvider] ALERTA: Não foi possível determinar o ID da loja!');
+            }
             setStore(storeData);
           } else {
             console.log('[StoreProvider] Nenhum dado de loja encontrado para o usuário');
@@ -67,9 +104,23 @@ export const StoreProvider = ({ children }) => {
       setLoading(false);
     }
   }, [slug, user]);
+  
+  // Log adicional para debug quando o store mudar
+  useEffect(() => {
+    console.log('[StoreProvider] Store atualizado:', store);
+    if (store) {
+      console.log('[StoreProvider] Store ID:', store.id);
+      if (!store.id) {
+        console.error('[StoreProvider] ALERTA: Store sem ID definido!');
+      }
+    }
+  }, [store]);
 
+  // Extrair o ID da loja para garantir que sempre temos acesso a ele
+  const storeId = store?.id;
+  
   return (
-    <StoreContext.Provider value={{ store, slug, loading }}>
+    <StoreContext.Provider value={{ store, slug, loading, storeId }}>
       {children}
     </StoreContext.Provider>
   );

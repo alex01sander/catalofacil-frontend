@@ -46,7 +46,7 @@ interface FormProduct {
 const ProductManagement = () => {
   const { toast } = useToast();
   const { user, token } = useAuth();
-  const { store, loading: storeLoading } = useStore();
+  const { store, loading: storeLoading, storeId } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<FormProduct | null>(null);
@@ -58,7 +58,8 @@ const ProductManagement = () => {
   useEffect(() => {
     console.log('[ProductManagement] Store:', store);
     console.log('[ProductManagement] Store ID:', store?.id);
-  }, [store]);
+    console.log('[ProductManagement] storeId do contexto:', storeId);
+  }, [store, storeId]);
 
 
   const handleAddProduct = () => {
@@ -83,19 +84,27 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
-  console.log('[DEBUG handleFormSubmit] Dados recebidos do ProductForm:', productData);
+    console.log('[DEBUG handleFormSubmit] Dados recebidos do ProductForm:', productData);
     console.log('[DEBUG handleFormSubmit] user:', user);
     console.log('[DEBUG handleFormSubmit] token:', token);
+    console.log('[DEBUG handleFormSubmit] store completo:', store);
     console.log('[DEBUG handleFormSubmit] store.id:', store?.id);
-    if (!user || !token || !store?.id) {
-      console.warn('[DEBUG handleFormSubmit] BLOQUEADO: user, token ou store.id ausente');
+    console.log('[DEBUG handleFormSubmit] storeId do contexto:', storeId);
+    
+    if (!user || !token) {
+      console.warn('[DEBUG handleFormSubmit] BLOQUEADO: user ou token ausente');
+      return;
+    }
+    
+    if (!storeId) {
+      console.warn('[DEBUG handleFormSubmit] BLOQUEADO: Não foi possível encontrar o ID da loja');
       return;
     }
     try {
       if (editingProduct) {
         console.log('[DEBUG handleFormSubmit] Enviando PUT para:', `${API_URL}/products/${editingProduct.id}`);
         const response = await api.put(`${API_URL}/products/${editingProduct.id}`, {
-          store_id: store.id,
+          store_id: storeId,
           name: productData.name,
           price: productData.price,
           description: productData.description,
@@ -104,13 +113,15 @@ const ProductManagement = () => {
           is_active: productData.isActive,
           image: productData.image,
           images: productData.images || [],
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta PUT:', response);
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
         console.log('[DEBUG handleFormSubmit] Enviando POST para:', `${API_URL}/products`);
         const response = await api.post(`${API_URL}/products`, {
-          store_id: store.id,
+          store_id: storeId,
           user_id: user.id,
           name: productData.name,
           price: productData.price,
@@ -120,6 +131,8 @@ const ProductManagement = () => {
           is_active: productData.isActive,
           image: productData.image,
           images: productData.images || [],
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta POST:', response);
         toast({ title: "Produto criado", description: "Novo produto adicionado com sucesso!" });

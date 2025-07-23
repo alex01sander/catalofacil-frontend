@@ -18,3 +18,10 @@ export interface StoreSettingsContextType {
   updateSettings: (newSettings: Partial<StoreSettings>) => Promise<void>;
   refetch: () => Promise<void>;
 }
+
+export interface StoreContextType {
+  store: any; // Tipo do objeto store
+  slug: string | null;
+  loading: boolean;
+  storeId: string | undefined; // ID da loja extraído e garantido
+}
