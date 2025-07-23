@@ -85,6 +85,7 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
+    console.log('[DEBUG] handleFormSubmit chamado', { editingProduct, productData });
     console.log('[DEBUG handleFormSubmit] Dados recebidos do ProductForm:', productData);
     console.log('[DEBUG handleFormSubmit] user:', user);
     console.log('[DEBUG handleFormSubmit] token:', token);
