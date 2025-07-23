@@ -133,15 +133,26 @@ const ProductManagement = () => {
         const payload = {
           store_id: effectiveStoreId,
           name: productData.name,
-          price: productData.price,
+          price: Number(productData.price),
           description: productData.description,
           category_id: productData.category === 'todos' ? null : productData.category,
-          stock: productData.stock,
+          stock: Number(productData.stock),
           is_active: productData.isActive,
           image: productData.image,
           images: productData.images || [],
         };
         console.log('[DEBUG handleFormSubmit] Payload PUT:', payload);
+        console.log('[DEBUG handleFormSubmit] Tipos dos campos:', {
+          store_id: typeof payload.store_id,
+          name: typeof payload.name,
+          price: typeof payload.price,
+          description: typeof payload.description,
+          category_id: typeof payload.category_id,
+          stock: typeof payload.stock,
+          is_active: typeof payload.is_active,
+          image: typeof payload.image,
+          images: typeof payload.images
+        });
         console.log('[DEBUG handleFormSubmit] Prestes a enviar requisição PUT...');
         const response = await api.put(`${API_URL}/products/${editingProduct.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
@@ -153,10 +164,10 @@ const ProductManagement = () => {
         const payload = {
           store_id: effectiveStoreId,
           name: productData.name,
-          price: productData.price,
+          price: Number(productData.price),
           description: productData.description,
           category_id: productData.category === 'todos' ? null : productData.category,
-          stock: productData.stock,
+          stock: Number(productData.stock),
           is_active: productData.isActive,
           image: productData.image,
           images: productData.images || [],
@@ -182,6 +193,7 @@ const ProductManagement = () => {
           console.error('[DEBUG handleFormSubmit][CATCH] error.response.data.details:', error.response.data.details);
           error.response.data.details.forEach((detail, index) => {
             console.error(`[DEBUG handleFormSubmit][CATCH] Detail ${index}:`, detail);
+            console.error(`[DEBUG handleFormSubmit][CATCH] Campo com problema (path):`, detail.path);
           });
         }
       } else if (error?.request) {
