@@ -142,6 +142,7 @@ const ProductManagement = () => {
           images: productData.images || [],
         };
         console.log('[DEBUG handleFormSubmit] Payload PUT:', payload);
+        console.log('[DEBUG handleFormSubmit] Prestes a enviar requisição PUT...');
         const response = await api.put(`${API_URL}/products/${editingProduct.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -177,6 +178,12 @@ const ProductManagement = () => {
       if (error?.response) {
         console.error('[DEBUG handleFormSubmit][CATCH] error.response:', error.response);
         console.error('[DEBUG handleFormSubmit][CATCH] error.response.data:', error.response.data);
+        if (error.response.data?.details) {
+          console.error('[DEBUG handleFormSubmit][CATCH] error.response.data.details:', error.response.data.details);
+          error.response.data.details.forEach((detail, index) => {
+            console.error(`[DEBUG handleFormSubmit][CATCH] Detail ${index}:`, detail);
+          });
+        }
       } else if (error?.request) {
         console.error('[DEBUG handleFormSubmit][CATCH] error.request:', error.request);
       } else {
