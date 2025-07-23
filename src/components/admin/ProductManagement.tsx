@@ -46,13 +46,19 @@ interface FormProduct {
 const ProductManagement = () => {
   const { toast } = useToast();
   const { user, token } = useAuth();
-  const { store } = useStore();
+  const { store, loading: storeLoading } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<FormProduct | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   // Usar hook centralizado para produtos
   const { products, loading, error, refetch } = useOptimizedProducts();
+  
+  // Log para debug do store
+  useEffect(() => {
+    console.log('[ProductManagement] Store:', store);
+    console.log('[ProductManagement] Store ID:', store?.id);
+  }, [store]);
 
 
   const handleAddProduct = () => {

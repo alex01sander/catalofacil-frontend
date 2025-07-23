@@ -22,21 +22,51 @@ export const useStoreSettings = () => {
 export const useStore = () => useContext(StoreContext);
 
 export const StoreProvider = ({ children }) => {
+  const { user } = useAuth();
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const slug = getStoreSlug();
 
   useEffect(() => {
-    if (!slug) return;
     setLoading(true);
-    console.log('[StoreProvider] slug detectado:', slug);
-    api.get(`/site/public/${slug}`)
-      .then(res => {
-        console.log('[StoreProvider] Dados públicos da loja recebidos:', res.data);
-        setStore(res.data);
-      })
-      .finally(() => setLoading(false));
-  }, [slug]);
+    
+    // Se tiver slug, busca informações públicas da loja
+    if (slug) {
+      console.log('[StoreProvider] slug detectado:', slug);
+      api.get(`/site/public/${slug}`)
+        .then(res => {
+          console.log('[StoreProvider] Dados públicos da loja recebidos:', res.data);
+          setStore(res.data);
+        })
+        .finally(() => setLoading(false));
+    } 
+    // Se não tiver slug mas tiver usuário logado, busca a loja do usuário
+    else if (user && user.id) {
+      console.log('[StoreProvider] Buscando loja do usuário:', user.id);
+      api.get(`/storeSettings?user_id=${user.id}`)
+        .then(res => {
+          console.log('[StoreProvider] Resposta da API para loja do usuário:', res);
+          if (res.data) {
+            console.log('[StoreProvider] Dados da loja do usuário recebidos:', res.data);
+            // Garantir que o objeto store tenha um id
+            const storeData = {
+              ...res.data,
+              id: res.data.id || res.data.store_id
+            };
+            console.log('[StoreProvider] Dados da loja formatados:', storeData);
+            setStore(storeData);
+          } else {
+            console.log('[StoreProvider] Nenhum dado de loja encontrado para o usuário');
+          }
+        })
+        .catch(err => {
+          console.error('[StoreProvider] Erro ao buscar loja do usuário:', err);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [slug, user]);
 
   return (
     <StoreContext.Provider value={{ store, slug, loading }}>
