@@ -86,6 +86,18 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>(product?.images || []);
 
+  // Sincronizar imagens quando o produto mudar
+  useEffect(() => {
+    if (product?.images) {
+      setImages(product.images);
+      setFormData(prev => ({
+        ...prev,
+        images: product.images,
+        image: product.image || product.images[0] || "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=400&h=400&fit=crop"
+      }));
+    }
+  }, [product?.images, product?.image]);
+
   // Buscar categorias do backend
   const fetchCategories = async () => {
     setLoadingCategories(true);
@@ -128,6 +140,8 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[DEBUG] handleSubmit ProductForm', formData, product);
+    console.log('[DEBUG] handleSubmit images state:', images);
+    console.log('[DEBUG] handleSubmit formData.images:', formData.images);
     // Validação dos campos obrigatórios
     if (!formData.name || !formData.price) {
       setShowRequiredFieldsMsg(true);
@@ -168,7 +182,16 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
             const newImages = [...prev, data.publicUrl];
             // Se for a primeira imagem, definir como principal
             if (prev.length === 0) {
-              setFormData(prevForm => ({ ...prevForm, image: data.publicUrl }));
+              setFormData(prevForm => ({ 
+                ...prevForm, 
+                image: data.publicUrl,
+                images: newImages 
+              }));
+            } else {
+              setFormData(prevForm => ({ 
+                ...prevForm, 
+                images: newImages 
+              }));
             }
             return newImages;
           });
@@ -185,7 +208,13 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
         if (prev.length === 0) {
           setFormData(prevForm => ({
             ...prevForm,
-            image: imageUrl.trim()
+            image: imageUrl.trim(),
+            images: newImages
+          }));
+        } else {
+          setFormData(prevForm => ({
+            ...prevForm,
+            images: newImages
           }));
         }
         return newImages;
@@ -196,22 +225,29 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
 
   const removeImage = (index: number) => {
     const imageToRemove = images[index];
-    setImages(prev => prev.filter((_, i) => i !== index));
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
     
     // Se a imagem removida era a principal, definir a primeira restante como principal
     if (formData.image === imageToRemove) {
-      const remainingImages = images.filter((_, i) => i !== index);
-      if (remainingImages.length > 0) {
+      if (newImages.length > 0) {
         setFormData(prev => ({
           ...prev,
-          image: remainingImages[0]
+          image: newImages[0],
+          images: newImages
         }));
       } else {
         setFormData(prev => ({
           ...prev,
-          image: "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=400&h=400&fit=crop"
+          image: "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=400&h=400&fit=crop",
+          images: newImages
         }));
       }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        images: newImages
+      }));
     }
   };
 

@@ -130,7 +130,7 @@ const ProductManagement = () => {
     try {
       if (editingProduct) {
         console.log('[DEBUG handleFormSubmit] Enviando PUT para:', `${API_URL}/products/${editingProduct.id}`);
-        const response = await api.put(`${API_URL}/products/${editingProduct.id}`, {
+        const payload = {
           store_id: effectiveStoreId,
           name: productData.name,
           price: productData.price,
@@ -140,14 +140,16 @@ const ProductManagement = () => {
           is_active: productData.isActive,
           image: productData.image,
           images: productData.images || [],
-        }, {
+        };
+        console.log('[DEBUG handleFormSubmit] Payload PUT:', payload);
+        const response = await api.put(`${API_URL}/products/${editingProduct.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta PUT:', response);
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
         console.log('[DEBUG handleFormSubmit] Enviando POST para:', `${API_URL}/products`);
-        const response = await api.post(`${API_URL}/products`, {
+        const payload = {
           store_id: effectiveStoreId,
           name: productData.name,
           price: productData.price,
@@ -157,7 +159,9 @@ const ProductManagement = () => {
           is_active: productData.isActive,
           image: productData.image,
           images: productData.images || [],
-        }, {
+        };
+        console.log('[DEBUG handleFormSubmit] Payload POST:', payload);
+        const response = await api.post(`${API_URL}/products`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta POST:', response);
@@ -210,15 +214,28 @@ const ProductManagement = () => {
 
   const deleteProduct = async (productId: string) => {
     console.log('[DEBUG] Botão excluir clicado para produtoId:', productId);
-    if (!user || !user.token) return;
+    console.log('[DEBUG] user:', user);
+    console.log('[DEBUG] token:', token);
+    if (!user || !token) {
+      console.warn('[DEBUG] BLOQUEADO: user ou token ausente para exclusão');
+      return;
+    }
     try {
-      await api.delete(`${API_URL}/products/${productId}`);
+      console.log('[DEBUG] Enviando DELETE para:', `${API_URL}/products/${productId}`);
+      const response = await api.delete(`${API_URL}/products/${productId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('[DEBUG] Resposta DELETE:', response);
       toast({ title: "Produto removido", description: "Produto removido com sucesso!" });
       setShowDeleteConfirm(null);
       if (typeof refetch === 'function') refetch();
       
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('[DEBUG] Error deleting product:', error);
+      if (error?.response) {
+        console.error('[DEBUG] error.response:', error.response);
+        console.error('[DEBUG] error.response.data:', error.response.data);
+      }
       toast({ title: "Erro ao remover produto", description: "Não foi possível remover o produto.", variant: "destructive" });
     }
   };
