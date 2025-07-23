@@ -81,10 +81,10 @@ export const StoreProvider = ({ children }) => {
     // Criar uma cópia com o ID garantido
     const storeData = {
       ...data,
-      id: storeId || 'fake-store-id' // Se não encontrar, cria um id fake temporário
+      id: storeId // Agora só define se for válido
     };
     if (!storeId) {
-      console.warn('[StoreProvider] ATENÇÃO: ID da loja não encontrado, usando id fake temporário! Corrija o backend para sempre enviar o id.');
+      console.warn('[StoreProvider] ATENÇÃO: ID da loja não encontrado ou inválido! Corrija o backend para sempre enviar o id correto.');
     }
     
     console.log('[StoreProvider] ID da loja encontrado:', storeId);
@@ -186,11 +186,15 @@ export const StoreProvider = ({ children }) => {
     }
   }, [store]);
 
+  // Helper para validar UUID
+  function isValidUUID(uuid) {
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
+  }
+
   // Extrair o ID da loja para garantir que sempre temos acesso a ele
   // Verificar todas as possíveis localizações do ID
   const extractStoreId = () => {
     if (!store) return undefined;
-    
     // Verificar todas as possíveis localizações do ID
     const possibleLocations = [
       store.id,
@@ -202,16 +206,13 @@ export const StoreProvider = ({ children }) => {
       store.store_settings?.store_id,
       store.store_settings?.id
     ];
-    
-    // Encontrar o primeiro valor válido
-    const foundId = possibleLocations.find(id => id !== undefined && id !== null);
-    
+    // Encontrar o primeiro valor válido que seja um UUID
+    const foundId = possibleLocations.find(id => id !== undefined && id !== null && isValidUUID(id));
     console.log('[StoreProvider] Possíveis localizações de ID verificadas:', possibleLocations);
-    console.log('[StoreProvider] ID encontrado:', foundId);
-    
+    console.log('[StoreProvider] ID válido encontrado:', foundId);
     return foundId;
   };
-  
+
   const storeId = extractStoreId();
   
   // Log adicional para debug do storeId
