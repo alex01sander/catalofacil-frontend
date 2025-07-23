@@ -39,11 +39,43 @@ export const StoreProvider = ({ children }) => {
     // Verificar se há um objeto store aninhado com ID
     if (!storeId && data.store && data.store.id) {
       storeId = data.store.id;
+      console.log('[StoreProvider] ID encontrado em data.store.id:', storeId);
     }
     
     // Verificar se há um objeto settings com store_id
     if (!storeId && data.settings && data.settings.store_id) {
       storeId = data.settings.store_id;
+      console.log('[StoreProvider] ID encontrado em data.settings.store_id:', storeId);
+    }
+    
+    // Verificar se há um objeto store_settings com store_id
+    if (!storeId && data.store_settings && data.store_settings.store_id) {
+      storeId = data.store_settings.store_id;
+      console.log('[StoreProvider] ID encontrado em data.store_settings.store_id:', storeId);
+    }
+    
+    // Verificar se há um objeto store_settings com id
+    if (!storeId && data.store_settings && data.store_settings.id) {
+      storeId = data.store_settings.id;
+      console.log('[StoreProvider] ID encontrado em data.store_settings.id:', storeId);
+    }
+    
+    // Verificar se há um objeto store_id dentro de um objeto store
+    if (!storeId && data.store && data.store.store_id) {
+      storeId = data.store.store_id;
+      console.log('[StoreProvider] ID encontrado em data.store.store_id:', storeId);
+    }
+    
+    // Verificar se há um objeto store_id dentro de um objeto settings
+    if (!storeId && data.settings && data.settings.id) {
+      storeId = data.settings.id;
+      console.log('[StoreProvider] ID encontrado em data.settings.id:', storeId);
+    }
+    
+    // Verificar se há um objeto id dentro de um objeto store_settings
+    if (!storeId && data.store_settings && data.store_settings.id) {
+      storeId = data.store_settings.id;
+      console.log('[StoreProvider] ID encontrado em data.store_settings.id:', storeId);
     }
     
     // Criar uma cópia com o ID garantido
@@ -67,6 +99,8 @@ export const StoreProvider = ({ children }) => {
       api.get(`/site/public/${slug}`)
         .then(res => {
           console.log('[StoreProvider] Dados públicos da loja recebidos:', res.data);
+          console.log('[StoreProvider] Estrutura completa da resposta pública:', JSON.stringify(res.data, null, 2));
+          
           // Garantir que o objeto store tenha um id mesmo para lojas públicas
           const storeData = ensureStoreHasId(res.data);
           console.log('[StoreProvider] Dados da loja pública formatados:', storeData);
@@ -83,14 +117,47 @@ export const StoreProvider = ({ children }) => {
       api.get(`/storeSettings?user_id=${user.id}`)
         .then(res => {
           console.log('[StoreProvider] Resposta da API para loja do usuário:', res);
+          console.log('[StoreProvider] Estrutura completa da resposta:', JSON.stringify(res.data, null, 2));
+          
           if (res.data) {
             console.log('[StoreProvider] Dados da loja do usuário recebidos:', res.data);
+            
+            // Verificar se a resposta contém um objeto store diretamente
+            if (res.data.store && typeof res.data.store === 'object') {
+              console.log('[StoreProvider] Objeto store encontrado na resposta:', res.data.store);
+            }
+            
+            // Verificar a estrutura completa da resposta para encontrar o ID
+            console.log('[StoreProvider] Verificando estrutura completa da resposta:');
+            if (res.data) {
+              Object.keys(res.data).forEach(key => {
+                console.log(`- Propriedade ${key}:`, res.data[key]);
+                if (typeof res.data[key] === 'object' && res.data[key] !== null) {
+                  console.log(`  - Subpropriedades de ${key}:`, Object.keys(res.data[key]));
+                }
+              });
+            }
+            
             // Garantir que o objeto store tenha um id
             const storeData = ensureStoreHasId(res.data);
             console.log('[StoreProvider] Dados da loja formatados com ID:', storeData);
+            
             if (!storeData.id) {
               console.error('[StoreProvider] ALERTA: Não foi possível determinar o ID da loja!');
+              
+              // Tentativa adicional de extrair o ID
+              if (res.data.store && res.data.store.id) {
+                console.log('[StoreProvider] ID encontrado em res.data.store.id:', res.data.store.id);
+                storeData.id = res.data.store.id;
+              } else if (res.data.store_id) {
+                console.log('[StoreProvider] ID encontrado em res.data.store_id:', res.data.store_id);
+                storeData.id = res.data.store_id;
+              } else if (res.data.id) {
+                console.log('[StoreProvider] ID encontrado em res.data.id:', res.data.id);
+                storeData.id = res.data.id;
+              }
             }
+            
             setStore(storeData);
           } else {
             console.log('[StoreProvider] Nenhum dado de loja encontrado para o usuário');
@@ -117,7 +184,48 @@ export const StoreProvider = ({ children }) => {
   }, [store]);
 
   // Extrair o ID da loja para garantir que sempre temos acesso a ele
-  const storeId = store?.id;
+  // Verificar todas as possíveis localizações do ID
+  const extractStoreId = () => {
+    if (!store) return undefined;
+    
+    // Verificar todas as possíveis localizações do ID
+    const possibleLocations = [
+      store.id,
+      store.store_id,
+      store.store?.id,
+      store.store?.store_id,
+      store.settings?.store_id,
+      store.settings?.id,
+      store.store_settings?.store_id,
+      store.store_settings?.id
+    ];
+    
+    // Encontrar o primeiro valor válido
+    const foundId = possibleLocations.find(id => id !== undefined && id !== null);
+    
+    console.log('[StoreProvider] Possíveis localizações de ID verificadas:', possibleLocations);
+    console.log('[StoreProvider] ID encontrado:', foundId);
+    
+    return foundId;
+  };
+  
+  const storeId = extractStoreId();
+  
+  // Log adicional para debug do storeId
+  useEffect(() => {
+    if (store && !storeId) {
+      console.error('[StoreProvider] ALERTA CRÍTICO: Não foi possível extrair o ID da loja!');
+      console.error('[StoreProvider] Estrutura do objeto store:', JSON.stringify(store, null, 2));
+      console.error('[StoreProvider] Verificando propriedades específicas:');
+      console.error('- store.id:', store.id);
+      console.error('- store.store_id:', store.store_id);
+      console.error('- store.store?.id:', store.store?.id);
+      console.error('- store.settings?.store_id:', store.settings?.store_id);
+      console.error('- store.store_settings?.id:', store.store_settings?.id);
+    } else if (storeId) {
+      console.log('[StoreProvider] storeId extraído com sucesso:', storeId);
+    }
+  }, [store, storeId]);
   
   return (
     <StoreContext.Provider value={{ store, slug, loading, storeId }}>

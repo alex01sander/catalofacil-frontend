@@ -91,12 +91,37 @@ const ProductManagement = () => {
     console.log('[DEBUG handleFormSubmit] store.id:', store?.id);
     console.log('[DEBUG handleFormSubmit] storeId do contexto:', storeId);
     
+    // Verificar todas as possíveis localizações do ID da loja
+    const effectiveStoreId = storeId || 
+                           store?.id || 
+                           store?.store_id || 
+                           (store?.store && store.store.id) || 
+                           (store?.settings && store.settings.store_id) || 
+                           (store?.store_settings && store.store_settings.store_id) || 
+                           (store?.store_settings && store.store_settings.id);
+    
+    console.log('[DEBUG handleFormSubmit] effectiveStoreId:', effectiveStoreId);
+    
+    // Verificação adicional para encontrar o ID da loja
+    if (!effectiveStoreId && store) {
+      console.log('[DEBUG handleFormSubmit] Tentando encontrar ID da loja em propriedades aninhadas:');
+      console.log('- store:', store);
+      
+      // Verificar todas as propriedades do objeto store
+      Object.keys(store).forEach(key => {
+        console.log(`- Propriedade ${key}:`, store[key]);
+        if (typeof store[key] === 'object' && store[key] !== null) {
+          console.log(`  - Subpropriedades de ${key}:`, Object.keys(store[key]));
+        }
+      });
+    }
+    
     if (!user || !token) {
       console.warn('[DEBUG handleFormSubmit] BLOQUEADO: user ou token ausente');
       return;
     }
     
-    if (!storeId) {
+    if (!effectiveStoreId) {
       console.warn('[DEBUG handleFormSubmit] BLOQUEADO: Não foi possível encontrar o ID da loja');
       return;
     }
@@ -104,7 +129,7 @@ const ProductManagement = () => {
       if (editingProduct) {
         console.log('[DEBUG handleFormSubmit] Enviando PUT para:', `${API_URL}/products/${editingProduct.id}`);
         const response = await api.put(`${API_URL}/products/${editingProduct.id}`, {
-          store_id: storeId,
+          store_id: effectiveStoreId,
           name: productData.name,
           price: productData.price,
           description: productData.description,
@@ -121,8 +146,7 @@ const ProductManagement = () => {
       } else {
         console.log('[DEBUG handleFormSubmit] Enviando POST para:', `${API_URL}/products`);
         const response = await api.post(`${API_URL}/products`, {
-          store_id: storeId,
-          user_id: user.id,
+          store_id: effectiveStoreId,
           name: productData.name,
           price: productData.price,
           description: productData.description,
