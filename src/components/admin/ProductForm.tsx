@@ -129,7 +129,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
     e.preventDefault();
     console.log('[DEBUG] handleSubmit ProductForm', formData, product);
     // Validação dos campos obrigatórios
-    if (!formData.name || !formData.price || !formData.category) {
+    if (!formData.name || !formData.price) {
       setShowRequiredFieldsMsg(true);
       return;
     }
@@ -240,7 +240,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {showRequiredFieldsMsg && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-3 text-sm">
-                Preencha todos os campos obrigatórios antes de salvar.
+                Preencha o nome e preço do produto antes de salvar.
               </div>
             )}
             {/* Imagens do produto */}
@@ -435,7 +435,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="category">Categoria</Label>
+                <Label htmlFor="category">Categoria (opcional)</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => handleInputChange('category', value)}
