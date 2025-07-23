@@ -45,7 +45,7 @@ interface FormProduct {
 
 const ProductManagement = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { store } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -79,9 +79,9 @@ const ProductManagement = () => {
   const handleFormSubmit = async (productData: Omit<FormProduct, 'id'>) => {
   console.log('[DEBUG handleFormSubmit] Dados recebidos do ProductForm:', productData);
     console.log('[DEBUG handleFormSubmit] user:', user);
-    console.log('[DEBUG handleFormSubmit] user.token:', user?.token);
+    console.log('[DEBUG handleFormSubmit] token:', token);
     console.log('[DEBUG handleFormSubmit] store.id:', store?.id);
-    if (!user || !user.token || !store?.id) {
+    if (!user || !token || !store?.id) {
       console.warn('[DEBUG handleFormSubmit] BLOQUEADO: user, token ou store.id ausente');
       return;
     }
