@@ -149,10 +149,16 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
     }
     setShowRequiredFieldsMsg(false);
     
-    onSubmit({
+    const dataToSubmit = {
       ...formData,
       images: images
-    });
+    };
+    
+    console.log('[DEBUG] ProductForm enviando dados:', dataToSubmit);
+    console.log('[DEBUG] ProductForm formData completo:', formData);
+    console.log('[DEBUG] ProductForm images state:', images);
+    
+    onSubmit(dataToSubmit);
   };
 
   const handleInputChange = (field: keyof typeof formData, value: any) => {

@@ -135,13 +135,24 @@ const ProductManagement = () => {
           name: productData.name,
           price: Number(productData.price),
           description: productData.description,
-          category_id: productData.category === 'todos' ? null : productData.category,
+          category_id: productData.category === 'todos' || productData.category === '' ? null : productData.category,
           stock: Number(productData.stock),
           is_active: productData.isActive,
           image: productData.image,
           images: productData.images || [],
         };
         console.log('[DEBUG handleFormSubmit] Payload PUT:', payload);
+        console.log('[DEBUG handleFormSubmit] Valores detalhados do payload:', {
+          store_id: payload.store_id,
+          name: payload.name,
+          price: payload.price,
+          description: payload.description,
+          category_id: payload.category_id,
+          stock: payload.stock,
+          is_active: payload.is_active,
+          image: payload.image,
+          images: payload.images
+        });
         console.log('[DEBUG handleFormSubmit] Tipos dos campos:', {
           store_id: typeof payload.store_id,
           name: typeof payload.name,
@@ -158,6 +169,7 @@ const ProductManagement = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta PUT:', response);
+        console.log('[DEBUG handleFormSubmit] Produto atualizado com sucesso, fazendo refetch...');
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
         console.log('[DEBUG handleFormSubmit] Enviando POST para:', `${API_URL}/products`);
@@ -166,7 +178,7 @@ const ProductManagement = () => {
           name: productData.name,
           price: Number(productData.price),
           description: productData.description,
-          category_id: productData.category === 'todos' ? null : productData.category,
+          category_id: productData.category === 'todos' || productData.category === '' ? null : productData.category,
           stock: Number(productData.stock),
           is_active: productData.isActive,
           image: productData.image,
@@ -177,11 +189,18 @@ const ProductManagement = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta POST:', response);
+        console.log('[DEBUG handleFormSubmit] Produto criado com sucesso, fazendo refetch...');
         toast({ title: "Produto criado", description: "Novo produto adicionado com sucesso!" });
       }
       setShowForm(false);
       setEditingProduct(null);
-      if (typeof refetch === 'function') refetch();
+      console.log('[DEBUG handleFormSubmit] Chamando refetch...');
+      if (typeof refetch === 'function') {
+        await refetch();
+        console.log('[DEBUG handleFormSubmit] Refetch concluído');
+      } else {
+        console.warn('[DEBUG handleFormSubmit] refetch não é uma função:', refetch);
+      }
       
     } catch (error: any) {
       // Log detalhado para qualquer erro, inclusive erros de rede, CORS ou resposta indefinida
