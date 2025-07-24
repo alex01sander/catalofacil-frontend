@@ -56,10 +56,13 @@ const Cart = () => {
     try {
       console.log('[Cart] Criando pedido com storeId:', storeId);
       console.log('[Cart] Dados da loja:', store);
+      console.log('[Cart] store?.user_id:', store?.user_id);
+      console.log('[Cart] Itens do carrinho:', items);
       
       // Montar payload conforme schema do Prisma
       const payload: any = {
-        store_id: storeId, // Usar store_id em vez de store_owner_id
+        store_id: storeId, // ID da loja
+        store_owner_id: store?.user_id || null, // ID do proprietário da loja
         customer_name: formData.name,
         customer_phone: formData.phone,
         total_amount: totalPrice,
@@ -135,10 +138,25 @@ const Cart = () => {
       
       let errorMessage = 'Erro ao criar pedido. Tente novamente.';
       
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
+      if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
+        
+        // Se houver detalhes específicos, adicionar ao log e à mensagem
+        if (error.response.data.details && Array.isArray(error.response.data.details)) {
+          console.error('[Cart] Detalhes do erro:', error.response.data.details);
+          
+          // Mostrar detalhes específicos para debug
+          const details = error.response.data.details.map(detail => {
+            if (typeof detail === 'object') {
+              return `${detail.path?.join('.')}: ${detail.message}`;
+            }
+            return detail;
+          }).join(', ');
+          
+          errorMessage += ` (${details})`;
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
