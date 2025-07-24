@@ -82,16 +82,22 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
 
   // Filtrar produtos por categoria e termo de busca
   const filteredProducts = products.filter(product => {
-    console.log('[ProductGrid] Filtrando produto:', product);
+    console.log('[ProductGrid] Filtrando produto - ESTRUTURA COMPLETA:', JSON.stringify(product, null, 2));
     console.log('[ProductGrid] - product.id:', product.id);
     console.log('[ProductGrid] - product.name:', product.name);
     console.log('[ProductGrid] - product.category_id:', product.category_id);
+    console.log('[ProductGrid] - product.category:', product.category);
+    console.log('[ProductGrid] - product.categories:', product.categories);
     console.log('[ProductGrid] - selectedCategory:', selectedCategory);
+    
+    // Verificar diferentes possíveis campos de categoria
+    const categoryId = product.category_id || product.category || product.categories?.id;
+    console.log('[ProductGrid] - categoryId extraído:', categoryId);
     
     // Filtro por categoria
     const matchesCategory = selectedCategory === 'todos' || 
-                           product.category_id === selectedCategory ||
-                           product.category_id?.toString() === selectedCategory?.toString();
+                           categoryId === selectedCategory ||
+                           categoryId?.toString() === selectedCategory?.toString();
     
     // Filtro por termo de busca
     const matchesSearch = !searchTerm || 

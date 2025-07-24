@@ -20,6 +20,21 @@ export function usePublicProducts(slug: string) {
         console.log('[usePublicProducts] Resposta da API:', res);
         console.log('[usePublicProducts] Produtos públicos recebidos:', res.data);
         console.log('[usePublicProducts] Quantidade de produtos:', res.data?.length);
+        
+        // Log detalhado da estrutura de cada produto
+        if (res.data && res.data.length > 0) {
+          console.log('[usePublicProducts] ESTRUTURA DO PRIMEIRO PRODUTO:', JSON.stringify(res.data[0], null, 2));
+          res.data.forEach((product, index) => {
+            console.log(`[usePublicProducts] Produto ${index + 1}:`, {
+              id: product.id,
+              name: product.name,
+              category_id: product.category_id,
+              category: product.category,
+              categories: product.categories
+            });
+          });
+        }
+        
         setProducts(res.data || []);
       })
       .catch(error => {
