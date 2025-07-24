@@ -12,6 +12,7 @@ import { API_URL } from "@/constants/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStore } from "@/contexts/StoreSettingsContext";
 import { useOptimizedProducts } from '@/hooks/useOptimizedProducts';
+import { useOptimizedCategories } from '@/hooks/useOptimizedCategories';
 
 // Database Product interface (matches database schema)
 interface Product {
@@ -53,6 +54,14 @@ const ProductManagement = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   // Usar hook centralizado para produtos
   const { products, loading, error, refetch } = useOptimizedProducts();
+  const { categories } = useOptimizedCategories();
+  
+  // Função para obter o nome da categoria
+  const getCategoryName = (categoryId: string | null) => {
+    if (!categoryId) return "Sem categoria";
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.name || "Sem categoria";
+  };
   
   // Log para debug do store
   useEffect(() => {
@@ -169,6 +178,7 @@ const ProductManagement = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta PUT:', response);
+        console.log('[DEBUG handleFormSubmit] Dados retornados pelo backend:', response.data);
         console.log('[DEBUG handleFormSubmit] Produto atualizado com sucesso, fazendo refetch...');
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
@@ -189,6 +199,7 @@ const ProductManagement = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta POST:', response);
+        console.log('[DEBUG handleFormSubmit] Dados retornados pelo backend:', response.data);
         console.log('[DEBUG handleFormSubmit] Produto criado com sucesso, fazendo refetch...');
         toast({ title: "Produto criado", description: "Novo produto adicionado com sucesso!" });
       }
@@ -233,15 +244,39 @@ const ProductManagement = () => {
   };
 
   const toggleProductStatus = async (productId: string) => {
-    if (!user || !user.token) return;
+    console.log('[DEBUG] toggleProductStatus chamado para produto:', productId);
+    console.log('[DEBUG] user:', user);
+    console.log('[DEBUG] token:', token);
+    if (!user || !token) {
+      console.warn('[DEBUG] BLOQUEADO: user ou token ausente para toggle status');
+      return;
+    }
     const product = products.find(p => p.id === productId);
-    if (!product) return;
+    if (!product) {
+      console.warn('[DEBUG] Produto não encontrado:', productId);
+      return;
+    }
+    console.log('[DEBUG] Produto atual is_active:', product.is_active);
+    console.log('[DEBUG] Novo status será:', !product.is_active);
     try {
-      await api.put(`${API_URL}/products/${productId}`, { is_active: !product.is_active });
+      const payload = { is_active: !product.is_active };
+      console.log('[DEBUG] Enviando PUT para toggle status:', `${API_URL}/products/${productId}`, payload);
+      const response = await api.put(`${API_URL}/products/${productId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('[DEBUG] Resposta toggle status:', response);
       toast({ title: "Status atualizado", description: "Status do produto atualizado com sucesso!" });
-      
+      console.log('[DEBUG] Fazendo refetch após toggle status...');
+      if (typeof refetch === 'function') {
+        await refetch();
+        console.log('[DEBUG] Refetch toggle status concluído');
+      }
     } catch (error) {
-      console.error('Error updating product status:', error);
+      console.error('[DEBUG] Error updating product status:', error);
+      if (error?.response) {
+        console.error('[DEBUG] error.response:', error.response);
+        console.error('[DEBUG] error.response.data:', error.response.data);
+      }
       toast({ title: "Erro ao atualizar status", description: "Não foi possível atualizar o status do produto.", variant: "destructive" });
     }
   };
@@ -429,7 +464,7 @@ const ProductManagement = () => {
                         
                         <div className="flex justify-between items-center mb-2">
                           <Badge variant="secondary" className="text-xs">
-                            {product.categories?.name || "Sem categoria"}
+                            {getCategoryName(product.category_id)}
                           </Badge>
                           <span className="font-bold text-green-600">
                             R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
@@ -534,7 +569,7 @@ const ProductManagement = () => {
                         </td>
                         <td className="p-3">
                           <Badge variant="secondary">
-                            {product.categories?.name || "Sem categoria"}
+                            {getCategoryName(product.category_id)}
                           </Badge>
                         </td>
                         <td className="p-3 font-semibold">
