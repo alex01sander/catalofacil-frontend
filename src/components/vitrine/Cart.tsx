@@ -12,6 +12,7 @@ import axios from 'axios';
 import { API_URL } from '@/constants/api';
 import { toast } from "sonner";
 import { useStore } from "@/contexts/StoreSettingsContext";
+import { useAuth } from "@/contexts/AuthContext";
 import api from '@/services/api';
 
 const Cart = () => {
@@ -24,6 +25,7 @@ const Cart = () => {
     clearCart
   } = useCart();
   const { store, storeId } = useStore();
+  const { user } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
@@ -59,12 +61,12 @@ const Cart = () => {
       console.log('[Cart] store?.user_id:', store?.user_id);
       console.log('[Cart] store?.owner_id:', store?.owner_id);
       console.log('[Cart] store?.created_by:', store?.created_by);
+      console.log('[Cart] user autenticado:', user);
       console.log('[Cart] Itens do carrinho:', items);
       
       // Montar payload conforme schema do Prisma
       const payload: any = {
         store_id: storeId, // ID da loja
-        store_owner_id: store?.user_id || store?.owner_id || store?.created_by || null, // ID do proprietário da loja
         customer_name: formData.name,
         customer_phone: formData.phone,
         total_amount: totalPrice,
@@ -78,6 +80,15 @@ const Cart = () => {
           }))
         }
       };
+
+      // Adicionar store_owner_id apenas se disponível
+      const ownerId = store?.user_id || store?.owner_id || store?.created_by || user?.id;
+      if (ownerId) {
+        payload.store_owner_id = ownerId;
+        console.log('[Cart] store_owner_id adicionado:', ownerId);
+      } else {
+        console.log('[Cart] Nenhum store_owner_id disponível - enviando sem este campo');
+      }
 
       // Campos opcionais
       if (formData.deliveryMethod === 'delivery' && formData.address) {
