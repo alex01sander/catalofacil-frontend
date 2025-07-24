@@ -173,7 +173,7 @@ const Index = () => {
         </div>
       </section>
 
-      <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} />
+      <ProductGrid searchTerm={searchTerm} selectedCategory={selectedCategory} publicView={true} />
       <Footer />
       
       <WhatsAppFloat />
