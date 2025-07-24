@@ -23,7 +23,7 @@ const Cart = () => {
     totalPrice,
     clearCart
   } = useCart();
-  const { store } = useStore();
+  const { store, storeId } = useStore();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
@@ -46,10 +46,20 @@ const Cart = () => {
       toast.error('Por favor, preencha todos os campos obrigatórios');
       return;
     }
+
+    if (!storeId) {
+      toast.error('Erro: ID da loja não encontrado. Tente recarregar a página.');
+      console.error('[Cart] storeId não encontrado:', { store, storeId });
+      return;
+    }
+
     try {
+      console.log('[Cart] Criando pedido com storeId:', storeId);
+      console.log('[Cart] Dados da loja:', store);
+      
       // Montar payload conforme schema do Prisma
       const payload: any = {
-        store_owner_id: null, // Não há usuário autenticado, então store_owner_id é null
+        store_id: storeId, // Usar store_id em vez de store_owner_id
         customer_name: formData.name,
         customer_phone: formData.phone,
         total_amount: totalPrice,
@@ -63,12 +73,18 @@ const Cart = () => {
           }))
         }
       };
+
       // Campos opcionais
-      if (formData.deliveryMethod !== 'delivery' && formData.address) {
-        payload.customer_email = formData.address;
+      if (formData.deliveryMethod === 'delivery' && formData.address) {
+        payload.customer_address = formData.address;
       }
-      // Enviar pedido
-      const { data: order } = await api.post(`${API_URL}/pedidos`, payload);
+
+      console.log('[Cart] Payload do pedido:', JSON.stringify(payload, null, 2));
+
+      // Enviar pedido - usar endpoint correto
+      const { data: order } = await api.post('/pedidos', payload);
+      
+      console.log('[Cart] Pedido criado com sucesso:', order);
       // 2. WhatsApp
       // Garantir que o número está no formato internacional (apenas dígitos)
       const whatsappNumber = (store.whatsapp_number || "5511999999999").replace(/\D/g, "");
@@ -113,7 +129,21 @@ const Cart = () => {
       clearCart();
       setShowCheckoutForm(false);
     } catch (error) {
-      toast.error('Erro ao criar pedido. Tente novamente.');
+      console.error('[Cart] Erro ao criar pedido:', error);
+      console.error('[Cart] error.response:', error.response);
+      console.error('[Cart] error.response.data:', error.response?.data);
+      
+      let errorMessage = 'Erro ao criar pedido. Tente novamente.';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
   return (
