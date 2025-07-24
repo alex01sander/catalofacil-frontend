@@ -99,18 +99,25 @@ export const StoreProvider = ({ children }) => {
     // Se tiver slug, busca informações públicas da loja
     if (slug) {
       console.log('[StoreProvider] slug detectado:', slug);
+      console.log('[StoreProvider] Fazendo requisição para:', `/site/public/${slug}`);
       api.get(`/site/public/${slug}`)
         .then(res => {
           console.log('[StoreProvider] Dados públicos da loja recebidos:', res.data);
           console.log('[StoreProvider] Estrutura completa da resposta pública:', JSON.stringify(res.data, null, 2));
+          console.log('[StoreProvider] store_name na resposta:', res.data?.store_name);
+          console.log('[StoreProvider] store_description na resposta:', res.data?.store_description);
+          console.log('[StoreProvider] mobile_logo na resposta:', res.data?.mobile_logo);
           
           // Garantir que o objeto store tenha um id mesmo para lojas públicas
           const storeData = ensureStoreHasId(res.data);
           console.log('[StoreProvider] Dados da loja pública formatados:', storeData);
+          console.log('[StoreProvider] storeData.store_name:', storeData?.store_name);
+          console.log('[StoreProvider] storeData.store_description:', storeData?.store_description);
           setStore(storeData);
         })
         .catch(err => {
           console.error('[StoreProvider] Erro ao buscar loja pública:', err);
+          console.error('[StoreProvider] err.response:', err.response);
         })
         .finally(() => setLoading(false));
     } 
