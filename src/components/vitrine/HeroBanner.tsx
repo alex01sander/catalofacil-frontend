@@ -5,12 +5,6 @@ import { FaInstagram, FaWhatsapp } from 'react-icons/fa';
 const HeroBanner = () => {
   const { store } = useStore();
   
-  console.log('[HeroBanner] store completo:', store);
-  console.log('[HeroBanner] store_name:', store?.store_name);
-  console.log('[HeroBanner] store_description:', store?.store_description);
-  console.log('[HeroBanner] mobile_logo:', store?.mobile_logo);
-  console.log('[HeroBanner] desktop_banner:', store?.desktop_banner);
-  
   const handleWhatsAppClick = () => {
     window.open(`https://wa.me/${store?.whatsapp_number}?text=${encodeURIComponent("Olá! Gostaria de saber mais sobre os produtos da loja.")}` , "_blank");
   };
@@ -23,10 +17,10 @@ const HeroBanner = () => {
       height: 400
     }}>
       {/* Background image */}
-      {store?.desktop_banner && (
+      {store?.banner_url && (
         <div 
           style={{
-            backgroundImage: `url('${store.desktop_banner}')`,
+            backgroundImage: `url('${store.banner_url}')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -45,11 +39,11 @@ const HeroBanner = () => {
         {/* Logo Circle */}
         <div className="flex justify-center mb-6">
           <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full shadow-lg overflow-hidden border border-white/30 flex items-center justify-center">
-            {store?.mobile_logo ? (
+            {store?.logo_url ? (
               <img 
-                alt={`${store?.store_name || 'Logo da loja'}`} 
+                alt={`${store?.name || 'Logo da loja'}`} 
                 className="w-full h-full object-cover" 
-                src={store?.mobile_logo} 
+                src={store?.logo_url} 
               />
             ) : (
               <div className="text-white/70 text-xs">Logo</div>
@@ -59,12 +53,12 @@ const HeroBanner = () => {
         
         {/* Store Name */}
         <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-fade-in drop-shadow-lg text-center">
-          {store?.store_name || 'Nome da Loja'}
+          {store?.name || 'Nome da Loja'}
         </h1>
         
         {/* Store Description */}
         <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto whitespace-pre-line drop-shadow-md text-center">
-          {store?.store_description || 'Descrição da loja'}
+          {store?.description || 'Descrição da loja'}
         </p>
         
         {/* Social Media Buttons */}
