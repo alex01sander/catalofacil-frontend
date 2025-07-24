@@ -79,33 +79,45 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
         </div>
       </section>;
   }
+
+  // Filtrar produtos por categoria e termo de busca
+  const filteredProducts = products.filter(product => {
+    console.log('[ProductGrid] Filtrando produto:', product);
+    console.log('[ProductGrid] - product.id:', product.id);
+    console.log('[ProductGrid] - product.name:', product.name);
+    console.log('[ProductGrid] - product.category_id:', product.category_id);
+    console.log('[ProductGrid] - selectedCategory:', selectedCategory);
+    
+    // Filtro por categoria
+    const matchesCategory = selectedCategory === 'todos' || 
+                           product.category_id === selectedCategory ||
+                           product.category_id?.toString() === selectedCategory?.toString();
+    
+    // Filtro por termo de busca
+    const matchesSearch = !searchTerm || 
+                         product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    console.log('[ProductGrid] - matchesCategory:', matchesCategory);
+    console.log('[ProductGrid] - matchesSearch:', matchesSearch);
+    
+    return matchesCategory && matchesSearch;
+  });
+
+  console.log('[ProductGrid] Produtos filtrados:', filteredProducts);
+  console.log('[ProductGrid] Quantidade de produtos filtrados:', filteredProducts.length);
+
   return <>
       <section className="px-4 bg-gray-50 py-px">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {(() => {
-              console.log('=== DEBUG PRODUCTGRID RENDER ===');
-              console.log('Produtos recebidos no render:', products);
-              console.log('Quantidade de produtos:', products?.length);
-              console.log('selectedCategory:', selectedCategory);
-              console.log('searchTerm:', searchTerm);
-              console.log('publicView:', publicView);
-              return products;
-            })()
-              // REMOVENDO FILTROS TEMPORARIAMENTE PARA DEBUG
-              // .filter(product =>
-              //   !selectedCategory ||
-              //   selectedCategory === 'todos' ||
-              //   product.category_id == selectedCategory ||
-              //   product.category == selectedCategory
-              // )
-              .map(product => (
-                <ProductCard 
-                  key={product.id}
-                  product={product}
-                  onViewDetails={() => handleViewDetails(product)}
-                />
-              ))}
+            {filteredProducts.map(product => (
+              <ProductCard 
+                key={product.id}
+                product={product}
+                onViewDetails={() => handleViewDetails(product)}
+              />
+            ))}
           </div>
         </div>
       </section>
