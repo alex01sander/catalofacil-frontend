@@ -94,24 +94,16 @@ const LoginComponent = () => {
     }
     setLoading(true);
     try {
-      const { error } = await signIn(email, password);
-      if (error) {
-        toast({
-          title: "Erro no login",
-          description: typeof error === 'string' ? error : error.message || 'Erro desconhecido',
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo de volta!"
-        });
-        navigate('/admin');
-      }
+      await signIn(email, password);
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo de volta!"
+      });
+      navigate('/admin');
     } catch (error: any) {
       console.error('Erro no login:', error);
       toast({
-        title: "Erro",
+        title: "Erro no login",
         description: error?.message || "Ocorreu um erro inesperado",
         variant: "destructive"
       });

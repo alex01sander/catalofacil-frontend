@@ -9,6 +9,7 @@ async function corrigirAutenticacao() {
     console.log('🧹 Limpando token antigo...');
     localStorage.removeItem('token');
     localStorage.removeItem('authToken');
+    localStorage.removeItem('userEmail');
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('authToken');
     
@@ -32,9 +33,10 @@ async function corrigirAutenticacao() {
     const data = await response.json();
     const novoToken = data.token;
 
-    // 3. Salvar novo token
-    console.log('💾 Salvando novo token...');
+    // 3. Salvar novo token e email
+    console.log('💾 Salvando novo token e dados...');
     localStorage.setItem('token', novoToken);
+    localStorage.setItem('userEmail', 'alexsander01@hotmail.com.br');
     
     // 4. Verificar se o token está funcionando
     console.log('✅ Testando novo token...');
@@ -76,5 +78,6 @@ console.log(`
 
 🔍 PARA DEBUG:
 - Token atual: ${localStorage.getItem('token') ? 'Existe' : 'Não existe'}
+- Email salvo: ${localStorage.getItem('userEmail') ? 'Existe' : 'Não existe'}
 - Verificar em: Application → Local Storage → Domínio
 `); 

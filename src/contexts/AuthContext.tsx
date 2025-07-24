@@ -129,16 +129,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (isValid) {
           console.log('[Auth] ✅ Token válido');
-          try {
-            // Buscar dados do usuário
-            const response = await api.get('/auth/me', {
-              headers: { Authorization: `Bearer ${savedToken}` }
+          // Usar o token sem buscar /auth/me (que não existe)
+          setToken(savedToken);
+          // Definir usuário básico baseado no email salvo
+          const savedEmail = localStorage.getItem('userEmail');
+          if (savedEmail) {
+            setUser({
+              id: 'user-id', // Será definido pelo backend quando necessário
+              email: savedEmail,
+              createdAt: new Date().toISOString()
             });
-            setToken(savedToken);
-            setUser(response.data.user);
-          } catch (error) {
-            console.error('[Auth] ❌ Erro ao buscar dados do usuário:', error);
-            await signOut();
           }
         } else {
           console.log('[Auth] ❌ Token inválido ou expirado');
