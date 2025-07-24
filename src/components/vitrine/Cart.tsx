@@ -57,12 +57,14 @@ const Cart = () => {
       console.log('[Cart] Criando pedido com storeId:', storeId);
       console.log('[Cart] Dados da loja:', store);
       console.log('[Cart] store?.user_id:', store?.user_id);
+      console.log('[Cart] store?.owner_id:', store?.owner_id);
+      console.log('[Cart] store?.created_by:', store?.created_by);
       console.log('[Cart] Itens do carrinho:', items);
       
       // Montar payload conforme schema do Prisma
       const payload: any = {
         store_id: storeId, // ID da loja
-        store_owner_id: store?.user_id || null, // ID do proprietário da loja
+        store_owner_id: store?.user_id || store?.owner_id || store?.created_by || null, // ID do proprietário da loja
         customer_name: formData.name,
         customer_phone: formData.phone,
         total_amount: totalPrice,
