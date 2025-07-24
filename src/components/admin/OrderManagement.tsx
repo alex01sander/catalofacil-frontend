@@ -90,37 +90,8 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Tentar buscar pedidos com itens incluídos
-      const res = await api.get('/pedidos?include=order_items');
-      console.log('[OrderManagement] Resposta completa do backend:', res);
-      console.log('[OrderManagement] Pedidos recebidos:', res.data);
-      
-      // Log detalhado do primeiro pedido se existir
-      if (res.data && res.data.length > 0) {
-        console.log('[OrderManagement] Estrutura do primeiro pedido:', JSON.stringify(res.data[0], null, 2));
-        console.log('[OrderManagement] order_items do primeiro pedido:', res.data[0].order_items);
-      }
-      
-      // Se não vier com order_items, buscar separadamente
-      let ordersWithItems = res.data || [];
-      
-      if (ordersWithItems.length > 0 && !ordersWithItems[0].order_items) {
-        console.log('[OrderManagement] Pedidos sem itens, buscando itens separadamente...');
-        
-        // Buscar itens para cada pedido
-        for (let i = 0; i < ordersWithItems.length; i++) {
-          try {
-            const itemsRes = await api.get(`/pedidos/${ordersWithItems[i].id}/items`);
-            ordersWithItems[i].order_items = itemsRes.data || [];
-            console.log(`[OrderManagement] Itens do pedido ${ordersWithItems[i].id}:`, itemsRes.data);
-          } catch (itemError) {
-            console.warn(`[OrderManagement] Erro ao buscar itens do pedido ${ordersWithItems[i].id}:`, itemError);
-            ordersWithItems[i].order_items = [];
-          }
-        }
-      }
-      
-      setOrders(ordersWithItems);
+      const res = await api.get('/pedidos');
+      setOrders(res.data || []);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
       toast({
