@@ -134,8 +134,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Definir usuário básico baseado no email salvo
           const savedEmail = localStorage.getItem('userEmail');
           if (savedEmail) {
+            // Gerar um UUID temporário válido para o usuário ou usar identificador do email
+            const tempUserId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             setUser({
-              id: 'user-id', // Será definido pelo backend quando necessário
+              id: tempUserId, // UUID temporário válido
               email: savedEmail,
               createdAt: new Date().toISOString()
             });
