@@ -28,7 +28,8 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
         setProducts([]);
       }
     } catch (err) {
-      setError(err);
+      console.error('[useOptimizedProducts] Erro na fetchProducts:', err);
+      setError(err || new Error('Erro desconhecido'));
       setProducts([]);
     } finally {
       setLoading(false);
@@ -109,7 +110,8 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       })
       .catch(err => {
         console.error('❌ Erro ao carregar produtos:', err);
-        setError(err);
+        setError(err || new Error('Erro desconhecido ao carregar produtos'));
+        setProducts([]);
         setLoading(false);
       });
   }, [categoryId, enabled, token, authLoading, user]);
@@ -135,9 +137,9 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
   console.log('error:', error);
 
   return {
-    products: filteredProducts,
-    loading,
-    error,
+    products: Array.isArray(filteredProducts) ? filteredProducts : [],
+    loading: Boolean(loading),
+    error: error,
     refetch: fetchProducts
   };
 };

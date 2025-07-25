@@ -57,9 +57,10 @@ const ProductManagement = () => {
   const { categories } = useOptimizedCategories();
   
   // Função para obter o nome da categoria
-  const getCategoryName = (categoryId: string | null) => {
+  const getCategoryName = (categoryId: string | null | undefined) => {
     if (!categoryId) return "Sem categoria";
-    const category = categories.find(cat => cat.id === categoryId);
+    if (!categories || !Array.isArray(categories)) return "Sem categoria";
+    const category = categories.find(cat => cat && cat.id === categoryId);
     return category?.name || "Sem categoria";
   };
   
@@ -110,6 +111,17 @@ const ProductManagement = () => {
                            (store?.settings && store.settings.store_id) || 
                            (store?.store_settings && store.store_settings.store_id) || 
                            (store?.store_settings && store.store_settings.id);
+    
+    // Verificação adicional para garantir que não é null ou undefined
+    if (!effectiveStoreId || effectiveStoreId === 'null' || effectiveStoreId === 'undefined') {
+      console.error('[DEBUG handleFormSubmit] ID da loja é inválido:', effectiveStoreId);
+      toast({ 
+        title: "Erro de configuração", 
+        description: "ID da loja não encontrado. Entre em contato com o suporte.", 
+        variant: "destructive" 
+      });
+      return;
+    }
     
     console.log('[DEBUG handleFormSubmit] effectiveStoreId:', effectiveStoreId);
     
@@ -216,9 +228,13 @@ const ProductManagement = () => {
     } catch (error: any) {
       // Log detalhado para qualquer erro, inclusive erros de rede, CORS ou resposta indefinida
       console.error('[DEBUG handleFormSubmit][CATCH] Erro ao salvar produto:', error);
+      
+      let errorMessage = "Erro inesperado ao salvar produto.";
+      
       if (error?.response) {
         console.error('[DEBUG handleFormSubmit][CATCH] error.response:', error.response);
         console.error('[DEBUG handleFormSubmit][CATCH] error.response.data:', error.response.data);
+        
         if (error.response.data?.details) {
           console.error('[DEBUG handleFormSubmit][CATCH] error.response.data.details:', error.response.data.details);
           error.response.data.details.forEach((detail, index) => {
@@ -226,13 +242,22 @@ const ProductManagement = () => {
             console.error(`[DEBUG handleFormSubmit][CATCH] Campo com problema (path):`, detail.path);
           });
         }
+        
+        errorMessage = error.response.data?.error || error.response.data?.message || errorMessage;
       } else if (error?.request) {
         console.error('[DEBUG handleFormSubmit][CATCH] error.request:', error.request);
-      } else {
+        errorMessage = "Erro de rede. Verifique sua conexão.";
+      } else if (error?.message) {
         console.error('[DEBUG handleFormSubmit][CATCH] error.message:', error.message);
+        errorMessage = error.message;
+      } else if (error === null) {
+        console.error('[DEBUG handleFormSubmit][CATCH] Erro é null - possível problema de async/await');
+        errorMessage = "Erro interno do sistema. Tente novamente.";
       }
+      
       toast({ 
-        title: "Erro inesperado",         description: error?.response?.data?.error || error?.message || "Erro inesperado ao salvar produto.", 
+        title: "Erro inesperado",
+        description: errorMessage,
         variant: "destructive" 
       });
     }
@@ -251,7 +276,13 @@ const ProductManagement = () => {
       console.warn('[DEBUG] BLOQUEADO: user ou token ausente para toggle status');
       return;
     }
-    const product = products.find(p => p.id === productId);
+    
+    if (!products || !Array.isArray(products)) {
+      console.warn('[DEBUG] Array products inválido:', products);
+      return;
+    }
+    
+    const product = products.find(p => p && p.id === productId);
     if (!product) {
       console.warn('[DEBUG] Produto não encontrado:', productId);
       return;
@@ -319,8 +350,20 @@ const ProductManagement = () => {
 
   // Adicionar log antes do map de produtos
   console.log('Array de produtos para renderizar:', products);
+  
+  // Verificações de segurança
+  if (loading) {
+    return <div className="text-gray-500">Carregando produtos...</div>;
+  }
+  
   if (error) {
-    return <div className="text-red-500">Erro ao carregar produtos: {error.message}</div>;
+    console.error('Erro encontrado:', error);
+    return <div className="text-red-500">Erro ao carregar produtos: {error?.message || 'Erro desconhecido'}</div>;
+  }
+  
+  if (!products || !Array.isArray(products)) {
+    console.warn('Products não é um array válido:', products);
+    return <div className="text-gray-500">Nenhum produto encontrado.</div>;
   }
 
   return (
@@ -371,7 +414,7 @@ const ProductManagement = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">📦 Total de Produtos</p>
-                <p className="text-2xl font-bold text-blue-600">{products.length}</p>
+                <p className="text-2xl font-bold text-blue-600">{products?.length || 0}</p>
               </div>
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                 <Package className="h-5 w-5 text-blue-600" />
@@ -385,7 +428,7 @@ const ProductManagement = () => {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">✅ Produtos Ativos</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {products.filter(p => p.is_active).length}
+                  {products?.filter(p => p && p.is_active).length || 0}
                 </p>
               </div>
               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -400,7 +443,7 @@ const ProductManagement = () => {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">⚠️ Estoque Baixo</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {products.filter(p => p.stock < 10).length}
+                  {products?.filter(p => p && p.stock < 10).length || 0}
                 </p>
               </div>
               <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -415,7 +458,7 @@ const ProductManagement = () => {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">❌ Inativos</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {products.filter(p => !p.is_active).length}
+                  {products?.filter(p => p && !p.is_active).length || 0}
                 </p>
               </div>
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
@@ -445,7 +488,7 @@ const ProductManagement = () => {
           {/* Mobile Product Cards */}
           <div className="block md:hidden">
             <div className="space-y-4">
-              {products.map((product) => (
+              {products.filter(product => product && product.id).map((product) => (
                 <Card key={product.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
@@ -554,7 +597,7 @@ const ProductManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((product) => (
+                    {products.filter(product => product && product.id).map((product) => (
                       <tr key={product.id} className="border-b hover:bg-gray-50">
                         <td className="p-3">
                           <div className="flex items-center space-x-3">
