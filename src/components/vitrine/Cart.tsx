@@ -72,14 +72,12 @@ const Cart = () => {
         customer_phone: formData.phone,
         total_amount: totalPrice,
         status: 'pending',
-        order_items: {
-          create: items.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity,
-            unit_price: Number(item.price), // Garantir que seja número
-            total_price: Number(item.price) * item.quantity // Garantir que seja número
-          }))
-        }
+        order_items: items.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity,
+          unit_price: Number(item.price), // Garantir que seja número
+          total_price: Number(item.price) * item.quantity // Garantir que seja número
+        }))
       };
 
       // Adicionar store_owner_id apenas se disponível nos dados da loja (não usar user.id temporário)
