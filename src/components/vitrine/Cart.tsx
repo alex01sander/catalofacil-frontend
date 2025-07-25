@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useStore } from "@/contexts/StoreSettingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import api from '@/services/api';
+import { getStoreSlug } from "@/utils/getStoreSlug";
 
 const Cart = () => {
   const {
@@ -82,7 +83,33 @@ const Cart = () => {
       };
 
       // Adicionar store_owner_id apenas se disponível nos dados da loja (não usar user.id temporário)
-      const ownerId = store?.user_id || store?.owner_id || store?.created_by;
+      let ownerId = store?.user_id || store?.owner_id || store?.created_by;
+      
+      // Se não temos o ownerId nos dados da loja, tentar buscar via storeSettings
+      if (!ownerId) {
+        try {
+          console.log('[Cart] Tentando obter store_owner_id via storeSettings para store:', storeId);
+          const storeSettingsRes = await api.get(`/storeSettings?store_id=${storeId}`);
+          console.log('[Cart] Resposta storeSettings:', storeSettingsRes.data);
+          ownerId = storeSettingsRes.data?.user_id || storeSettingsRes.data?.owner_id;
+          console.log('[Cart] Owner ID obtido via storeSettings:', ownerId);
+        } catch (settingsError) {
+          console.log('[Cart] Erro ao buscar storeSettings:', settingsError);
+          
+          // Fallback: tentar buscar pela API pública da loja
+          try {
+            const slug = getStoreSlug();
+            console.log('[Cart] Tentando obter store_owner_id via API pública para slug:', slug);
+            const publicStoreRes = await api.get(`/site/public/${slug}/owner`);
+            console.log('[Cart] Resposta API pública:', publicStoreRes.data);
+            ownerId = publicStoreRes.data?.owner_id || publicStoreRes.data?.user_id;
+            console.log('[Cart] Owner ID obtido via API pública:', ownerId);
+          } catch (publicError) {
+            console.log('[Cart] Erro ao buscar owner via API pública:', publicError);
+          }
+        }
+      }
+      
       // Verificar se é um UUID válido e não é um ID temporário/genérico
       const isValidUUID = ownerId && ownerId !== 'user-id' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownerId);
       
@@ -90,7 +117,9 @@ const Cart = () => {
         payload.store_owner_id = ownerId;
         console.log('[Cart] store_owner_id válido adicionado:', ownerId);
       } else {
-        console.log('[Cart] Nenhum store_owner_id válido disponível nos dados da loja - enviando sem este campo. OwnerId recebido:', ownerId);
+        console.log('[Cart] Nenhum store_owner_id válido disponível - erro: campo obrigatório. OwnerId recebido:', ownerId);
+        toast.error('Erro: Não foi possível identificar o proprietário da loja. Tente recarregar a página.');
+        return;
       }
 
       // Campos opcionais
