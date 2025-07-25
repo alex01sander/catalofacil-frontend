@@ -147,37 +147,19 @@ const Cart = () => {
       setShowThankYou(true);
       clearCart();
       setShowCheckoutForm(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('[Cart] Erro ao criar pedido:', error);
       console.error('[Cart] error.response:', error.response);
       console.error('[Cart] error.response.data:', error.response?.data);
       
-      let errorMessage = 'Erro ao criar pedido. Tente novamente.';
-      
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-        
-        // Se houver detalhes específicos, adicionar ao log e à mensagem
-        if (error.response.data.details && Array.isArray(error.response.data.details)) {
-          console.error('[Cart] Detalhes do erro:', error.response.data.details);
-          
-          // Mostrar detalhes específicos para debug
-          const details = error.response.data.details.map(detail => {
-            if (typeof detail === 'object') {
-              return `${detail.path?.join('.')}: ${detail.message}`;
-            }
-            return detail;
-          }).join(', ');
-          
-          errorMessage += ` (${details})`;
-        }
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      // Expandir details se existir
+      if (error.response?.data?.details) {
+        console.error('[Cart] error.response.data.details:', error.response.data.details);
+        console.error('[Cart] details expandido:', JSON.stringify(error.response.data.details, null, 2));
       }
       
-      toast.error(errorMessage);
+      const errorMessage = error.response?.data?.error || error.message || 'Erro inesperado';
+      toast.error(`Erro ao criar pedido: ${errorMessage}`);
     }
   };
   return (
