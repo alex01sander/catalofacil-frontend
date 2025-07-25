@@ -91,6 +91,9 @@ const OrderManagement = () => {
     try {
       setLoading(true);
       const res = await api.get('/pedidos');
+      console.log('[OrderManagement] Resposta de pedidos:', res.data);
+      console.log('[OrderManagement] Primeiro pedido:', res.data?.[0]);
+      console.log('[OrderManagement] order_items do primeiro pedido:', res.data?.[0]?.order_items);
       setOrders(res.data || []);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
