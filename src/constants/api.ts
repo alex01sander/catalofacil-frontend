@@ -1,7 +1,7 @@
 // Usar proxy local para evitar problemas de CORS em produção
-export const API_URL = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD ? "/api" : "http://localhost:3000"
-);
+export const API_URL = import.meta.env.PROD 
+  ? "/api"  // Em produção, sempre usar proxy
+  : (import.meta.env.VITE_API_URL || "http://localhost:3000"); // Em desenvolvimento, usar VITE_API_URL ou localhost
 import axios from "axios";
 import { useAuth } from '@/contexts/AuthContext';
 
