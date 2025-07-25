@@ -19,7 +19,10 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       : "/products";
     try {
       const res = await api.get(url);
-      if (Array.isArray(res.data)) {
+      // Verificar se é resposta paginada ou array direto
+      if (res.data && res.data.data && Array.isArray(res.data.data)) {
+        setProducts(res.data.data);
+      } else if (Array.isArray(res.data)) {
         setProducts(res.data);
       } else {
         setProducts([]);
@@ -85,16 +88,21 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
         console.log('Status:', res.status);
         console.log('Data:', res.data);
         console.log('Tipo de res.data:', typeof res.data);
-        console.log('É array?', Array.isArray(res.data));
-        console.log('Tamanho do array:', Array.isArray(res.data) ? res.data.length : 'N/A');
         
-        // Tratar tanto array vazio quanto array com dados
-        if (Array.isArray(res.data)) {
-          console.log('✅ Array válido recebido, definindo produtos e parando loading');
+        // Verificar se é resposta paginada ou array direto
+        if (res.data && res.data.data && Array.isArray(res.data.data)) {
+          console.log('✅ Resposta paginada válida recebida');
+          console.log('Produtos:', res.data.data);
+          console.log('Tamanho do array:', res.data.data.length);
+          setProducts(res.data.data);
+          setLoading(false);
+        } else if (Array.isArray(res.data)) {
+          console.log('✅ Array direto válido recebido');
+          console.log('Tamanho do array:', res.data.length);
           setProducts(res.data);
-          setLoading(false); // Sempre parar loading quando receber resposta válida
+          setLoading(false);
         } else {
-          console.error('❌ res.data não é um array:', res.data);
+          console.error('❌ Formato de resposta inválido:', res.data);
           setProducts([]);
           setLoading(false);
         }

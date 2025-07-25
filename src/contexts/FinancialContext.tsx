@@ -90,12 +90,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       console.log('sales:', salesRes.data);
       console.log('products:', productsRes.data);
       
-      // Garantir que todos os dados sejam arrays
-      const cashFlow = Array.isArray(cashFlowRes.data) ? cashFlowRes.data : [];
-      const creditAccounts = Array.isArray(creditRes.data) ? creditRes.data : [];
-      const expenses = Array.isArray(expensesRes.data) ? expensesRes.data : [];
-      const sales = Array.isArray(salesRes.data) ? salesRes.data : [];
-      const products = Array.isArray(productsRes.data) ? productsRes.data : [];
+      // Garantir que todos os dados sejam arrays - tratar resposta paginada
+      const cashFlow = cashFlowRes.data?.data ? cashFlowRes.data.data : (Array.isArray(cashFlowRes.data) ? cashFlowRes.data : []);
+      const creditAccounts = creditRes.data?.data ? creditRes.data.data : (Array.isArray(creditRes.data) ? creditRes.data : []);
+      const expenses = expensesRes.data?.data ? expensesRes.data.data : (Array.isArray(expensesRes.data) ? expensesRes.data : []);
+      const sales = salesRes.data?.data ? salesRes.data.data : (Array.isArray(salesRes.data) ? salesRes.data : []);
+      const products = productsRes.data?.data ? productsRes.data.data : (Array.isArray(productsRes.data) ? productsRes.data : []);
       
       const totalIncome = cashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);

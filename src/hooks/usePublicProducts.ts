@@ -35,7 +35,14 @@ export function usePublicProducts(slug: string) {
           });
         }
         
-        setProducts(res.data || []);
+        // Verificar se é resposta paginada ou array direto
+        if (res.data && res.data.data && Array.isArray(res.data.data)) {
+          setProducts(res.data.data);
+        } else if (Array.isArray(res.data)) {
+          setProducts(res.data);
+        } else {
+          setProducts([]);
+        }
       })
       .catch(error => {
         console.error('[usePublicProducts] Erro ao buscar produtos:', error);

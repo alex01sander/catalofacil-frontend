@@ -45,21 +45,26 @@ export const useOptimizedCategories = (enabled = true) => {
     
     api.get(`/categorias`)
       .then(res => {
-        console.log('=== RESPOSTA DO SERVIDOR ===');
+        console.log('=== RESPOSTA DO SERVIDOR (CATEGORIAS) ===');
         console.log('Status:', res.status);
         console.log('Headers:', res.headers);
         console.log('Data:', res.data);
         console.log('Tipo de res.data:', typeof res.data);
-        console.log('É array?', Array.isArray(res.data));
-        console.log('Tamanho do array:', Array.isArray(res.data) ? res.data.length : 'N/A');
         
-        // Tratar tanto array vazio quanto array com dados
-        if (Array.isArray(res.data)) {
-          console.log('✅ Array válido recebido, definindo categorias e parando loading');
+        // Verificar se é resposta paginada ou array direto
+        if (res.data && res.data.data && Array.isArray(res.data.data)) {
+          console.log('✅ Resposta paginada válida recebida');
+          console.log('Categorias:', res.data.data);
+          console.log('Tamanho do array:', res.data.data.length);
+          setCategories(res.data.data);
+          setLoading(false);
+        } else if (Array.isArray(res.data)) {
+          console.log('✅ Array direto válido recebido');
+          console.log('Tamanho do array:', res.data.length);
           setCategories(res.data);
-          setLoading(false); // Sempre parar loading quando receber resposta válida
+          setLoading(false);
         } else {
-          console.error('❌ res.data não é um array:', res.data);
+          console.error('❌ Formato de resposta inválido:', res.data);
           setCategories([]);
           setLoading(false);
         }

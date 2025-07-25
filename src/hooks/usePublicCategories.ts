@@ -9,7 +9,16 @@ export function usePublicCategories(slug: string) {
     if (!slug) return;
     setLoading(true);
     api.get(`/site/public/${slug}/categories`)
-      .then(res => setCategories(res.data))
+      .then(res => {
+        // Verificar se é resposta paginada ou array direto
+        if (res.data && res.data.data && Array.isArray(res.data.data)) {
+          setCategories(res.data.data);
+        } else if (Array.isArray(res.data)) {
+          setCategories(res.data);
+        } else {
+          setCategories([]);
+        }
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 
