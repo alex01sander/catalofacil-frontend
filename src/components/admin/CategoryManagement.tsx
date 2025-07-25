@@ -50,7 +50,7 @@ const CategoryManagement = () => {
     if (!user) return;
     try {
       setLoading(true);
-      const res = await api.get(`${API_URL}/categorias`);
+      const res = await api.get('/categorias');
       setCategories(res.data || []);
     } catch (error) {
       console.error('Erro ao buscar categorias:', error);
@@ -78,7 +78,7 @@ const CategoryManagement = () => {
       console.log('User ID (original):', user.id);
       console.log('User ID (tipo):', typeof user.id);
       console.log('User completo:', user);
-      console.log('URL:', `${API_URL}/categorias`);
+      console.log('URL:', '/categorias');
       console.log('Token disponível:', !!user.token);
       console.log('Token completo:', user.token);
       
@@ -105,7 +105,7 @@ const CategoryManagement = () => {
       
       console.log('Headers explícitos:', headers);
       
-      const res = await api.post(`${API_URL}/categorias`, payload, { headers });
+      const res = await api.post('/categorias', payload, { headers });
       
       console.log('✅ Resposta do servidor:', res.data);
       
@@ -148,7 +148,7 @@ const CategoryManagement = () => {
   const saveEdit = async () => {
     if (!editingName.trim() || !user || !editingCategory) return;
     try {
-      await api.put(`${API_URL}/categorias/${editingCategory}`, {
+      await api.put(`/categorias/${editingCategory}`, {
         name: editingName.trim(),
         image: editingImage || null
       });
@@ -180,7 +180,7 @@ const CategoryManagement = () => {
   const deleteCategory = async (categoryId: string) => {
     if (!user) return;
     try {
-      await api.delete(`${API_URL}/categorias/${categoryId}`);
+      await api.delete(`/categorias/${categoryId}`);
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
       setDeleteConfirm(null);
       toast({ title: "Categoria removida", description: "Categoria removida com sucesso!" });

@@ -31,10 +31,10 @@ const UserManagement = () => {
     queryKey: ['active_users'],
     queryFn: async () => {
       // Buscar todos os profiles do backend
-      const profilesRes = await api.get(`${API_URL}/profiles`);
+      const profilesRes = await api.get('/profiles');
       const profiles = profilesRes.data;
       // Buscar todos os domínios do backend
-      const domainsRes = await api.get(`${API_URL}/domainOwners`);
+      const domainsRes = await api.get('/domainOwners');
       const domainOwners = domainsRes.data;
       // Combinar os dados
       const usersWithDomains = profiles?.map((profile: any) => ({

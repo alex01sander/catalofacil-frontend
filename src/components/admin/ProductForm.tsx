@@ -103,7 +103,7 @@ const ProductForm = ({ product, onSubmit, onCancel }: ProductFormProps) => {
     setLoadingCategories(true);
     try {
       const headers = user && user.token ? { Authorization: `Bearer ${user.token}` } : {};
-      const res = await api.get(`${API_URL}/categorias`, { headers });
+      const res = await api.get('/categorias', { headers });
       setCategories(res.data || []);
     } catch (error) {
       toast({

@@ -13,7 +13,7 @@ export function useLojaPublica(slug?: string) {
       setLoading(true);
       // Buscar produtos públicos
       if (slug) {
-        const prodsRes = await api.get(`${API_URL}/site/${slug}`);
+        const prodsRes = await api.get(`/site/${slug}`);
         setProdutos(prodsRes.data.products || []);
       } else {
         setProdutos([]);

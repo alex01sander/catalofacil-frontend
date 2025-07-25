@@ -76,11 +76,11 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
-        api.get(`${API_URL}/fluxo-caixa`),
-        api.get(`${API_URL}/credit-accounts`),
-        api.get(`${API_URL}/despesas`),
-        api.get(`${API_URL}/vendas`),
-        api.get(`${API_URL}/products`)
+        api.get('/fluxo-caixa'),
+        api.get('/credit-accounts'),
+        api.get('/despesas'),
+        api.get('/vendas'),
+        api.get('/products')
       ]);
       
       console.log('✅ Dados financeiros carregados com sucesso');
@@ -136,7 +136,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         date: new Date(entry.date).toISOString(),
       };
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.post(`${API_URL}/fluxo-caixa`, payload);
+      const res = await api.post('/fluxo-caixa', payload);
       setData(prev => ({
         ...prev,
         cashFlow: [res.data, ...prev.cashFlow],
@@ -158,7 +158,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       // Remover campos duplicados e garantir apenas um user_id
       const payload = { ...expense, user_id: user.id };
       delete payload["userId"];
-      const res = await api.post(`${API_URL}/despesas`, payload);
+      const res = await api.post('/despesas', payload);
       setData(prev => ({ ...prev, expenses: [res.data, ...prev.expenses] }));
       toast({ title: 'Sucesso', description: 'Despesa adicionada com sucesso!' });
     } catch (error) {
@@ -171,7 +171,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !token) return;
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.put(`${API_URL}/despesas/${id}`, updates);
+      const res = await api.put(`/despesas/${id}`, updates);
       setData(prev => ({
         ...prev,
         expenses: prev.expenses.map(exp => exp.id === id ? res.data : exp)
@@ -201,9 +201,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         status: 'completed',
         store_id: selectedProduct.store_id || null
       };
-      const res = await api.post(`${API_URL}/vendas`, payload);
+      const res = await api.post('/vendas', payload);
       // Lançar também no fluxo de caixa
-      await api.post(`${API_URL}/fluxo-caixa`, {
+      await api.post('/fluxo-caixa', {
         user_id: user?.id,
         store_id: payload.store_id,
         type: 'income',
@@ -229,7 +229,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.post(`${API_URL}/credit-transactions`, {
+      const res = await api.post('/credit-transactions', {
         credit_account_id: accountId,
         type,
         amount,

@@ -138,7 +138,7 @@ const ProductManagement = () => {
     }
     try {
       if (editingProduct) {
-        console.log('[DEBUG handleFormSubmit] Enviando PUT para:', `${API_URL}/products/${editingProduct.id}`);
+        console.log('[DEBUG handleFormSubmit] Enviando PUT para:', `/products/${editingProduct.id}`);
         const payload = {
           store_id: effectiveStoreId,
           name: productData.name,
@@ -174,7 +174,7 @@ const ProductManagement = () => {
           images: typeof payload.images
         });
         console.log('[DEBUG handleFormSubmit] Prestes a enviar requisição PUT...');
-        const response = await api.put(`${API_URL}/products/${editingProduct.id}`, payload, {
+        const response = await api.put(`/products/${editingProduct.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta PUT:', response);
@@ -182,7 +182,7 @@ const ProductManagement = () => {
         console.log('[DEBUG handleFormSubmit] Produto atualizado com sucesso, fazendo refetch...');
         toast({ title: "Produto atualizado", description: "Produto atualizado com sucesso!" });
       } else {
-        console.log('[DEBUG handleFormSubmit] Enviando POST para:', `${API_URL}/products`);
+                  console.log('[DEBUG handleFormSubmit] Enviando POST para:', '/products');
         const payload = {
           store_id: effectiveStoreId,
           name: productData.name,
@@ -195,7 +195,7 @@ const ProductManagement = () => {
           images: productData.images || [],
         };
         console.log('[DEBUG handleFormSubmit] Payload POST:', payload);
-        const response = await api.post(`${API_URL}/products`, payload, {
+                  const response = await api.post('/products', payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('[DEBUG handleFormSubmit] Resposta POST:', response);
@@ -260,8 +260,8 @@ const ProductManagement = () => {
     console.log('[DEBUG] Novo status será:', !product.is_active);
     try {
       const payload = { is_active: !product.is_active };
-      console.log('[DEBUG] Enviando PUT para toggle status:', `${API_URL}/products/${productId}`, payload);
-      const response = await api.put(`${API_URL}/products/${productId}`, payload, {
+      console.log('[DEBUG] Enviando PUT para toggle status:', `/products/${productId}`, payload);
+      const response = await api.put(`/products/${productId}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log('[DEBUG] Resposta toggle status:', response);
@@ -294,8 +294,8 @@ const ProductManagement = () => {
       return;
     }
     try {
-      console.log('[DEBUG] Enviando DELETE para:', `${API_URL}/products/${productId}`);
-      const response = await api.delete(`${API_URL}/products/${productId}`, {
+      console.log('[DEBUG] Enviando DELETE para:', `/products/${productId}`);
+      const response = await api.delete(`/products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log('[DEBUG] Resposta DELETE:', response);

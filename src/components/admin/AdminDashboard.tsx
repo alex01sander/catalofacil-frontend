@@ -46,7 +46,7 @@ const AdminDashboard = () => {
         return;
       }
       try {
-        const { data } = await api.get(`${API_URL}/pedidos?store_owner_id=${user.id}`);
+        const { data } = await api.get(`/pedidos?store_owner_id=${user.id}`);
         setOrders(data || []);
       } catch (error) {
         // console.error('Erro ao buscar pedidos:', error);

@@ -26,7 +26,7 @@ const UserCreation = () => {
       fullName: string;
       makeControllerAdmin: boolean;
     }) => {
-      const { data } = await api.post(`${API_URL}/users`, {
+      const { data } = await api.post('/users', {
         email,
         password,
         fullName,
