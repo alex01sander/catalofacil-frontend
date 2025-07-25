@@ -90,18 +90,52 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/pedidos');
-      console.log('[OrderManagement] Resposta de pedidos:', res.data);
-      console.log('[OrderManagement] Primeiro pedido:', res.data?.[0]);
-      console.log('[OrderManagement] order_items do primeiro pedido:', res.data?.[0]?.order_items);
-      setOrders(res.data || []);
+      console.log('[OrderManagement] Iniciando busca de pedidos...');
+      
+      // Tentar buscar com include dos itens
+      const res = await api.get('/pedidos?include=order_items');
+      console.log('[OrderManagement] Resposta completa da API:', res);
+      console.log('[OrderManagement] Status da resposta:', res.status);
+      console.log('[OrderManagement] Headers da resposta:', res.headers);
+      console.log('[OrderManagement] Dados da resposta:', res.data);
+      
+      if (res.data && Array.isArray(res.data)) {
+        console.log('[OrderManagement] Total de pedidos recebidos:', res.data.length);
+        
+        res.data.forEach((order, index) => {
+          console.log(`[OrderManagement] Pedido ${index + 1}:`, {
+            id: order.id,
+            customer_name: order.customer_name,
+            total_amount: order.total_amount,
+            status: order.status,
+            order_items: order.order_items,
+            order_items_length: order.order_items?.length || 0
+          });
+          
+          if (!order.order_items || order.order_items.length === 0) {
+            console.warn(`[OrderManagement] ALERTA: Pedido ${order.id} não tem itens!`);
+          }
+        });
+        
+        setOrders(res.data);
+      } else {
+        console.warn('[OrderManagement] Resposta da API não é um array válido:', res.data);
+        setOrders([]);
+      }
+      
     } catch (error) {
-      console.error('Erro ao buscar pedidos:', error);
+      console.error('[OrderManagement] Erro completo ao buscar pedidos:', error);
+      if (error.response) {
+        console.error('[OrderManagement] Resposta de erro:', error.response.data);
+        console.error('[OrderManagement] Status de erro:', error.response.status);
+      }
+      
       toast({
         title: "Erro",
-        description: "Falha ao carregar pedidos",
+        description: "Falha ao carregar pedidos. Verifique o console para mais detalhes.",
         variant: "destructive",
       });
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -109,8 +143,29 @@ const OrderManagement = () => {
 
   // Confirmar pedido
   const confirmOrder = async (order: Order) => {
-    if (!user || !user.token) return;
+    if (!user || !user.token) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Verificar se o pedido tem itens
+    if (!order.order_items || order.order_items.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Este pedido não possui itens. Não é possível confirmar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
+      console.log('[OrderManagement] Confirmando pedido:', order.id);
+      console.log('[OrderManagement] Itens do pedido:', order.order_items);
+      
       // Verificar estoque
       const stockIssues = [];
       for (const item of order.order_items) {
@@ -120,7 +175,11 @@ const OrderManagement = () => {
         }
       }
       if (stockIssues.length > 0) {
-        toast.error(`Estoque insuficiente:\n${stockIssues.join('\n')}`);
+        toast({
+          title: "Estoque insuficiente",
+          description: stockIssues.join('\n'),
+          variant: "destructive",
+        });
         return;
       }
       // Atualizar status do pedido
@@ -143,51 +202,113 @@ const OrderManagement = () => {
         date: new Date().toISOString().split('T')[0],
         payment_method: 'whatsapp'
       });
-      toast.success('Pedido confirmado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: 'Pedido confirmado com sucesso!',
+        variant: "default",
+      });
       await fetchOrders();
       await refetchProducts();
     } catch (error) {
-      console.error('Erro ao confirmar pedido:', error);
-      toast.error('Erro ao confirmar pedido');
+      console.error('[OrderManagement] Erro ao confirmar pedido:', error);
+      toast({
+        title: "Erro",
+        description: 'Erro ao confirmar pedido. Verifique o console para mais detalhes.',
+        variant: "destructive",
+      });
     }
   };
 
   // Cancelar pedido
   const cancelOrder = async (orderId: string) => {
-    if (!user || !user.token) return;
+    if (!user || !user.token) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
+      console.log('[OrderManagement] Cancelando pedido:', orderId);
       await api.put(`/pedidos/${orderId}`, { status: 'cancelled' });
-      toast.success('Pedido cancelado');
+      toast({
+        title: "Sucesso",
+        description: 'Pedido cancelado com sucesso',
+        variant: "default",
+      });
       await fetchOrders();
     } catch (error) {
-      console.error('Erro ao cancelar pedido:', error);
-      toast.error('Erro ao cancelar pedido');
+      console.error('[OrderManagement] Erro ao cancelar pedido:', error);
+      toast({
+        title: "Erro",
+        description: 'Erro ao cancelar pedido. Verifique o console para mais detalhes.',
+        variant: "destructive",
+      });
     }
   };
 
   // Abrir modal de edição
   const openEditModal = (order: Order) => {
+    console.log('[OrderManagement] Abrindo modal de edição para pedido:', order.id);
+    console.log('[OrderManagement] Itens do pedido para edição:', order.order_items);
+    
     setEditingOrder(order);
-    setEditingItems([...order.order_items]);
+    // Se não há itens, inicializar com array vazio
+    setEditingItems(order.order_items ? [...order.order_items] : []);
   };
 
   // Salvar edições
   const saveOrderEdits = async () => {
-    if (!editingOrder || !user || !user.token) return;
+    if (!editingOrder || !user || !user.token) {
+      toast({
+        title: "Erro",
+        description: "Dados insuficientes para salvar pedido",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (editingItems.length === 0) {
+      toast({
+        title: "Erro",
+        description: "O pedido deve ter pelo menos um item",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
+      console.log('[OrderManagement] Salvando edições do pedido:', editingOrder.id);
+      console.log('[OrderManagement] Novos itens:', editingItems);
+      
       // Calcular novo total
       const newTotal = editingItems.reduce((sum, item) => sum + item.total_price, 0);
+      console.log('[OrderManagement] Novo total calculado:', newTotal);
+      
       // Atualizar pedido
-      await api.put(`/pedidos/${editingOrder.id}`, { total_amount: newTotal });
-      // Deletar itens antigos e inserir novos (idealmente backend faz isso em uma rota específica)
-      // Aqui, para simplificação, apenas atualiza o pedido
-      toast.success('Pedido atualizado com sucesso!');
+      await api.put(`/pedidos/${editingOrder.id}`, { 
+        total_amount: newTotal,
+        order_items: editingItems
+      });
+      
+      toast({
+        title: "Sucesso",
+        description: 'Pedido atualizado com sucesso!',
+        variant: "default",
+      });
+      
       setEditingOrder(null);
       setEditingItems([]);
       await fetchOrders();
     } catch (error) {
-      console.error('Erro ao salvar pedido:', error);
-      toast.error('Erro ao salvar pedido');
+      console.error('[OrderManagement] Erro ao salvar pedido:', error);
+      toast({
+        title: "Erro",
+        description: 'Erro ao salvar pedido. Verifique o console para mais detalhes.',
+        variant: "destructive",
+      });
     }
   };
 
@@ -400,21 +521,31 @@ const OrderManagement = () => {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>
-                            {/* Calcular quantidade total de itens */}
-                            {(() => {
-                              const totalQuantity = (order.order_items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
-                              return `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'itens'}`;
-                            })()}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {(order.order_items || []).slice(0, 1).map(item => {
-                              const productName = item.product?.name || item.product_name || 'Produto';
-                              const quantity = item.quantity || 1;
-                              return `${productName} (${quantity}x)`;
-                            }).join(', ')}
-                            {(order.order_items || []).length > 1 && ' +'}
-                          </div>
+                          {/* Verificar se há itens no pedido */}
+                          {!order.order_items || order.order_items.length === 0 ? (
+                            <div className="text-red-500">
+                              <div>0 itens</div>
+                              <div className="text-xs">⚠️ Sem itens</div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div>
+                                {/* Calcular quantidade total de itens */}
+                                {(() => {
+                                  const totalQuantity = (order.order_items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
+                                  return `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'itens'}`;
+                                })()}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {(order.order_items || []).slice(0, 1).map(item => {
+                                  const productName = item.product?.name || item.product_name || 'Produto';
+                                  const quantity = item.quantity || 1;
+                                  return `${productName} (${quantity}x)`;
+                                }).join(', ')}
+                                {(order.order_items || []).length > 1 && ' +'}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -436,6 +567,8 @@ const OrderManagement = () => {
                               size="sm"
                               variant="outline"
                               className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
+                              disabled={!order.order_items || order.order_items.length === 0}
+                              title={!order.order_items || order.order_items.length === 0 ? "Não é possível confirmar pedido sem itens" : "Confirmar pedido"}
                             >
                               <Check className="h-3 w-3" />
                             </Button>
@@ -444,6 +577,7 @@ const OrderManagement = () => {
                               size="sm"
                               variant="outline"
                               className="h-7 w-7 p-0"
+                              title="Editar pedido"
                             >
                               <Edit3 className="h-3 w-3" />
                             </Button>
@@ -452,6 +586,7 @@ const OrderManagement = () => {
                               size="sm"
                               variant="outline"
                               className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                              title="Cancelar pedido"
                             >
                               <X className="h-3 w-3" />
                             </Button>
