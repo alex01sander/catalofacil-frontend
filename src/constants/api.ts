@@ -33,7 +33,7 @@ export async function testProtectedProductsApi() {
     return;
   }
   try {
-    const res = await axios.get(`${API_URL}/products`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await axios.get('/products', { headers: { Authorization: `Bearer ${token}` } });
   } catch (err) {
   }
 }

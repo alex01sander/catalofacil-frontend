@@ -84,7 +84,7 @@ const CreditTab = () => {
       if (formData.is_new_customer) {
         // 1. Cria o cliente
         const res = await api.post(
-          `${API_URL}/credit-accounts`,
+          '/credit-accounts',
           {
             customer_name: formData.customer_name,
             customer_phone: formData.customer_phone,
