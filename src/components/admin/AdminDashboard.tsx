@@ -179,8 +179,11 @@ const AdminDashboard = () => {
   // Atividades recentes baseadas nos dados reais do contexto financeiro
   const recentActivities = [
     ...orders.slice(0, 2).map(order => {
-      // Quantidade de itens
-      const qtdItens = order.order_items && order.order_items.length ? `${order.order_items.length} ${order.order_items.length === 1 ? 'item' : 'itens'}` : '1 item';
+      // Quantidade total de itens (soma das quantidades)
+      const totalQuantity = order.order_items && order.order_items.length 
+        ? order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0)
+        : 1;
+      const qtdItens = `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'itens'}`;
       return {
         action: "Nova venda realizada",
         product: `Pedido #${order.id.slice(0, 8)} — ${qtdItens} — R$ ${Number(order.total_amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})} — Cliente: ${order.customer_name}`,

@@ -398,10 +398,18 @@ const OrderManagement = () => {
                       <TableCell>
                         <div className="text-sm">
                           <div>
-                            {(order.order_items || []).length} {(order.order_items || []).length === 1 ? 'item' : 'itens'}
+                            {/* Calcular quantidade total de itens */}
+                            {(() => {
+                              const totalQuantity = (order.order_items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
+                              return `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'itens'}`;
+                            })()}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {(order.order_items || []).slice(0, 1).map(item => item.product?.name || item.product_name || 'Produto').join(', ')}
+                            {(order.order_items || []).slice(0, 1).map(item => {
+                              const productName = item.product?.name || item.product_name || 'Produto';
+                              const quantity = item.quantity || 1;
+                              return `${productName} (${quantity}x)`;
+                            }).join(', ')}
                             {(order.order_items || []).length > 1 && ' +'}
                           </div>
                         </div>
