@@ -81,16 +81,16 @@ const Cart = () => {
         }
       };
 
-      // Adicionar store_owner_id apenas se disponível e for um UUID válido
-      const ownerId = store?.user_id || store?.owner_id || store?.created_by || user?.id;
-      // Verificar se é um UUID válido (não é 'user-id' genérico)
+      // Adicionar store_owner_id apenas se disponível nos dados da loja (não usar user.id temporário)
+      const ownerId = store?.user_id || store?.owner_id || store?.created_by;
+      // Verificar se é um UUID válido e não é um ID temporário/genérico
       const isValidUUID = ownerId && ownerId !== 'user-id' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ownerId);
       
       if (isValidUUID) {
         payload.store_owner_id = ownerId;
         console.log('[Cart] store_owner_id válido adicionado:', ownerId);
       } else {
-        console.log('[Cart] Nenhum store_owner_id válido disponível - enviando sem este campo. OwnerId recebido:', ownerId);
+        console.log('[Cart] Nenhum store_owner_id válido disponível nos dados da loja - enviando sem este campo. OwnerId recebido:', ownerId);
       }
 
       // Campos opcionais
