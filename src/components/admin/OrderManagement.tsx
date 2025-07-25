@@ -35,6 +35,7 @@ import { ptBR } from "date-fns/locale";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
+import { useStoreSettings } from "@/contexts/StoreSettingsContext";
 import { toast } from "sonner";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,7 @@ const OrderManagement = () => {
   const { user } = useAuth();
   const { addCashFlowEntry, registerSale } = useFinancial();
   const { products, refetch: refetchProducts } = useOptimizedProducts();
+  const { store } = useStoreSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
