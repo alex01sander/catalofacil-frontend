@@ -35,12 +35,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Função para verificar se o token está válido
   const verifyToken = async (tokenToVerify: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://catalofacil-backend.onrender.com'}/auth/verify`, {
+      const response = await api.get('/auth/verify', {
         headers: {
           'Authorization': `Bearer ${tokenToVerify}`
         }
       });
-      return response.ok;
+      return response.status === 200;
     } catch (error) {
       console.error('[Auth] Erro ao verificar token:', error);
       return false;
