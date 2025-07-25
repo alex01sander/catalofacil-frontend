@@ -76,7 +76,7 @@ const OrderManagement = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [editingItems, setEditingItems] = useState<OrderItem[]>([]);
 
@@ -87,14 +87,15 @@ const OrderManagement = () => {
     }
   }, [user]);
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      console.log('[OrderManagement] Iniciando busca de pedidos...');
-      
-      // Tentar buscar com include dos itens
-      const res = await api.get('/pedidos?include=order_items');
-      console.log('[OrderManagement] Resposta completa da API:', res);
+     const fetchOrders = async () => {
+     try {
+       setLoading(true);
+       console.log('[OrderManagement] Iniciando busca de pedidos...');
+       console.log('[OrderManagement] Timestamp da requisição:', new Date().toISOString());
+       
+       // Tentar buscar com include dos itens
+       const res = await api.get('/pedidos?include=order_items&_t=' + Date.now());
+       console.log('[OrderManagement] Resposta completa da API:', res);
       console.log('[OrderManagement] Status da resposta:', res.status);
       console.log('[OrderManagement] Headers da resposta:', res.headers);
       console.log('[OrderManagement] Dados da resposta:', res.data);
@@ -102,20 +103,29 @@ const OrderManagement = () => {
       if (res.data && Array.isArray(res.data)) {
         console.log('[OrderManagement] Total de pedidos recebidos:', res.data.length);
         
-        res.data.forEach((order, index) => {
-          console.log(`[OrderManagement] Pedido ${index + 1}:`, {
-            id: order.id,
-            customer_name: order.customer_name,
-            total_amount: order.total_amount,
-            status: order.status,
-            order_items: order.order_items,
-            order_items_length: order.order_items?.length || 0
-          });
-          
-          if (!order.order_items || order.order_items.length === 0) {
-            console.warn(`[OrderManagement] ALERTA: Pedido ${order.id} não tem itens!`);
-          }
-        });
+                 res.data.forEach((order, index) => {
+           console.log(`[OrderManagement] Pedido ${index + 1}:`, {
+             id: order.id,
+             customer_name: order.customer_name,
+             customer_phone: order.customer_phone,
+             total_amount: order.total_amount,
+             status: order.status,
+             created_at: order.created_at,
+             order_items: order.order_items,
+             order_items_length: order.order_items?.length || 0
+           });
+           
+           // Log detalhado da data para debug de filtros
+           console.log(`[OrderManagement] Data do pedido ${index + 1}:`, {
+             created_at_raw: order.created_at,
+             created_at_formatted: new Date(order.created_at).toLocaleDateString('pt-BR'),
+             hoje: new Date().toLocaleDateString('pt-BR')
+           });
+           
+           if (!order.order_items || order.order_items.length === 0) {
+             console.warn(`[OrderManagement] ALERTA: Pedido ${order.id} não tem itens!`);
+           }
+         });
         
         setOrders(res.data);
       } else {
@@ -278,21 +288,31 @@ const OrderManagement = () => {
     setEditingItems(newItems);
   };
 
-  // Filtrar pedidos
-  const filteredOrders = orders.filter(order => {
-    const matchesFilter = filter === 'all' || order.status === filter;
-    const matchesSearch = order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customer_phone?.includes(searchTerm) ||
-                         order.id.includes(searchTerm);
-    
-    // Filtrar por data selecionada
-    const orderDate = new Date(order.created_at);
-    const matchesDate = selectedDate ? 
-      format(orderDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') :
-      true;
-    
-    return matchesFilter && matchesSearch && matchesDate;
-  });
+     // Filtrar pedidos
+   const filteredOrders = orders.filter(order => {
+     const matchesFilter = filter === 'all' || order.status === filter;
+     const matchesSearch = order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          order.customer_phone?.includes(searchTerm) ||
+                          order.id.includes(searchTerm);
+     
+     // Filtrar por data selecionada
+     const orderDate = new Date(order.created_at);
+     const matchesDate = selectedDate ? 
+       format(orderDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') :
+       true;
+     
+     // Log detalhado do filtro para debug
+     console.log(`[OrderManagement] Filtrando pedido ${order.id}:`, {
+       matchesFilter: `${filter} === 'all' || ${order.status} === ${filter} = ${matchesFilter}`,
+       matchesSearch: `${searchTerm} = ${matchesSearch}`,
+       matchesDate: `${format(orderDate, 'yyyy-MM-dd')} === ${selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'any'} = ${matchesDate}`,
+       passouFiltro: matchesFilter && matchesSearch && matchesDate
+     });
+     
+     return matchesFilter && matchesSearch && matchesDate;
+   });
+   
+   console.log(`[OrderManagement] Total de pedidos após filtro: ${filteredOrders.length} de ${orders.length}`);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -346,13 +366,30 @@ const OrderManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          🛒 Pedidos
-        </h1>
-        <p className="text-muted-foreground">Gerencie os pedidos dos seus clientes</p>
-      </div>
+             {/* Header */}
+       <div className="flex justify-between items-start">
+                    <div>
+             <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+               🛒 Pedidos
+             </h1>
+             <p className="text-muted-foreground">
+               Gerencie os pedidos dos seus clientes
+               {orders.length > 0 && (
+                 <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                   {filteredOrders.length} de {orders.length} pedidos
+                 </span>
+               )}
+             </p>
+           </div>
+         <Button 
+           onClick={fetchOrders} 
+           variant="outline" 
+           className="flex items-center gap-2"
+           disabled={loading}
+         >
+           🔄 {loading ? 'Carregando...' : 'Atualizar'}
+         </Button>
+       </div>
 
       {/* Filtros */}
       <Card className="shadow-lg border-l-4 border-l-primary">
@@ -402,20 +439,33 @@ const OrderManagement = () => {
               </Popover>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="pending">Pendentes</SelectItem>
-                  <SelectItem value="confirmed">Confirmados</SelectItem>
-                  <SelectItem value="cancelled">Cancelados</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                         <div className="flex items-center gap-2">
+               <Filter className="h-4 w-4 text-gray-500" />
+               <Select value={filter} onValueChange={setFilter}>
+                 <SelectTrigger className="w-[180px]">
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="all">Todos os Status</SelectItem>
+                   <SelectItem value="pending">Pendentes</SelectItem>
+                   <SelectItem value="confirmed">Confirmados</SelectItem>
+                   <SelectItem value="cancelled">Cancelados</SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
+             
+             <Button 
+               onClick={() => {
+                 setFilter('all');
+                 setSearchTerm('');
+                 setSelectedDate(undefined);
+                 console.log('[OrderManagement] Filtros limpos - mostrando todos os pedidos');
+               }}
+               variant="outline"
+               size="sm"
+             >
+               🧹 Limpar Filtros
+             </Button>
           </div>
         </CardContent>
       </Card>
