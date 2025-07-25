@@ -91,7 +91,10 @@ const Cart = () => {
           console.log('[Cart] Tentando obter store_owner_id via storeSettings para store:', storeId);
           const storeSettingsRes = await api.get(`/storeSettings?store_id=${storeId}`);
           console.log('[Cart] Resposta storeSettings:', storeSettingsRes.data);
-          ownerId = storeSettingsRes.data?.user_id || storeSettingsRes.data?.owner_id;
+          
+          // storeSettings retorna um array, acessar o primeiro item
+          const storeSettings = Array.isArray(storeSettingsRes.data) ? storeSettingsRes.data[0] : storeSettingsRes.data;
+          ownerId = storeSettings?.user_id || storeSettings?.owner_id;
           console.log('[Cart] Owner ID obtido via storeSettings:', ownerId);
         } catch (settingsError) {
           console.log('[Cart] Erro ao buscar storeSettings:', settingsError);
