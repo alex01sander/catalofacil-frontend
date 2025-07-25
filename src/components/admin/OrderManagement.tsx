@@ -130,11 +130,7 @@ const OrderManagement = () => {
         console.error('[OrderManagement] Status de erro:', error.response.status);
       }
       
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar pedidos. Verifique o console para mais detalhes.",
-        variant: "destructive",
-      });
+             toast.error("Falha ao carregar pedidos. Verifique o console para mais detalhes.");
       setOrders([]);
     } finally {
       setLoading(false);
@@ -143,24 +139,16 @@ const OrderManagement = () => {
 
   // Confirmar pedido
   const confirmOrder = async (order: Order) => {
-    if (!user || !user.token) {
-      toast({
-        title: "Erro de autenticação",
-        description: "Usuário não autenticado",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Verificar se o pedido tem itens
-    if (!order.order_items || order.order_items.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Este pedido não possui itens. Não é possível confirmar.",
-        variant: "destructive",
-      });
-      return;
-    }
+         if (!user || !user.token) {
+       toast.error("Usuário não autenticado");
+       return;
+     }
+     
+     // Verificar se o pedido tem itens
+     if (!order.order_items || order.order_items.length === 0) {
+       toast.error("Este pedido não possui itens. Não é possível confirmar.");
+       return;
+     }
     
     try {
       console.log('[OrderManagement] Confirmando pedido:', order.id);
@@ -174,14 +162,10 @@ const OrderManagement = () => {
           stockIssues.push(`${item.product?.name}: estoque insuficiente (${product.stock} disponível, ${item.quantity} solicitado)`);
         }
       }
-      if (stockIssues.length > 0) {
-        toast({
-          title: "Estoque insuficiente",
-          description: stockIssues.join('\n'),
-          variant: "destructive",
-        });
-        return;
-      }
+             if (stockIssues.length > 0) {
+         toast.error(`Estoque insuficiente: ${stockIssues.join(', ')}`);
+         return;
+       }
       // Atualizar status do pedido
       await api.put(`/pedidos/${order.id}`, { status: 'confirmed' });
       // Atualizar estoque
@@ -202,51 +186,31 @@ const OrderManagement = () => {
         date: new Date().toISOString().split('T')[0],
         payment_method: 'whatsapp'
       });
-      toast({
-        title: "Sucesso",
-        description: 'Pedido confirmado com sucesso!',
-        variant: "default",
-      });
+             toast.success('Pedido confirmado com sucesso!');
       await fetchOrders();
       await refetchProducts();
-    } catch (error) {
-      console.error('[OrderManagement] Erro ao confirmar pedido:', error);
-      toast({
-        title: "Erro",
-        description: 'Erro ao confirmar pedido. Verifique o console para mais detalhes.',
-        variant: "destructive",
-      });
-    }
+         } catch (error) {
+       console.error('[OrderManagement] Erro ao confirmar pedido:', error);
+       toast.error('Erro ao confirmar pedido. Verifique o console para mais detalhes.');
+     }
   };
 
   // Cancelar pedido
   const cancelOrder = async (orderId: string) => {
-    if (!user || !user.token) {
-      toast({
-        title: "Erro de autenticação",
-        description: "Usuário não autenticado",
-        variant: "destructive",
-      });
-      return;
-    }
+         if (!user || !user.token) {
+       toast.error("Usuário não autenticado");
+       return;
+     }
     
     try {
       console.log('[OrderManagement] Cancelando pedido:', orderId);
       await api.put(`/pedidos/${orderId}`, { status: 'cancelled' });
-      toast({
-        title: "Sucesso",
-        description: 'Pedido cancelado com sucesso',
-        variant: "default",
-      });
+             toast.success('Pedido cancelado com sucesso');
       await fetchOrders();
-    } catch (error) {
-      console.error('[OrderManagement] Erro ao cancelar pedido:', error);
-      toast({
-        title: "Erro",
-        description: 'Erro ao cancelar pedido. Verifique o console para mais detalhes.',
-        variant: "destructive",
-      });
-    }
+         } catch (error) {
+       console.error('[OrderManagement] Erro ao cancelar pedido:', error);
+       toast.error('Erro ao cancelar pedido. Verifique o console para mais detalhes.');
+     }
   };
 
   // Abrir modal de edição
@@ -261,23 +225,15 @@ const OrderManagement = () => {
 
   // Salvar edições
   const saveOrderEdits = async () => {
-    if (!editingOrder || !user || !user.token) {
-      toast({
-        title: "Erro",
-        description: "Dados insuficientes para salvar pedido",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (editingItems.length === 0) {
-      toast({
-        title: "Erro",
-        description: "O pedido deve ter pelo menos um item",
-        variant: "destructive",
-      });
-      return;
-    }
+         if (!editingOrder || !user || !user.token) {
+       toast.error("Dados insuficientes para salvar pedido");
+       return;
+     }
+     
+     if (editingItems.length === 0) {
+       toast.error("O pedido deve ter pelo menos um item");
+       return;
+     }
     
     try {
       console.log('[OrderManagement] Salvando edições do pedido:', editingOrder.id);
@@ -293,23 +249,15 @@ const OrderManagement = () => {
         order_items: editingItems
       });
       
-      toast({
-        title: "Sucesso",
-        description: 'Pedido atualizado com sucesso!',
-        variant: "default",
-      });
+             toast.success('Pedido atualizado com sucesso!');
       
       setEditingOrder(null);
       setEditingItems([]);
       await fetchOrders();
-    } catch (error) {
-      console.error('[OrderManagement] Erro ao salvar pedido:', error);
-      toast({
-        title: "Erro",
-        description: 'Erro ao salvar pedido. Verifique o console para mais detalhes.',
-        variant: "destructive",
-      });
-    }
+         } catch (error) {
+       console.error('[OrderManagement] Erro ao salvar pedido:', error);
+       toast.error('Erro ao salvar pedido. Verifique o console para mais detalhes.');
+     }
   };
 
   // Adicionar item ao pedido em edição
