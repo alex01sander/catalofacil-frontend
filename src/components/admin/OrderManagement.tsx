@@ -92,9 +92,53 @@ const OrderManagement = () => {
        setLoading(true);
        console.log('[OrderManagement] Iniciando busca de pedidos...');
        console.log('[OrderManagement] Timestamp da requisição:', new Date().toISOString());
+       console.log('[OrderManagement] User ID:', user?.id);
+       console.log('[OrderManagement] Store ID:', store?.id);
+       console.log('[OrderManagement] Token presente:', !!user?.token);
        
-       // Tentar buscar com include dos itens
+       // Tentar múltiplas URLs de pedidos para debug
+       console.log('[OrderManagement] Testando múltiplas rotas de pedidos...');
+       
+       // Tentar rota principal
        const res = await api.get('/pedidos?include=order_items&_t=' + Date.now());
+       console.log('[OrderManagement] Rota /pedidos - Total:', res.data?.length || 0);
+       
+       // Tentar sem include para ver se é problema do include
+       try {
+         const res2 = await api.get('/pedidos?_t=' + Date.now());
+         console.log('[OrderManagement] Rota /pedidos sem include - Total:', res2.data?.length || 0);
+       } catch (e) {
+         console.log('[OrderManagement] Erro na rota sem include:', e);
+       }
+       
+               // Tentar rota alternativa se existir
+        try {
+          const res3 = await api.get('/orders?_t=' + Date.now());
+          console.log('[OrderManagement] Rota /orders - Total:', res3.data?.length || 0);
+        } catch (e) {
+          console.log('[OrderManagement] Rota /orders não existe');
+        }
+        
+        // Tentar com storeId explícito se disponível
+        if (store?.id) {
+          try {
+            const res4 = await api.get(`/pedidos?store_id=${store.id}&_t=` + Date.now());
+            console.log('[OrderManagement] Rota /pedidos com store_id - Total:', res4.data?.length || 0);
+          } catch (e) {
+            console.log('[OrderManagement] Erro na rota com store_id:', e);
+          }
+        }
+        
+        // Tentar buscar TODOS os pedidos sem filtros
+        try {
+          const res5 = await api.get('/pedidos?all=true&_t=' + Date.now());
+          console.log('[OrderManagement] Todos os pedidos (sem filtro) - Total:', res5.data?.length || 0);
+          if (res5.data?.length > 0) {
+            console.log('[OrderManagement] Primeiro pedido encontrado:', res5.data[0]);
+          }
+        } catch (e) {
+          console.log('[OrderManagement] Erro ao buscar todos os pedidos:', e);
+        }
        console.log('[OrderManagement] Resposta completa da API:', res);
       console.log('[OrderManagement] Status da resposta:', res.status);
       console.log('[OrderManagement] Headers da resposta:', res.headers);
@@ -145,9 +189,52 @@ const OrderManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+     };
 
-  // Confirmar pedido
+   // Função para testar criação de pedido
+   const testCreateOrder = async () => {
+     if (!user || !user.token || !store?.id) {
+       console.log('[OrderManagement] Dados insuficientes para teste:', { user: !!user, token: !!user?.token, store: !!store?.id });
+       toast.error('Dados insuficientes para criar pedido de teste');
+       return;
+     }
+     
+     try {
+       const testOrder = {
+         customer_name: 'TESTE - Cliente Debug',
+         customer_phone: '11999999999',
+         customer_email: 'teste@debug.com',
+         total_amount: 99.99,
+         status: 'pending',
+         delivery_method: 'pickup',
+         payment_method: 'pix',
+         notes: 'Pedido criado para teste de debug',
+         order_items: [
+           {
+             product_id: products[0]?.id || 'test-product-id',
+             product_name: 'Produto Teste',
+             quantity: 1,
+             unit_price: 99.99,
+             total_price: 99.99
+           }
+         ]
+       };
+       
+       console.log('[OrderManagement] Criando pedido de teste:', testOrder);
+       const response = await api.post('/pedidos', testOrder);
+       console.log('[OrderManagement] Pedido de teste criado:', response);
+       toast.success('Pedido de teste criado com sucesso!');
+       
+       // Recarregar pedidos
+       await fetchOrders();
+       
+     } catch (error) {
+       console.error('[OrderManagement] Erro ao criar pedido de teste:', error);
+       toast.error('Erro ao criar pedido de teste. Verifique o console.');
+     }
+   };
+
+   // Confirmar pedido
   const confirmOrder = async (order: Order) => {
          if (!user || !user.token) {
        toast.error("Usuário não autenticado");
@@ -381,14 +468,24 @@ const OrderManagement = () => {
                )}
              </p>
            </div>
-         <Button 
-           onClick={fetchOrders} 
-           variant="outline" 
-           className="flex items-center gap-2"
-           disabled={loading}
-         >
-           🔄 {loading ? 'Carregando...' : 'Atualizar'}
-         </Button>
+         <div className="flex gap-2">
+           <Button 
+             onClick={fetchOrders} 
+             variant="outline" 
+             className="flex items-center gap-2"
+             disabled={loading}
+           >
+             🔄 {loading ? 'Carregando...' : 'Atualizar'}
+           </Button>
+           <Button 
+             onClick={testCreateOrder} 
+             variant="outline" 
+             className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100"
+             disabled={loading}
+           >
+             🧪 Teste Pedido
+           </Button>
+         </div>
        </div>
 
       {/* Filtros */}
