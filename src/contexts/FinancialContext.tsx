@@ -191,9 +191,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         user_id: user?.id,
         product_name: selectedProduct.name,
         quantity: Number(saleData.quantity),
-        unit_price: String(Number(saleData.unit_price)),
-        total_price: String(Number(saleData.quantity) * Number(saleData.unit_price)),
-        sale_date: new Date(saleData.date).toISOString(),
+        unit_price: Number(saleData.unit_price),
+        total_price: Number(saleData.quantity) * Number(saleData.unit_price),
+        sale_date: new Date(saleData.date),
         status: 'completed',
         store_id: selectedProduct.store_id || null,
         customer_name: saleData.customer_name || 'Cliente não informado'
