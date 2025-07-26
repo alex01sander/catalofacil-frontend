@@ -62,7 +62,9 @@ const AdminDashboard = () => {
   const totalRevenue = financialData.totalIncome;
   
   const totalProducts = products.filter(p => p.is_active).length;
-  const totalOrders = orders.length + financialData.sales.length;
+  // Contar apenas pedidos confirmados + vendas manuais
+  const confirmedOrders = orders.filter(order => order.status === 'confirmed').length;
+  const totalOrders = confirmedOrders + financialData.sales.length;
   const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
 
   // Dados para gráficos baseados nos dados reais (combinando orders e sales do contexto)
@@ -74,10 +76,10 @@ const AdminDashboard = () => {
     const monthIndex = (currentMonth - 5 + i + 12) % 12;
     const monthName = monthNames[monthIndex];
     
-    // Vendas dos pedidos
+    // Vendas dos pedidos confirmados
     const monthOrders = orders.filter(order => {
       const orderMonth = new Date(order.created_at).getMonth();
-      return orderMonth === monthIndex;
+      return orderMonth === monthIndex && order.status === 'confirmed';
     });
     const monthOrdersTotal = monthOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
     
@@ -178,7 +180,7 @@ const AdminDashboard = () => {
 
   // Atividades recentes baseadas nos dados reais do contexto financeiro
   const recentActivities = [
-    ...orders.slice(0, 2).map(order => {
+    ...orders.filter(order => order.status === 'confirmed').slice(0, 2).map(order => {
       // Quantidade total de itens (soma das quantidades)
       const totalQuantity = order.order_items && order.order_items.length 
         ? order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0)

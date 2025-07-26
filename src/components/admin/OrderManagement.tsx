@@ -276,8 +276,9 @@ const OrderManagement = () => {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
           const newStock = Math.max(0, product.stock - item.quantity);
-          console.log(`[OrderManagement] Atualizando estoque do produto ${product.name}: ${product.stock} -> ${newStock} (quantidade vendida: ${item.quantity})`);
-          await api.put(`/products/${item.product_id}`, { stock: newStock });
+          const isActive = newStock > 0;
+          console.log(`[OrderManagement] Atualizando estoque do produto ${product.name}: ${product.stock} -> ${newStock} (quantidade vendida: ${item.quantity}), ativo: ${isActive}`);
+          await api.put(`/products/${item.product_id}`, { stock: newStock, is_active: isActive });
         } else {
           console.warn(`[OrderManagement] Produto não encontrado para item: ${item.product_id}`);
         }

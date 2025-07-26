@@ -80,7 +80,7 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
       </section>;
   }
 
-  // Filtrar produtos por categoria, termo de busca e estoque
+  // Filtrar produtos por categoria, termo de busca, estoque e status ativo
   const filteredProducts = products.filter(product => {
     // Verificar diferentes possíveis campos de categoria
     const categoryId = product.categories?.id || product.category_id || product.category;
@@ -95,10 +95,11 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
                          product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro por estoque - não exibir produtos com estoque 0
+    // Filtro por estoque e ativo
     const hasStock = product.stock > 0;
+    const isActive = product.is_active === true;
     
-    return matchesCategory && matchesSearch && hasStock;
+    return matchesCategory && matchesSearch && hasStock && isActive;
   });
 
   console.log('[ProductGrid] Produtos filtrados:', filteredProducts);
