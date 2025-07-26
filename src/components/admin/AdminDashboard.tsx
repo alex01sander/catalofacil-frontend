@@ -58,13 +58,16 @@ const AdminDashboard = () => {
   }, [user]);
 
   // Calcular estatísticas reais combinando pedidos e vendas do contexto financeiro
-  // Receita total = apenas entradas do caixa (evita duplicidade)
-  const totalRevenue = financialData.totalIncome;
+  // Receita total = entradas do caixa + pedidos confirmados
+  const confirmedOrdersTotal = orders
+    .filter(order => order.status === 'confirmed')
+    .reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+  const totalRevenue = financialData.totalIncome + confirmedOrdersTotal;
   
   const totalProducts = products.filter(p => p.is_active).length;
-  // Contar apenas pedidos confirmados + vendas manuais
+  // Contar apenas pedidos confirmados (as vendas do contexto já incluem os pedidos confirmados)
   const confirmedOrders = orders.filter(order => order.status === 'confirmed').length;
-  const totalOrders = confirmedOrders + financialData.sales.length;
+  const totalOrders = confirmedOrders; // Remover duplicação com financialData.sales.length
   const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
   
   // Debug das vendas
@@ -73,6 +76,8 @@ const AdminDashboard = () => {
   console.log('- Vendas do contexto:', financialData.sales.length);
   console.log('- Total de vendas:', totalOrders);
   console.log('- Receita total:', totalRevenue);
+  console.log('- Receita do fluxo de caixa:', financialData.totalIncome);
+  console.log('- Receita dos pedidos confirmados:', confirmedOrdersTotal);
   console.log('- Pedidos:', orders.map(o => ({ id: o.id, status: o.status, total: o.total_amount })));
   console.log('- Vendas do contexto:', financialData.sales);
 
