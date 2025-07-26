@@ -95,9 +95,9 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
                          product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filtro por estoque e ativo
-    const hasStock = product.stock > 0;
-    const isActive = product.is_active === true;
+    // Filtro por estoque e ativo (apenas se os campos existirem)
+    const hasStock = product.stock !== undefined ? product.stock > 0 : true;
+    const isActive = product.is_active !== undefined ? product.is_active === true : true;
     
     return matchesCategory && matchesSearch && hasStock && isActive;
   });
