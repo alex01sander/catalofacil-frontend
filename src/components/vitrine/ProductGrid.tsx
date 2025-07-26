@@ -80,7 +80,7 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
       </section>;
   }
 
-  // Filtrar produtos por categoria e termo de busca
+  // Filtrar produtos por categoria, termo de busca e estoque
   const filteredProducts = products.filter(product => {
     // Verificar diferentes possíveis campos de categoria
     const categoryId = product.categories?.id || product.category_id || product.category;
@@ -95,7 +95,10 @@ const ProductGrid = memo(({ searchTerm, selectedCategory, publicView = false }: 
                          product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesCategory && matchesSearch;
+    // Filtro por estoque - não exibir produtos com estoque 0
+    const hasStock = product.stock > 0;
+    
+    return matchesCategory && matchesSearch && hasStock;
   });
 
   console.log('[ProductGrid] Produtos filtrados:', filteredProducts);

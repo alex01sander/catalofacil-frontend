@@ -66,7 +66,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           }}
         />
 
-        {product.stock < 10 && (
+        {product.stock > 0 && product.stock < 10 && (
           <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-orange-500 text-xs">
             Últimas
           </Badge>
