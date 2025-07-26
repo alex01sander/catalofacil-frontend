@@ -209,7 +209,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         quantity: Number(saleData.quantity),
         unit_price: Number(saleData.unit_price),
         total_price: Number(saleData.quantity) * Number(saleData.unit_price),
-        sale_date: new Date(saleData.date),
+        sale_date: saleData.date, // Enviar como string em vez de Date object
         status: 'completed',
         store_id: selectedProduct.store_id || null,
         customer_name: saleData.customer_name || 'Cliente não informado'
