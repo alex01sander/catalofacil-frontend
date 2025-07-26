@@ -275,20 +275,44 @@ const OrderManagement = () => {
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
-          await api.put(`/products/${item.product_id}`, { stock: product.stock - item.quantity });
+          const newStock = Math.max(0, product.stock - item.quantity);
+          console.log(`[OrderManagement] Atualizando estoque do produto ${product.name}: ${product.stock} -> ${newStock} (quantidade vendida: ${item.quantity})`);
+          await api.put(`/products/${item.product_id}`, { stock: newStock });
+        } else {
+          console.warn(`[OrderManagement] Produto não encontrado para item: ${item.product_id}`);
         }
       }
-      // Adicionar ao financeiro
+      // Adicionar ao financeiro com informações detalhadas dos produtos
+      const productNames = order.order_items.map(item => {
+        const product = products.find(p => p.id === item.product_id);
+        return product ? `${product.name} (${item.quantity}x)` : `Produto ${item.product_id} (${item.quantity}x)`;
+      }).join(', ');
+      
       await addCashFlowEntry({
         user_id: user.id,
-        store_id: null,
+        store_id: store?.id || null,
         type: 'income',
         amount: order.total_amount,
-        description: `Pedido confirmado - ${order.customer_name}`,
+        description: `Venda: ${productNames} - Cliente: ${order.customer_name}`,
         category: 'Vendas',
         date: new Date().toISOString().split('T')[0],
         payment_method: 'whatsapp'
       });
+      
+      // Registrar venda para cada item
+      for (const item of order.order_items) {
+        const product = products.find(p => p.id === item.product_id);
+        if (product) {
+          await registerSale({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            date: new Date().toISOString().split('T')[0],
+            payment_method: 'whatsapp',
+            customer_name: order.customer_name
+          });
+        }
+      }
              toast.success('Pedido confirmado com sucesso!');
       await fetchOrders();
       await refetchProducts();

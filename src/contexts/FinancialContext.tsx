@@ -137,13 +137,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       };
       const headers = { Authorization: `Bearer ${token}` };
       const res = await api.post('/fluxo-caixa', payload);
-      setData(prev => ({
-        ...prev,
-        cashFlow: [res.data, ...prev.cashFlow],
-        totalIncome: entry.type === 'income' ? prev.totalIncome + Number(entry.amount) : prev.totalIncome,
-        totalExpenses: entry.type === 'expense' ? prev.totalExpenses + Number(entry.amount) : prev.totalExpenses,
-        balance: entry.type === 'income' ? prev.balance + Number(entry.amount) : prev.balance - Number(entry.amount)
-      }));
+      // Recarregar dados para garantir consistência
+      await refreshData();
+      console.log('[FinancialContext] Dados recarregados após adicionar lançamento');
       toast({ title: 'Sucesso', description: 'Lançamento adicionado com sucesso!' });
     } catch (error) {
       console.error('Erro ao adicionar lançamento:', error);
@@ -199,7 +195,8 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         total_price: String(Number(saleData.quantity) * Number(saleData.unit_price)),
         sale_date: new Date(saleData.date).toISOString(),
         status: 'completed',
-        store_id: selectedProduct.store_id || null
+        store_id: selectedProduct.store_id || null,
+        customer_name: saleData.customer_name || 'Cliente não informado'
       };
       const res = await api.post('/vendas', payload);
       // Lançar também no fluxo de caixa
@@ -208,12 +205,14 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         store_id: payload.store_id,
         type: 'income',
         category: 'Venda',
-        description: `Venda: ${payload.product_name}`,
+        description: `Venda: ${payload.product_name} - Cliente: ${payload.customer_name}`,
         amount: payload.total_price,
         date: payload.sale_date,
         payment_method: saleData.payment_method || 'cash'
       });
+      // Recarregar dados para garantir que tudo esteja atualizado
       await refreshData();
+      console.log('[FinancialContext] Dados recarregados após venda');
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {
       console.error('Erro ao registrar venda:', error);
