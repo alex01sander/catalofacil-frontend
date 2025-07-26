@@ -301,17 +301,24 @@ const OrderManagement = () => {
       });
       
       // Registrar venda para cada item
+      console.log('[OrderManagement] Registrando vendas para os itens...');
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
-          await registerSale({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            date: new Date().toISOString().split('T')[0],
-            payment_method: 'whatsapp',
-            customer_name: order.customer_name
-          });
+          console.log(`[OrderManagement] Registrando venda: ${product.name} - ${item.quantity}x R$ ${item.unit_price}`);
+          try {
+            await registerSale({
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              date: new Date().toISOString().split('T')[0],
+              payment_method: 'whatsapp',
+              customer_name: order.customer_name
+            });
+            console.log(`[OrderManagement] ✅ Venda registrada com sucesso para ${product.name}`);
+          } catch (error) {
+            console.error(`[OrderManagement] ❌ Erro ao registrar venda para ${product.name}:`, error);
+          }
         }
       }
              toast.success('Pedido confirmado com sucesso!');

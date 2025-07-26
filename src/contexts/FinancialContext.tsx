@@ -75,6 +75,15 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
+      // Testar API de vendas separadamente para debug
+      console.log('🧪 Testando API de vendas...');
+      try {
+        const salesRes = await api.get('/vendas');
+        console.log('✅ API vendas funcionou:', salesRes.data);
+      } catch (error) {
+        console.error('❌ Erro na API vendas:', error);
+      }
+      
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
         api.get('/fluxo-caixa'),
         api.get('/credit-accounts'),
@@ -89,6 +98,13 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       console.log('expenses:', expensesRes.data);
       console.log('sales:', salesRes.data);
       console.log('products:', productsRes.data);
+      
+      // Debug detalhado das vendas
+      console.log('🔍 DEBUG VENDAS:');
+      console.log('- Tipo de resposta:', typeof salesRes.data);
+      console.log('- É array?', Array.isArray(salesRes.data));
+      console.log('- Tem propriedade data?', salesRes.data?.data ? 'SIM' : 'NÃO');
+      console.log('- Resposta completa:', JSON.stringify(salesRes.data, null, 2));
       
       // Garantir que todos os dados sejam arrays - tratar resposta paginada
       const cashFlow = cashFlowRes.data?.data ? cashFlowRes.data.data : (Array.isArray(cashFlowRes.data) ? cashFlowRes.data : []);

@@ -66,6 +66,15 @@ const AdminDashboard = () => {
   const confirmedOrders = orders.filter(order => order.status === 'confirmed').length;
   const totalOrders = confirmedOrders + financialData.sales.length;
   const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
+  
+  // Debug das vendas
+  console.log('🔍 DEBUG DASHBOARD VENDAS:');
+  console.log('- Pedidos confirmados:', confirmedOrders);
+  console.log('- Vendas do contexto:', financialData.sales.length);
+  console.log('- Total de vendas:', totalOrders);
+  console.log('- Receita total:', totalRevenue);
+  console.log('- Pedidos:', orders.map(o => ({ id: o.id, status: o.status, total: o.total_amount })));
+  console.log('- Vendas do contexto:', financialData.sales);
 
   // Dados para gráficos baseados nos dados reais (combinando orders e sales do contexto)
   const currentMonth = new Date().getMonth();
