@@ -222,8 +222,8 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         type: 'income',
         category: 'Venda',
         description: `Venda: ${payload.product_name} - Cliente: ${payload.customer_name}`,
-        amount: payload.total_price,
-        date: payload.sale_date,
+        amount: String(Number(payload.total_price)), // Converter para string como addCashFlowEntry
+        date: new Date(payload.sale_date).toISOString(), // Converter para ISO string como addCashFlowEntry
         payment_method: saleData.payment_method || 'cash'
       });
       // Recarregar dados para garantir que tudo esteja atualizado
