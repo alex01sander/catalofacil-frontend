@@ -6,6 +6,7 @@ interface User {
   id: string;
   email: string;
   createdAt: string;
+  token?: string;
 }
 
 interface AuthContextType {
@@ -160,7 +161,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const value = {
-    user,
+    user: user ? { ...user, token } : null, // Incluir token no objeto user
     token,
     signIn,
     signOut,

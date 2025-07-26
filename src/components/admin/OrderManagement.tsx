@@ -35,7 +35,7 @@ import { ptBR } from "date-fns/locale";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
-import { useStoreSettings } from "@/contexts/StoreSettingsContext";
+import { useStore } from "@/contexts/StoreSettingsContext";
 import { toast } from "sonner";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
 import { cn } from "@/lib/utils";
@@ -73,7 +73,7 @@ const OrderManagement = () => {
   const { user } = useAuth();
   const { addCashFlowEntry, registerSale } = useFinancial();
   const { products, refetch: refetchProducts } = useOptimizedProducts();
-  const { store } = useStoreSettings();
+  const { store } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -238,10 +238,14 @@ const OrderManagement = () => {
 
    // Confirmar pedido
   const confirmOrder = async (order: Order) => {
-         if (!user || !user.token) {
-       toast.error("Usuário não autenticado");
-       return;
-     }
+    console.log('[OrderManagement] confirmOrder - user:', user);
+    console.log('[OrderManagement] confirmOrder - user.token:', user?.token);
+    
+    if (!user || !user.token) {
+      console.error('[OrderManagement] confirmOrder - Usuário não autenticado');
+      toast.error("Usuário não autenticado");
+      return;
+    }
      
      // Verificar se o pedido tem itens
      if (!order.order_items || order.order_items.length === 0) {
@@ -296,10 +300,14 @@ const OrderManagement = () => {
 
   // Cancelar pedido
   const cancelOrder = async (orderId: string) => {
-         if (!user || !user.token) {
-       toast.error("Usuário não autenticado");
-       return;
-     }
+    console.log('[OrderManagement] cancelOrder - user:', user);
+    console.log('[OrderManagement] cancelOrder - user.token:', user?.token);
+    
+    if (!user || !user.token) {
+      console.error('[OrderManagement] cancelOrder - Usuário não autenticado');
+      toast.error("Usuário não autenticado");
+      return;
+    }
     
     try {
       console.log('[OrderManagement] Cancelando pedido:', orderId);
@@ -324,10 +332,15 @@ const OrderManagement = () => {
 
   // Salvar edições
   const saveOrderEdits = async () => {
-         if (!editingOrder || !user || !user.token) {
-       toast.error("Dados insuficientes para salvar pedido");
-       return;
-     }
+    console.log('[OrderManagement] saveOrderEdits - user:', user);
+    console.log('[OrderManagement] saveOrderEdits - user.token:', user?.token);
+    console.log('[OrderManagement] saveOrderEdits - editingOrder:', editingOrder);
+    
+    if (!editingOrder || !user || !user.token) {
+      console.error('[OrderManagement] saveOrderEdits - Dados insuficientes para salvar pedido');
+      toast.error("Dados insuficientes para salvar pedido");
+      return;
+    }
      
      if (editingItems.length === 0) {
        toast.error("O pedido deve ter pelo menos um item");
