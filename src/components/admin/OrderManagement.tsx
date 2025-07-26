@@ -283,24 +283,8 @@ const OrderManagement = () => {
           console.warn(`[OrderManagement] Produto não encontrado para item: ${item.product_id}`);
         }
       }
-      // Adicionar ao financeiro com informações detalhadas dos produtos
-      const productNames = order.order_items.map(item => {
-        const product = products.find(p => p.id === item.product_id);
-        return product ? `${product.name} (${item.quantity}x)` : `Produto ${item.product_id} (${item.quantity}x)`;
-      }).join(', ');
       
-      await addCashFlowEntry({
-        user_id: user.id,
-        store_id: store?.id || null,
-        type: 'income',
-        amount: order.total_amount,
-        description: `Venda: ${productNames} - Cliente: ${order.customer_name}`,
-        category: 'Vendas',
-        date: new Date().toISOString().split('T')[0],
-        payment_method: 'whatsapp'
-      });
-      
-      // Registrar venda para cada item
+      // Registrar venda para cada item (registerSale já adiciona ao fluxo de caixa)
       console.log('[OrderManagement] Registrando vendas para os itens...');
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
