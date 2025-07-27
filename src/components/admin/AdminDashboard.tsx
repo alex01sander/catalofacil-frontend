@@ -17,11 +17,10 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const { products, loading: productsLoading } = useOptimizedProducts();
   const { categories, loading: categoriesLoading } = useOptimizedCategories();
-  const { data: financialData, syncSalesWithCashFlow } = useFinancial();
+  const { data: financialData } = useFinancial();
   
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
 
   // Estado para simulação de preço - todos os campos zerados
   const [priceSimulation, setPriceSimulation] = useState({
@@ -218,33 +217,6 @@ const AdminDashboard = () => {
           </Card>
         ))}
       </div>
-
-      {/* Botão de Sincronização Temporário */}
-      <Card className="bg-yellow-50 border-yellow-200">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-yellow-800">🔧 Sincronização de Vendas</h3>
-              <p className="text-sm text-yellow-700">
-                Detectamos {financialData.sales.length} vendas mas apenas {financialData.cashFlow.filter(e => e.type === 'income').length} entradas no fluxo de caixa.
-                {financialData.sales.length > financialData.cashFlow.filter(e => e.type === 'income').length && 
-                  ` Faltam ${financialData.sales.length - financialData.cashFlow.filter(e => e.type === 'income').length} registros no fluxo de caixa.`}
-              </p>
-            </div>
-            <Button 
-              onClick={async () => {
-                setSyncing(true);
-                await syncSalesWithCashFlow();
-                setSyncing(false);
-              }}
-              disabled={syncing}
-              className="bg-yellow-600 hover:bg-yellow-700"
-            >
-              {syncing ? 'Sincronizando...' : 'Sincronizar Vendas'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

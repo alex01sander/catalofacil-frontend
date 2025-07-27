@@ -173,12 +173,33 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         productsCount: products.length,
         totalIncome,
         totalExpenses,
-        balance
+        balance,
+        totalDebt
       });
 
-      // Atualizar cache global e estado local
+      // Sincronização automática se houver discrepância
+      const incomeEntriesCount = incomeEntries.length;
+      const salesCount = sales.length;
+      
+      if (salesCount > incomeEntriesCount) {
+        console.log('[FinancialContext] 🔄 Discrepância detectada - iniciando sincronização automática...');
+        console.log(`[FinancialContext] Vendas: ${salesCount}, Entradas: ${incomeEntriesCount}`);
+        
+        // Executar sincronização em background sem bloquear a UI
+        setTimeout(async () => {
+          try {
+            await syncSalesWithCashFlow();
+          } catch (error) {
+            console.error('[FinancialContext] Erro na sincronização automática:', error);
+          }
+        }, 2000); // Aguardar 2 segundos para não interferir no carregamento inicial
+      }
+
+      // Atualizar cache global
       globalFinancialCache.data = newData;
-      globalFinancialCache.timestamp = now;
+      globalFinancialCache.timestamp = Date.now();
+      globalFinancialCache.isFetching = false;
+
       setData(newData);
       
     } catch (error) {
@@ -230,11 +251,14 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       // Registrar entrada no fluxo de caixa para cada venda órfã
       for (const sale of salesWithoutCashFlow) {
         const cashFlowEntry = {
+          user_id: user.id,
+          store_id: sale.store_id || null,
           type: 'income',
-          amount: Number(sale.total_price),
+          category: 'Venda',
           description: `Venda: ${sale.product_name} (Sincronização automática)`,
-          date: sale.sale_date || new Date().toISOString().split('T')[0],
-          user_id: user.id
+          amount: String(Number(sale.total_price)),
+          date: new Date(sale.sale_date || new Date()).toISOString(),
+          payment_method: 'cash'
         };
 
         await api.post('/fluxo-caixa', cashFlowEntry);
