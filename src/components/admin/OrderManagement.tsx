@@ -91,7 +91,7 @@ const OrderManagement = () => {
     }
   }, [user]);
 
-  // Função para registrar vendas de pedidos confirmados que não foram registrados
+  // Função para registrar vendas de pedidos confirmados automaticamente
   const registerConfirmedOrdersSales = async () => {
     if (!user || !user.token) {
       console.log('[OrderManagement] Usuário não autenticado para registrar vendas');
@@ -106,19 +106,16 @@ const OrderManagement = () => {
       
       if (!confirmedOrders || confirmedOrders.length === 0) {
         console.log('[OrderManagement] Nenhum pedido confirmado encontrado');
-        toast.info('Nenhum pedido confirmado encontrado');
         return;
       }
 
       console.log(`[OrderManagement] 📊 Encontrados ${confirmedOrders.length} pedidos confirmados`);
-      console.log('[OrderManagement] Detalhes dos pedidos confirmados:', confirmedOrders);
 
       // Buscar vendas já registradas para comparar
       const { data: existingSales } = await api.get('/vendas');
       const existingSalesData = existingSales?.data || existingSales || [];
       
       console.log(`[OrderManagement] 📊 Vendas já registradas: ${existingSalesData.length}`);
-      console.log('[OrderManagement] Detalhes das vendas existentes:', existingSalesData);
 
       let vendasRegistradas = 0;
       let vendasJaExistentes = 0;
@@ -154,22 +151,6 @@ const OrderManagement = () => {
             const sameQuantity = sale.quantity === item.quantity;
             const sameDate = new Date(sale.sale_date).toDateString() === new Date(order.created_at).toDateString();
             const sameCustomer = sale.customer_name === order.customer_name;
-            
-            console.log(`[OrderManagement] Comparando venda:`, {
-              sale: {
-                product_id: sale.product_id,
-                quantity: sale.quantity,
-                date: sale.sale_date,
-                customer: sale.customer_name
-              },
-              item: {
-                product_id: item.product_id,
-                quantity: item.quantity,
-                date: order.created_at,
-                customer: order.customer_name
-              },
-              matches: { sameProduct, sameQuantity, sameDate, sameCustomer }
-            });
             
             return sameProduct && sameQuantity && sameDate;
           });
@@ -207,22 +188,22 @@ const OrderManagement = () => {
       console.log(`[OrderManagement] 📊 Resumo: ${vendasRegistradas} novas vendas registradas, ${vendasJaExistentes} já existiam, ${erros} erros`);
       
       if (vendasRegistradas > 0) {
-        toast.success(`${vendasRegistradas} vendas registradas automaticamente!`);
+        console.log(`[OrderManagement] ✅ ${vendasRegistradas} vendas registradas automaticamente!`);
         // Recarregar dados
         await fetchOrders();
-        // Recarregar dados financeiros
-        window.location.reload();
-      } else if (erros > 0) {
-        toast.error(`${erros} erros ao registrar vendas. Verifique o console.`);
-      } else {
-        toast.info('Todas as vendas já estão registradas!');
       }
 
     } catch (error) {
       console.error('[OrderManagement] Erro ao registrar vendas de pedidos confirmados:', error);
-      toast.error('Erro ao registrar vendas automaticamente');
     }
   };
+
+  // Executar sincronização automática quando o componente carrega
+  useEffect(() => {
+    if (user && orders.length > 0) {
+      registerConfirmedOrdersSales();
+    }
+  }, [user, orders.length]);
 
      const fetchOrders = async () => {
      try {
@@ -654,14 +635,6 @@ const OrderManagement = () => {
               disabled={loading}
             >
               🔄 {loading ? 'Carregando...' : 'Atualizar'}
-            </Button>
-            <Button 
-              onClick={registerConfirmedOrdersSales} 
-              variant="outline" 
-              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700"
-              disabled={loading}
-            >
-              💰 Registrar Vendas
             </Button>
             <Button 
               onClick={testCreateOrder} 

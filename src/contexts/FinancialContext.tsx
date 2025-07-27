@@ -61,6 +61,10 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     isLoading: true,
   });
 
+  // Cache para evitar requisições desnecessárias
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [isFetching, setIsFetching] = useState(false);
+
   const fetchAllData = async () => {
     console.log('=== FinancialContext fetchAllData ===');
     console.log('user:', user);
@@ -70,20 +74,27 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       console.log('❌ Sem usuário ou token, saindo...');
       return;
     }
+
+    // Evitar múltiplas requisições simultâneas
+    if (isFetching) {
+      console.log('🔄 Já está buscando dados, aguardando...');
+      return;
+    }
+
+    // Cache de 30 segundos para evitar requisições excessivas
+    const now = Date.now();
+    if (now - lastFetchTime < 30000 && data.cashFlow.length > 0) {
+      console.log('⏰ Dados em cache, usando dados existentes');
+      return;
+    }
     
+    setIsFetching(true);
     console.log('✅ Iniciando busca de dados financeiros...');
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      // Testar API de vendas separadamente para debug
-      console.log('🧪 Testando API de vendas...');
-      try {
-        const salesRes = await api.get('/vendas');
-        console.log('✅ API vendas funcionou:', salesRes.data);
-      } catch (error) {
-        console.error('❌ Erro na API vendas:', error);
-      }
       
+      // Fazer requisições em paralelo para melhor performance
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
         api.get('/fluxo-caixa'),
         api.get('/credit-accounts'),
@@ -93,18 +104,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       ]);
       
       console.log('✅ Dados financeiros carregados com sucesso');
-      console.log('cashFlow:', cashFlowRes.data);
-      console.log('creditAccounts:', creditRes.data);
-      console.log('expenses:', expensesRes.data);
-      console.log('sales:', salesRes.data);
-      console.log('products:', productsRes.data);
-      
-      // Debug detalhado das vendas
-      console.log('🔍 DEBUG VENDAS:');
-      console.log('- Tipo de resposta:', typeof salesRes.data);
-      console.log('- É array?', Array.isArray(salesRes.data));
-      console.log('- Tem propriedade data?', salesRes.data?.data ? 'SIM' : 'NÃO');
-      console.log('- Resposta completa:', JSON.stringify(salesRes.data, null, 2));
       
       // Garantir que todos os dados sejam arrays - tratar resposta paginada
       const cashFlow = cashFlowRes.data?.data ? cashFlowRes.data.data : (Array.isArray(cashFlowRes.data) ? cashFlowRes.data : []);
@@ -130,15 +129,20 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         totalDebt,
         isLoading: false,
       });
+      
+      setLastFetchTime(now);
     } catch (error) {
       console.error('❌ Erro ao buscar dados financeiros:', error);
       console.log('✅ Parando loading mesmo com erro');
       setData(prev => ({ ...prev, isLoading: false }));
+    } finally {
+      setIsFetching(false);
     }
   };
 
   const refreshData = async () => {
     console.log('🔄 RefreshData chamado');
+    setLastFetchTime(0); // Forçar nova busca
     setData(prev => ({ ...prev, isLoading: true }));
     await fetchAllData();
   };
