@@ -44,7 +44,7 @@ interface Product {
 
 export default function OrderManagement() {
   const { user, token } = useAuth();
-  const { registerSale } = useFinancial();
+  const { registerSale, refreshData } = useFinancial();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -188,6 +188,20 @@ export default function OrderManagement() {
       }));
 
       console.log('[OrderManagement] 🎉 CONFIRMAÇÃO CONCLUÍDA COM SUCESSO!');
+      
+      // FORÇAR ATUALIZAÇÃO DOS DADOS FINANCEIROS
+      console.log('[OrderManagement] 🔄 Forçando atualização dos dados financeiros...');
+      try {
+        // Aguardar um pouco para o backend processar
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Forçar refresh dos dados financeiros
+        await refreshData();
+        
+        console.log('[OrderManagement] ✅ Dados financeiros atualizados!');
+      } catch (refreshError) {
+        console.error('[OrderManagement] ⚠️ Erro ao atualizar dados financeiros:', refreshError);
+      }
       
       toast({
         title: 'Sucesso',
