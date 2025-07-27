@@ -135,14 +135,32 @@ const OrderManagement = () => {
             continue;
           }
 
-          // Verificar se já existe uma venda para este item
-          const saleExists = existingSalesData.some((sale: any) => 
-            sale.product_id === item.product_id && 
-            sale.quantity === item.quantity &&
-            sale.unit_price === item.unit_price &&
-            sale.total_price === item.total_price &&
-            new Date(sale.sale_date).toDateString() === new Date(order.created_at).toDateString()
-          );
+          // Verificar se já existe uma venda para este item (lógica mais flexível)
+          const saleExists = existingSalesData.some((sale: any) => {
+            // Comparar por produto, quantidade e data aproximada (mesmo dia)
+            const sameProduct = sale.product_id === item.product_id;
+            const sameQuantity = sale.quantity === item.quantity;
+            const sameDate = new Date(sale.sale_date).toDateString() === new Date(order.created_at).toDateString();
+            const sameCustomer = sale.customer_name === order.customer_name;
+            
+            console.log(`[OrderManagement] Comparando venda:`, {
+              sale: {
+                product_id: sale.product_id,
+                quantity: sale.quantity,
+                date: sale.sale_date,
+                customer: sale.customer_name
+              },
+              item: {
+                product_id: item.product_id,
+                quantity: item.quantity,
+                date: order.created_at,
+                customer: order.customer_name
+              },
+              matches: { sameProduct, sameQuantity, sameDate, sameCustomer }
+            });
+            
+            return sameProduct && sameQuantity && sameDate;
+          });
 
           if (saleExists) {
             console.log(`[OrderManagement] ✅ Venda já registrada para ${product.name}`);
