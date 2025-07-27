@@ -130,6 +130,29 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const balance = totalIncome - totalExpenses;
       const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
 
+      // Debug detalhado para identificar discrepâncias
+      const incomeEntries = cashFlow.filter(e => e.type === 'income');
+      const salesTotal = sales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
+      
+      console.log('[FinancialContext] DIAGNÓSTICO DETALHADO:', {
+        cashFlowTotal: cashFlow.length,
+        incomeEntriesCount: incomeEntries.length,
+        incomeEntriesTotal: totalIncome,
+        salesCount: sales.length,
+        salesTotal: salesTotal,
+        discrepancia: salesTotal - totalIncome,
+        ultimasVendas: sales.slice(0, 3).map(s => ({
+          id: s.id,
+          total: s.total_price,
+          date: s.sale_date
+        })),
+        ultimasEntradas: incomeEntries.slice(0, 3).map(e => ({
+          id: e.id,
+          amount: e.amount,
+          date: e.date
+        }))
+      });
+
       const newData = {
         cashFlow,
         creditAccounts,
