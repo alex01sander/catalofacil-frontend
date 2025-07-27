@@ -33,7 +33,6 @@ interface FinancialContextType {
   updateExpense: (id: string, updates: any) => Promise<void>;
   registerSale: (saleData: any) => Promise<void>;
   addCreditTransaction: (accountId: string, type: 'debt' | 'payment', amount: number, description?: string) => Promise<void>;
-  syncSalesWithCashFlow: () => Promise<void>;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -131,29 +130,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const balance = totalIncome - totalExpenses;
       const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
 
-      // Debug detalhado para identificar discrepâncias
-      const incomeEntries = cashFlow.filter(e => e.type === 'income');
-      const salesTotal = sales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
-      
-      console.log('[FinancialContext] DIAGNÓSTICO DETALHADO:', {
-        cashFlowTotal: cashFlow.length,
-        incomeEntriesCount: incomeEntries.length,
-        incomeEntriesTotal: totalIncome,
-        salesCount: sales.length,
-        salesTotal: salesTotal,
-        discrepancia: salesTotal - totalIncome,
-        ultimasVendas: sales.slice(0, 3).map(s => ({
-          id: s.id,
-          total: s.total_price,
-          date: s.sale_date
-        })),
-        ultimasEntradas: incomeEntries.slice(0, 3).map(e => ({
-          id: e.id,
-          amount: e.amount,
-          date: e.date
-        }))
-      });
-
       const newData = {
         cashFlow,
         creditAccounts,
@@ -199,126 +175,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     globalFinancialCache.data = null;
     setData(prev => ({ ...prev, isLoading: true }));
     await fetchAllData();
-  };
-
-  // Função para sincronizar vendas existentes com fluxo de caixa
-  const syncSalesWithCashFlow = async () => {
-    if (!user?.id) return;
-
-    try {
-      console.log('[FinancialContext] Iniciando sincronização de vendas...');
-      
-      // Buscar todas as vendas e entradas de fluxo de caixa
-      const [salesRes, cashFlowRes] = await Promise.all([
-        api.get('/vendas'),
-        api.get('/fluxo-caixa')
-      ]);
-
-      const sales = salesRes.data?.data || salesRes.data || [];
-      const cashFlow = cashFlowRes.data?.data || cashFlowRes.data || [];
-      
-      console.log('[FinancialContext] DIAGNÓSTICO DE SINCRONIZAÇÃO:', {
-        totalSales: sales.length,
-        totalCashFlow: cashFlow.length,
-        incomeEntries: cashFlow.filter(e => e.type === 'income').length
-      });
-      
-      // Encontrar vendas sem entrada correspondente no fluxo de caixa
-      // Usar ID da venda para correspondência mais precisa
-      const salesWithoutCashFlow = sales.filter(sale => {
-        const hasCorrespondingEntry = cashFlow.some(entry => 
-          entry.type === 'income' && 
-          entry.description && 
-          (
-            // Correspondência por ID da venda (mais precisa)
-            entry.description.includes(`ID: ${sale.id}`) ||
-            // Correspondência por nome do produto E valor (menos precisa, para vendas antigas)
-            (entry.description.includes(`Venda: ${sale.product_name}`) &&
-             Math.abs(Number(entry.amount) - Number(sale.total_price)) < 0.01)
-          )
-        );
-        
-        // Log detalhado para cada venda
-        console.log(`[FinancialContext] Venda ${sale.id} (${sale.product_name} - R$ ${sale.total_price}):`, {
-          hasCorrespondingEntry,
-          matchingEntries: cashFlow.filter(entry => 
-            entry.type === 'income' && 
-            entry.description && 
-            (
-              entry.description.includes(`ID: ${sale.id}`) ||
-              (entry.description.includes(`Venda: ${sale.product_name}`) &&
-               Math.abs(Number(entry.amount) - Number(sale.total_price)) < 0.01)
-            )
-          ).map(e => ({ id: e.id, description: e.description, amount: e.amount }))
-        });
-        
-        return !hasCorrespondingEntry;
-      });
-
-      console.log('[FinancialContext] Vendas sem fluxo de caixa:', salesWithoutCashFlow.length);
-      console.log('[FinancialContext] Vendas órfãs:', salesWithoutCashFlow.map(s => ({ 
-        id: s.id, 
-        product: s.product_name, 
-        amount: s.total_price 
-      })));
-
-      if (salesWithoutCashFlow.length === 0) {
-        console.log('[FinancialContext] Todas as vendas já estão sincronizadas');
-        return;
-      }
-
-      // Registrar entrada no fluxo de caixa para cada venda órfã
-      for (const sale of salesWithoutCashFlow) {
-        const cashFlowEntry = {
-          user_id: user.id,
-          store_id: sale.store_id || null,
-          type: 'income',
-          category: 'Venda',
-          description: `Venda: ${sale.product_name} - ID: ${sale.id} (Sincronização automática)`,
-          amount: String(Number(sale.total_price)),
-          date: new Date(sale.sale_date || new Date()).toISOString(),
-          payment_method: 'cash'
-        };
-
-        await api.post('/fluxo-caixa', cashFlowEntry);
-        console.log('[FinancialContext] Entrada sincronizada:', sale.product_name, sale.total_price);
-      }
-
-      console.log(`[FinancialContext] ✅ ${salesWithoutCashFlow.length} vendas sincronizadas!`);
-      
-      // Forçar atualização dos dados com delay maior para garantir que o banco foi atualizado
-      globalFinancialCache.timestamp = 0;
-      globalFinancialCache.data = null;
-      globalFinancialCache.isFetching = false;
-      
-      // Aguardar mais tempo para garantir que as transações foram commitadas
-      console.log('[FinancialContext] Aguardando 3 segundos para garantir que o banco foi atualizado...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Buscar dados atualizados e verificar se as entradas foram realmente criadas
-      await fetchAllData();
-      
-      // Verificar se a sincronização funcionou
-      const verificationRes = await api.get('/fluxo-caixa');
-      const updatedCashFlow = verificationRes.data?.data || verificationRes.data || [];
-      const updatedIncomeCount = updatedCashFlow.filter(e => e.type === 'income').length;
-      
-      console.log('[FinancialContext] VERIFICAÇÃO PÓS-SINCRONIZAÇÃO:', {
-        entradasAntes: 11,
-        entradasEsperadas: 11 + salesWithoutCashFlow.length,
-        entradasAtuais: updatedIncomeCount,
-        sincronizacaoOK: updatedIncomeCount >= (11 + salesWithoutCashFlow.length)
-      });
-      
-      toast({ 
-        title: 'Sucesso', 
-        description: `${salesWithoutCashFlow.length} vendas sincronizadas! Total de entradas: ${updatedIncomeCount}` 
-      });
-
-    } catch (error) {
-      console.error('[FinancialContext] Erro na sincronização:', error);
-      toast({ title: 'Erro', description: 'Erro ao sincronizar vendas', variant: 'destructive' });
-    }
   };
 
   const addCashFlowEntry = async (entry: any) => {
@@ -547,7 +403,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     updateExpense,
     registerSale,
     addCreditTransaction,
-    syncSalesWithCashFlow, // Adicionar a nova função
   };
 
   return (
