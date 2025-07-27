@@ -106,34 +106,46 @@ const OrderManagement = () => {
       
       if (!confirmedOrders || confirmedOrders.length === 0) {
         console.log('[OrderManagement] Nenhum pedido confirmado encontrado');
+        toast.info('Nenhum pedido confirmado encontrado');
         return;
       }
 
       console.log(`[OrderManagement] 📊 Encontrados ${confirmedOrders.length} pedidos confirmados`);
+      console.log('[OrderManagement] Detalhes dos pedidos confirmados:', confirmedOrders);
 
       // Buscar vendas já registradas para comparar
       const { data: existingSales } = await api.get('/vendas');
       const existingSalesData = existingSales?.data || existingSales || [];
       
       console.log(`[OrderManagement] 📊 Vendas já registradas: ${existingSalesData.length}`);
+      console.log('[OrderManagement] Detalhes das vendas existentes:', existingSalesData);
 
       let vendasRegistradas = 0;
       let vendasJaExistentes = 0;
+      let erros = 0;
 
       // Para cada pedido confirmado
       for (const order of confirmedOrders) {
+        console.log(`[OrderManagement] 🔍 Processando pedido ${order.id} - ${order.customer_name}`);
+        
         if (!order.order_items || order.order_items.length === 0) {
           console.warn(`[OrderManagement] ⚠️ Pedido ${order.id} não tem itens`);
           continue;
         }
 
+        console.log(`[OrderManagement] 📦 Pedido ${order.id} tem ${order.order_items.length} itens`);
+
         // Para cada item do pedido
         for (const item of order.order_items) {
+          console.log(`[OrderManagement] 🎯 Processando item: ${item.product_id} - Qtd: ${item.quantity} - Preço: R$ ${item.unit_price}`);
+          
           const product = products.find(p => p.id === item.product_id);
           if (!product) {
             console.warn(`[OrderManagement] ⚠️ Produto não encontrado: ${item.product_id}`);
             continue;
           }
+
+          console.log(`[OrderManagement] ✅ Produto encontrado: ${product.name}`);
 
           // Verificar se já existe uma venda para este item (lógica mais flexível)
           const saleExists = existingSalesData.some((sale: any) => {
@@ -171,23 +183,28 @@ const OrderManagement = () => {
           // Registrar nova venda
           console.log(`[OrderManagement] 📝 Registrando venda para ${product.name} - ${item.quantity}x R$ ${item.unit_price}`);
           try {
-            await registerSale({
+            const saleData = {
               product_id: item.product_id,
               quantity: item.quantity,
               unit_price: item.unit_price,
               date: new Date(order.created_at).toISOString().split('T')[0],
               payment_method: 'whatsapp',
               customer_name: order.customer_name
-            });
+            };
+            
+            console.log('[OrderManagement] Dados da venda a ser registrada:', saleData);
+            
+            await registerSale(saleData);
             console.log(`[OrderManagement] ✅ Venda registrada com sucesso para ${product.name}`);
             vendasRegistradas++;
           } catch (error) {
             console.error(`[OrderManagement] ❌ Erro ao registrar venda para ${product.name}:`, error);
+            erros++;
           }
         }
       }
 
-      console.log(`[OrderManagement] 📊 Resumo: ${vendasRegistradas} novas vendas registradas, ${vendasJaExistentes} já existiam`);
+      console.log(`[OrderManagement] 📊 Resumo: ${vendasRegistradas} novas vendas registradas, ${vendasJaExistentes} já existiam, ${erros} erros`);
       
       if (vendasRegistradas > 0) {
         toast.success(`${vendasRegistradas} vendas registradas automaticamente!`);
@@ -195,6 +212,8 @@ const OrderManagement = () => {
         await fetchOrders();
         // Recarregar dados financeiros
         window.location.reload();
+      } else if (erros > 0) {
+        toast.error(`${erros} erros ao registrar vendas. Verifique o console.`);
       } else {
         toast.info('Todas as vendas já estão registradas!');
       }

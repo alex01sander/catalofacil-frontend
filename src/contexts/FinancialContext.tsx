@@ -196,12 +196,28 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const registerSale = async (saleData: any) => {
-    if (!user || !token) return;
+    console.log('[FinancialContext] 🚀 Iniciando registerSale com dados:', saleData);
+    
+    if (!user || !token) {
+      console.log('[FinancialContext] ❌ Sem usuário ou token');
+      return;
+    }
+    
     try {
       const headers = { Authorization: `Bearer ${token}` };
+      
       // Buscar nome do produto pelo product_id
+      console.log('[FinancialContext] 🔍 Buscando produto com ID:', saleData.product_id);
+      console.log('[FinancialContext] 📦 Produtos disponíveis:', data.products.map(p => ({ id: p.id, name: p.name })));
+      
       const selectedProduct = data.products.find((p) => p.id === saleData.product_id);
-      if (!selectedProduct) throw new Error('Produto não encontrado');
+      if (!selectedProduct) {
+        console.error('[FinancialContext] ❌ Produto não encontrado:', saleData.product_id);
+        throw new Error('Produto não encontrado');
+      }
+      
+      console.log('[FinancialContext] ✅ Produto encontrado:', selectedProduct.name);
+      
       const payload = {
         product_id: saleData.product_id,
         user_id: user?.id,
@@ -214,9 +230,14 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         store_id: selectedProduct.store_id || null,
         customer_name: saleData.customer_name || 'Cliente não informado'
       };
+      
+      console.log('[FinancialContext] 📤 Payload para API de vendas:', payload);
+      
       const res = await api.post('/vendas', payload);
+      console.log('[FinancialContext] ✅ Venda registrada na API:', res.data);
+      
       // Lançar também no fluxo de caixa
-      await api.post('/fluxo-caixa', {
+      const cashFlowPayload = {
         user_id: user?.id,
         store_id: payload.store_id,
         type: 'income',
@@ -225,13 +246,26 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         amount: String(Number(payload.total_price)), // Converter para string como addCashFlowEntry
         date: new Date(payload.sale_date).toISOString(), // Converter para ISO string como addCashFlowEntry
         payment_method: saleData.payment_method || 'cash'
-      });
+      };
+      
+      console.log('[FinancialContext] 📤 Payload para fluxo de caixa:', cashFlowPayload);
+      
+      const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
+      console.log('[FinancialContext] ✅ Entrada no fluxo de caixa registrada:', cashFlowRes.data);
+      
       // Recarregar dados para garantir que tudo esteja atualizado
+      console.log('[FinancialContext] 🔄 Recarregando dados...');
       await refreshData();
-      console.log('[FinancialContext] Dados recarregados após venda');
+      console.log('[FinancialContext] ✅ Dados recarregados após venda');
+      
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {
-      console.error('Erro ao registrar venda:', error);
+      console.error('[FinancialContext] ❌ Erro ao registrar venda:', error);
+      console.error('[FinancialContext] ❌ Detalhes do erro:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       toast({ title: 'Erro', description: error.message || 'Não foi possível registrar a venda', variant: 'destructive' });
     }
   };
