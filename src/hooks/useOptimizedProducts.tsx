@@ -4,39 +4,40 @@ import api from "@/services/api";
 import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 
+// Cache global para produtos
+let globalProductsCache = {
+  data: [],
+  timestamp: 0,
+  isFetching: false
+};
+
 export const useOptimizedProducts = (categoryId = null, enabled = true) => {
   const { token, loading: authLoading, user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Cache para evitar requisições desnecessárias
-  const lastFetchTime = useRef(0);
-  const isFetching = useRef(false);
-  const cacheKey = useRef('');
 
   // Função para buscar produtos (pode ser chamada sob demanda)
   const fetchProducts = async () => {
-    // Evitar múltiplas requisições simultâneas
-    if (isFetching.current) {
-      console.log('[useOptimizedProducts] Já está buscando produtos, aguardando...');
+    // Verificar cache global primeiro
+    const now = Date.now();
+    const cacheValid = now - globalProductsCache.timestamp < 120000; // 2 minutos
+    
+    if (globalProductsCache.isFetching) {
+      console.log('[useOptimizedProducts] Requisição global em andamento, aguardando...');
       return;
     }
 
-    // Cache de 60 segundos para evitar requisições excessivas
-    const now = Date.now();
-    const newCacheKey = `${categoryId}-${enabled}`;
-    
-    if (now - lastFetchTime.current < 60000 && 
-        cacheKey.current === newCacheKey && 
-        products.length > 0) {
-      console.log('[useOptimizedProducts] Produtos em cache, usando dados existentes');
+    if (cacheValid && globalProductsCache.data.length > 0) {
+      console.log('[useOptimizedProducts] Usando cache global');
+      setProducts(globalProductsCache.data);
+      setLoading(false);
       return;
     }
 
     setLoading(true);
     setError(null);
-    isFetching.current = true;
+    globalProductsCache.isFetching = true;
     
     const url = categoryId && categoryId !== "todos" 
       ? `/products?category_id=${categoryId}` 
@@ -56,9 +57,11 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
         productsData = [];
       }
       
+      // Atualizar cache global
+      globalProductsCache.data = productsData;
+      globalProductsCache.timestamp = now;
+      
       setProducts(productsData);
-      lastFetchTime.current = now;
-      cacheKey.current = newCacheKey;
       console.log(`[useOptimizedProducts] ✅ ${productsData.length} produtos carregados`);
       
     } catch (err) {
@@ -67,7 +70,7 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       setProducts([]);
     } finally {
       setLoading(false);
-      isFetching.current = false;
+      globalProductsCache.isFetching = false;
     }
   };
 
@@ -87,12 +90,17 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       return;
     }
     
-    fetchProducts();
+    // Debounce para evitar múltiplas requisições
+    const timeoutId = setTimeout(() => {
+      fetchProducts();
+    }, 1000); // 1 segundo de debounce
+    
+    return () => clearTimeout(timeoutId);
   }, [user, token, authLoading, enabled, categoryId]);
 
   // Função para forçar atualização (usada quando necessário)
   const refetch = () => {
-    lastFetchTime.current = 0; // Forçar nova busca
+    globalProductsCache.timestamp = 0; // Forçar nova busca
     fetchProducts();
   };
 

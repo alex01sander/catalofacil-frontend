@@ -5,6 +5,13 @@ import { useToast } from '@/hooks/use-toast';
 import { API_URL } from '@/constants/api';
 import api from '@/services/api';
 
+// Cache global para dados financeiros
+let globalFinancialCache = {
+  data: null,
+  timestamp: 0,
+  isFetching: false
+};
+
 interface FinancialData {
   cashFlow: any[];
   creditAccounts: any[];
@@ -61,27 +68,27 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     isLoading: true,
   });
 
-  // Cache para evitar requisições desnecessárias
-  const [lastFetchTime, setLastFetchTime] = useState(0);
-  const [isFetching, setIsFetching] = useState(false);
-
   const fetchAllData = async () => {
     if (!user || !token) {
       return;
     }
 
-    // Evitar múltiplas requisições simultâneas
-    if (isFetching) {
+    // Verificar cache global primeiro
+    const now = Date.now();
+    const cacheValid = now - globalFinancialCache.timestamp < 60000; // 1 minuto
+    
+    if (globalFinancialCache.isFetching) {
+      console.log('[FinancialContext] Requisição global em andamento, aguardando...');
       return;
     }
 
-    // Cache de 30 segundos para evitar requisições excessivas
-    const now = Date.now();
-    if (now - lastFetchTime < 30000 && data.cashFlow.length > 0) {
+    if (cacheValid && globalFinancialCache.data) {
+      console.log('[FinancialContext] Usando cache global');
+      setData(globalFinancialCache.data);
       return;
     }
     
-    setIsFetching(true);
+    globalFinancialCache.isFetching = true;
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
@@ -114,7 +121,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.total_debt), 0);
       
-      setData({
+      const newData = {
         cashFlow,
         creditAccounts,
         expenses,
@@ -125,19 +132,24 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         balance: totalIncome - totalExpenses,
         totalDebt,
         isLoading: false,
-      });
+      };
       
-      setLastFetchTime(now);
+      // Atualizar cache global
+      globalFinancialCache.data = newData;
+      globalFinancialCache.timestamp = now;
+      
+      setData(newData);
+      
     } catch (error) {
       console.error('Erro ao buscar dados financeiros:', error);
       setData(prev => ({ ...prev, isLoading: false }));
     } finally {
-      setIsFetching(false);
+      globalFinancialCache.isFetching = false;
     }
   };
 
   const refreshData = async () => {
-    setLastFetchTime(0); // Forçar nova busca
+    globalFinancialCache.timestamp = 0; // Forçar nova busca global
     setData(prev => ({ ...prev, isLoading: true }));
     await fetchAllData();
   };
@@ -275,7 +287,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user) {
-      fetchAllData();
+      // Debounce para evitar múltiplas requisições
+      const timeoutId = setTimeout(() => {
+        fetchAllData();
+      }, 2000); // 2 segundos de debounce
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [user]);
 

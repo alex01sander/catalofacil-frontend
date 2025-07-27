@@ -4,49 +4,60 @@ import api from "@/services/api";
 import { API_URL } from "@/constants/api";
 import { useAuth } from '@/contexts/AuthContext';
 
+// Cache global para categorias
+let globalCategoriesCache = {
+  data: [],
+  timestamp: 0,
+  isFetching: false
+};
+
 export const useOptimizedCategories = (enabled = true) => {
   const { token, loading: authLoading, user } = useAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Cache para evitar requisições desnecessárias
-  const lastFetchTime = useRef(0);
-  const isFetching = useRef(false);
 
   const fetchCategories = async () => {
-    // Evitar múltiplas requisições simultâneas
-    if (isFetching.current) {
-      console.log('[useOptimizedCategories] Já está buscando categorias, aguardando...');
+    // Verificar cache global primeiro
+    const now = Date.now();
+    const cacheValid = now - globalCategoriesCache.timestamp < 120000; // 2 minutos
+    
+    if (globalCategoriesCache.isFetching) {
+      console.log('[useOptimizedCategories] Requisição global em andamento, aguardando...');
       return;
     }
 
-    // Cache de 60 segundos para evitar requisições excessivas
-    const now = Date.now();
-    if (now - lastFetchTime.current < 60000 && categories.length > 0) {
-      console.log('[useOptimizedCategories] Categorias em cache, usando dados existentes');
+    if (cacheValid && globalCategoriesCache.data.length > 0) {
+      console.log('[useOptimizedCategories] Usando cache global');
+      setCategories(globalCategoriesCache.data);
+      setLoading(false);
       return;
     }
 
     setLoading(true);
     setError(null);
-    isFetching.current = true;
+    globalCategoriesCache.isFetching = true;
     
     try {
       console.log('[useOptimizedCategories] Buscando categorias...');
       const res = await api.get('/categorias');
       
+      let categoriesData = [];
       // Verificar se é resposta paginada ou array direto
       if (res.data && res.data.data && Array.isArray(res.data.data)) {
-        setCategories(res.data.data);
+        categoriesData = res.data.data;
       } else if (Array.isArray(res.data)) {
-        setCategories(res.data);
+        categoriesData = res.data;
       } else {
-        setCategories([]);
+        categoriesData = [];
       }
       
-      lastFetchTime.current = now;
-      console.log(`[useOptimizedCategories] ✅ ${categories.length} categorias carregadas`);
+      // Atualizar cache global
+      globalCategoriesCache.data = categoriesData;
+      globalCategoriesCache.timestamp = now;
+      
+      setCategories(categoriesData);
+      console.log(`[useOptimizedCategories] ✅ ${categoriesData.length} categorias carregadas`);
       
     } catch (err) {
       console.error('[useOptimizedCategories] Erro ao carregar categorias:', err);
@@ -54,7 +65,7 @@ export const useOptimizedCategories = (enabled = true) => {
       setCategories([]);
     } finally {
       setLoading(false);
-      isFetching.current = false;
+      globalCategoriesCache.isFetching = false;
     }
   };
 
@@ -74,7 +85,12 @@ export const useOptimizedCategories = (enabled = true) => {
       return;
     }
     
-    fetchCategories();
+    // Debounce para evitar múltiplas requisições
+    const timeoutId = setTimeout(() => {
+      fetchCategories();
+    }, 1500); // 1.5 segundos de debounce
+    
+    return () => clearTimeout(timeoutId);
   }, [user, token, authLoading, enabled]);
 
   const allCategories = useMemo(() => [
