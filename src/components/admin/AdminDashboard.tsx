@@ -46,10 +46,13 @@ const AdminDashboard = () => {
         return;
       }
       try {
-        const { data } = await api.get(`/pedidos?store_owner_id=${user.id}`);
+        console.log('[AdminDashboard] Buscando pedidos para usuário:', user.id);
+        const { data } = await api.get(`/pedidos?store_owner_id=${user.id}&include=order_items`);
+        console.log('[AdminDashboard] Pedidos recebidos:', data?.length || 0);
+        console.log('[AdminDashboard] Primeiros 3 pedidos:', data?.slice(0, 3));
         setOrders(data || []);
       } catch (error) {
-        // console.error('Erro ao buscar pedidos:', error);
+        console.error('[AdminDashboard] Erro ao buscar pedidos:', error);
       } finally {
         setOrdersLoading(false);
       }
@@ -69,12 +72,21 @@ const AdminDashboard = () => {
   
   // Debug das vendas
   console.log('🔍 DEBUG DASHBOARD VENDAS:');
+  console.log('- Total de pedidos carregados:', orders.length);
   console.log('- Pedidos confirmados:', confirmedOrders);
+  console.log('- Pedidos pendentes:', orders.filter(o => o.status === 'pending').length);
+  console.log('- Pedidos cancelados:', orders.filter(o => o.status === 'cancelled').length);
   console.log('- Vendas do contexto:', financialData.sales.length);
   console.log('- Total de vendas:', totalOrders);
   console.log('- Receita total:', totalRevenue);
   console.log('- Receita do fluxo de caixa:', financialData.totalIncome);
-  console.log('- Pedidos:', orders.map(o => ({ id: o.id, status: o.status, total: o.total_amount })));
+  console.log('- Detalhes dos pedidos:', orders.map(o => ({ 
+    id: o.id, 
+    status: o.status, 
+    total: o.total_amount,
+    customer: o.customer_name,
+    date: o.created_at
+  })));
   console.log('- Vendas do contexto:', financialData.sales);
 
   // Dados para gráficos baseados nos dados reais do fluxo de caixa
