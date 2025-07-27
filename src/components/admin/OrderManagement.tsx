@@ -82,6 +82,16 @@ export default function OrderManagement() {
 
   const confirmOrder = async (order: Order) => {
     try {
+      // Verificar se o pedido tem itens
+      if (!order.items || order.items.length === 0) {
+        toast({
+          title: 'Erro',
+          description: 'Este pedido não possui itens para confirmar',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       // Atualizar status do pedido
       await api.put(`/pedidos/${order.id}`, { status: 'confirmed' });
 
@@ -112,7 +122,7 @@ export default function OrderManagement() {
 
       // Atualizar lista de produtos localmente
       setProducts(prev => prev.map(p => {
-        const item = order.items.find(i => i.product_id === p.id);
+        const item = order.items?.find(i => i.product_id === p.id);
         if (item) {
           return { ...p, stock: p.stock - item.quantity };
         }
@@ -135,9 +145,9 @@ export default function OrderManagement() {
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customer_phone.includes(searchTerm);
-    const matchesDate = !selectedDate || order.created_at.startsWith(selectedDate);
+    const matchesSearch = (order.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (order.customer_phone || '').includes(searchTerm);
+    const matchesDate = !selectedDate || (order.created_at || '').startsWith(selectedDate);
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
     return matchesSearch && matchesDate && matchesStatus;
@@ -163,10 +173,16 @@ export default function OrderManagement() {
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM', { locale: ptBR });
+    if (!dateString) return '-';
+    try {
+      return format(new Date(dateString), 'dd/MM', { locale: ptBR });
+    } catch (error) {
+      return '-';
+    }
   };
 
   const formatCurrency = (value: number) => {
+    if (!value || isNaN(value)) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -276,11 +292,17 @@ export default function OrderManagement() {
                     <td className="py-3 px-4 font-medium">{order.customer_name}</td>
                     <td className="py-3 px-4">{order.customer_phone}</td>
                     <td className="py-3 px-4">
-                      {order.items.map((item, index) => (
-                        <div key={index} className="text-sm">
-                          {item.quantity}x {item.product_name}
+                      {order.items && order.items.length > 0 ? (
+                        order.items.map((item, index) => (
+                          <div key={index} className="text-sm">
+                            {item.quantity}x {item.product_name}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          Nenhum item
                         </div>
-                      ))}
+                      )}
                     </td>
                     <td className="py-3 px-4">{getStatusBadge(order.status)}</td>
                     <td className="py-3 px-4 font-medium">{formatCurrency(order.total)}</td>
