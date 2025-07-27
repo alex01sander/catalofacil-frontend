@@ -217,6 +217,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const sales = salesRes.data?.data || salesRes.data || [];
       const cashFlow = cashFlowRes.data?.data || cashFlowRes.data || [];
       
+      console.log('[FinancialContext] DIAGNÓSTICO DE SINCRONIZAÇÃO:', {
+        totalSales: sales.length,
+        totalCashFlow: cashFlow.length,
+        incomeEntries: cashFlow.filter(e => e.type === 'income').length
+      });
+      
       // Encontrar vendas sem entrada correspondente no fluxo de caixa
       // Usar ID da venda para correspondência mais precisa
       const salesWithoutCashFlow = sales.filter(sale => {
@@ -231,10 +237,30 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
              Math.abs(Number(entry.amount) - Number(sale.total_price)) < 0.01)
           )
         );
+        
+        // Log detalhado para cada venda
+        console.log(`[FinancialContext] Venda ${sale.id} (${sale.product_name} - R$ ${sale.total_price}):`, {
+          hasCorrespondingEntry,
+          matchingEntries: cashFlow.filter(entry => 
+            entry.type === 'income' && 
+            entry.description && 
+            (
+              entry.description.includes(`ID: ${sale.id}`) ||
+              (entry.description.includes(`Venda: ${sale.product_name}`) &&
+               Math.abs(Number(entry.amount) - Number(sale.total_price)) < 0.01)
+            )
+          ).map(e => ({ id: e.id, description: e.description, amount: e.amount }))
+        });
+        
         return !hasCorrespondingEntry;
       });
 
       console.log('[FinancialContext] Vendas sem fluxo de caixa:', salesWithoutCashFlow.length);
+      console.log('[FinancialContext] Vendas órfãs:', salesWithoutCashFlow.map(s => ({ 
+        id: s.id, 
+        product: s.product_name, 
+        amount: s.total_price 
+      })));
 
       if (salesWithoutCashFlow.length === 0) {
         console.log('[FinancialContext] Todas as vendas já estão sincronizadas');
