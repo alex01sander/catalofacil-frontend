@@ -28,7 +28,8 @@ import {
   Filter,
   Search,
   Plus,
-  Trash2
+  Trash2,
+  Eye
 } from "lucide-react";
 import { format, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -81,6 +82,7 @@ const OrderManagement = () => {
      const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [editingItems, setEditingItems] = useState<OrderItem[]>([]);
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   // Buscar pedidos
   useEffect(() => {
@@ -344,6 +346,12 @@ const OrderManagement = () => {
     setEditingOrder(order);
     // Se não há itens, inicializar com array vazio
     setEditingItems(order.order_items ? [...order.order_items] : []);
+  };
+
+  // Abrir modal de detalhes
+  const openDetailModal = (order: Order) => {
+    console.log('[OrderManagement] Abrindo modal de detalhes para pedido:', order.id);
+    setDetailOrder(order);
   };
 
   // Salvar edições
@@ -664,7 +672,7 @@ const OrderManagement = () => {
                               </div>
                               <div className="text-xs text-gray-500">
                                 {(order.order_items || []).slice(0, 1).map(item => {
-                                  const productName = item.product?.name || item.product_name || 'Produto';
+                                  const productName = item.product?.name || 'Produto';
                                   const quantity = item.quantity || 1;
                                   return `${productName} (${quantity}x)`;
                                 }).join(', ')}
@@ -686,40 +694,53 @@ const OrderManagement = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {order.status === 'pending' ? (
-                          <div className="flex gap-1">
-                            <Button
-                              onClick={() => confirmOrder(order)}
-                              size="sm"
-                              variant="outline"
-                              className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
-                              disabled={!order.order_items || order.order_items.length === 0}
-                              title={!order.order_items || order.order_items.length === 0 ? "Não é possível confirmar pedido sem itens" : "Confirmar pedido"}
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              onClick={() => openEditModal(order)}
-                              size="sm"
-                              variant="outline"
-                              className="h-7 w-7 p-0"
-                              title="Editar pedido"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              onClick={() => cancelOrder(order.id)}
-                              size="sm"
-                              variant="outline"
-                              className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
-                              title="Cancelar pedido"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
+                        <div className="flex gap-1">
+                          {/* Botão de detalhes para todos os pedidos */}
+                          <Button
+                            onClick={() => openDetailModal(order)}
+                            size="sm"
+                            variant="outline"
+                            className="h-7 w-7 p-0 text-blue-600 hover:bg-blue-50"
+                            title="Ver detalhes do pedido"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          
+                          {order.status === 'pending' ? (
+                            <>
+                              <Button
+                                onClick={() => confirmOrder(order)}
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
+                                disabled={!order.order_items || order.order_items.length === 0}
+                                title={!order.order_items || order.order_items.length === 0 ? "Não é possível confirmar pedido sem itens" : "Confirmar pedido"}
+                              >
+                                <Check className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                onClick={() => openEditModal(order)}
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                                title="Editar pedido"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                onClick={() => cancelOrder(order.id)}
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                                title="Cancelar pedido"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -855,6 +876,96 @@ const OrderManagement = () => {
               </Button>
               <Button onClick={saveOrderEdits} className="flex-1">
                 Salvar Alterações
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes */}
+      <Dialog open={!!detailOrder} onOpenChange={() => setDetailOrder(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Pedido - {detailOrder?.customer_name}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Informações do Cliente */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Cliente</Label>
+                <p className="text-lg font-semibold">{detailOrder?.customer_name}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Telefone</Label>
+                <p className="text-lg">{detailOrder?.customer_phone || 'Não informado'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Email</Label>
+                <p className="text-lg">{detailOrder?.customer_email || 'Não informado'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Data do Pedido</Label>
+                <p className="text-lg">{detailOrder ? format(new Date(detailOrder.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : ''}</p>
+              </div>
+            </div>
+
+            {/* Status do Pedido */}
+            <div>
+              <Label className="text-sm font-medium text-gray-600">Status</Label>
+              <div className="mt-1">
+                <Badge className={`${getStatusColor(detailOrder?.status || '')} flex items-center gap-1 w-fit`}>
+                  {getStatusIcon(detailOrder?.status || '')}
+                  <span>{getStatusText(detailOrder?.status || '')}</span>
+                </Badge>
+              </div>
+            </div>
+
+            {/* Lista de Itens */}
+            <div>
+              <Label className="text-sm font-medium text-gray-600">Itens do Pedido</Label>
+              <div className="mt-3 space-y-3">
+                {detailOrder?.order_items && detailOrder.order_items.length > 0 ? (
+                  detailOrder.order_items.map((item, index) => {
+                    const product = products.find(p => p.id === item.product_id);
+                    return (
+                      <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{product?.name || `Produto ${item.product_id}`}</p>
+                          <p className="text-sm text-gray-600">
+                            {item.quantity}x R$ {Number(item.unit_price).toFixed(2).replace('.', ',')} cada
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-green-600">
+                            R$ {Number(item.total_price).toFixed(2).replace('.', ',')}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    Nenhum item encontrado neste pedido
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-medium">Total do Pedido</span>
+                <span className="text-2xl font-bold text-green-600">
+                  R$ {Number(detailOrder?.total_amount || 0).toFixed(2).replace('.', ',')}
+                </span>
+              </div>
+            </div>
+
+            {/* Botão de Fechar */}
+            <div className="flex justify-end">
+              <Button onClick={() => setDetailOrder(null)} variant="outline">
+                Fechar
               </Button>
             </div>
           </div>
