@@ -286,16 +286,34 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
 
       console.log(`[FinancialContext] ✅ ${salesWithoutCashFlow.length} vendas sincronizadas!`);
       
-      // Forçar atualização dos dados APENAS uma vez
+      // Forçar atualização dos dados com delay maior para garantir que o banco foi atualizado
       globalFinancialCache.timestamp = 0;
       globalFinancialCache.data = null;
       globalFinancialCache.isFetching = false;
       
-      // Aguardar processamento e buscar dados atualizados
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Aguardar mais tempo para garantir que as transações foram commitadas
+      console.log('[FinancialContext] Aguardando 3 segundos para garantir que o banco foi atualizado...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Buscar dados atualizados e verificar se as entradas foram realmente criadas
       await fetchAllData();
       
-      toast({ title: 'Sucesso', description: `${salesWithoutCashFlow.length} vendas sincronizadas com o fluxo de caixa!` });
+      // Verificar se a sincronização funcionou
+      const verificationRes = await api.get('/fluxo-caixa');
+      const updatedCashFlow = verificationRes.data?.data || verificationRes.data || [];
+      const updatedIncomeCount = updatedCashFlow.filter(e => e.type === 'income').length;
+      
+      console.log('[FinancialContext] VERIFICAÇÃO PÓS-SINCRONIZAÇÃO:', {
+        entradasAntes: 11,
+        entradasEsperadas: 11 + salesWithoutCashFlow.length,
+        entradasAtuais: updatedIncomeCount,
+        sincronizacaoOK: updatedIncomeCount >= (11 + salesWithoutCashFlow.length)
+      });
+      
+      toast({ 
+        title: 'Sucesso', 
+        description: `${salesWithoutCashFlow.length} vendas sincronizadas! Total de entradas: ${updatedIncomeCount}` 
+      });
 
     } catch (error) {
       console.error('[FinancialContext] Erro na sincronização:', error);
