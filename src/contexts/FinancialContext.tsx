@@ -251,9 +251,22 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const headers = { Authorization: `Bearer ${token}` };
       
       // Buscar nome do produto pelo product_id
-      const selectedProduct = data.products.find((p) => p.id === saleData.product_id);
+      let selectedProduct = data.products.find((p) => p.id === saleData.product_id);
+      
+      // Se não encontrou no cache local, buscar na API
       if (!selectedProduct) {
-        throw new Error('Produto não encontrado');
+        try {
+          const productRes = await api.get(`/products/${saleData.product_id}`);
+          selectedProduct = productRes.data;
+        } catch (productError) {
+          console.error('Erro ao buscar produto:', productError);
+          // Usar dados fornecidos como fallback
+          selectedProduct = {
+            id: saleData.product_id,
+            name: saleData.product_name || 'Produto não encontrado',
+            store_id: null
+          };
+        }
       }
       
       const payload = {
@@ -309,6 +322,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       // Invalidar cache global para forçar atualização na próxima busca
       globalFinancialCache.timestamp = 0;
+      
+      console.log('[FinancialContext] Venda registrada com sucesso:', {
+        sale: newSale,
+        cashFlow: newCashFlowEntry,
+        totalIncome: newSale.total_price
+      });
       
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {

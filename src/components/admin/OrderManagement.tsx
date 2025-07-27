@@ -125,9 +125,18 @@ export default function OrderManagement() {
           // Buscar nome do produto se não estiver disponível no item
           const productName = item.product?.name || product.name;
           
+          console.log('[OrderManagement] Registrando venda:', {
+            product_id: item.product_id,
+            product_name: productName,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.quantity * item.unit_price
+          });
+          
           // Registrar venda
           await registerSale({
             product_id: item.product_id,
+            product_name: productName, // Passar o nome do produto explicitamente
             quantity: item.quantity,
             unit_price: item.unit_price,
             date: order.created_at,
@@ -138,6 +147,13 @@ export default function OrderManagement() {
           // Atualizar estoque do produto
           const newStock = product.stock - item.quantity;
           await api.put(`/products/${item.product_id}`, { stock: newStock });
+        } else {
+          console.error('[OrderManagement] Produto não encontrado:', item.product_id);
+          toast({
+            title: 'Aviso',
+            description: `Produto ${item.product_id} não encontrado`,
+            variant: 'destructive'
+          });
         }
       }
 
