@@ -17,10 +17,11 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const { products, loading: productsLoading } = useOptimizedProducts();
   const { categories, loading: categoriesLoading } = useOptimizedCategories();
-  const { data: financialData } = useFinancial();
+  const { data: financialData, syncSalesWithCashFlow } = useFinancial();
   
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   // Estado para simulação de preço - todos os campos zerados
   const [priceSimulation, setPriceSimulation] = useState({
@@ -217,6 +218,34 @@ const AdminDashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Botão de Recuperação de Vendas - Apenas se necessário */}
+      {financialData.sales.length > financialData.cashFlow.filter(e => e.type === 'income').length && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-blue-800">📊 Recuperar Vendas</h3>
+                <p className="text-sm text-blue-700">
+                  Detectamos {financialData.sales.length - financialData.cashFlow.filter(e => e.type === 'income').length} vendas que não estão no fluxo de caixa. 
+                  Clique para recuperá-las automaticamente.
+                </p>
+              </div>
+              <Button 
+                onClick={async () => {
+                  setSyncing(true);
+                  await syncSalesWithCashFlow();
+                  setSyncing(false);
+                }}
+                disabled={syncing}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {syncing ? 'Recuperando...' : 'Recuperar Vendas'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
