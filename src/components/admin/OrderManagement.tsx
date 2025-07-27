@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, RefreshCw, CheckCircle, Calendar, Filter, Search, X } from 'lucide-react';
+import { Eye, RefreshCw, CheckCircle, Calendar, Filter, Search, X, Edit, Trash2 } from 'lucide-react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinancial } from '@/contexts/FinancialContext';
@@ -50,6 +51,12 @@ export default function OrderManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // Estados para modais
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Partial<Order>>({});
 
   // Buscar pedidos apenas uma vez ao carregar
   useEffect(() => {
@@ -149,6 +156,78 @@ export default function OrderManagement() {
       toast({
         title: 'Erro',
         description: 'Não foi possível confirmar o pedido',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const openEditModal = (order: Order) => {
+    setSelectedOrder(order);
+    setEditingOrder({
+      customer_name: order.customer_name,
+      customer_phone: order.customer_phone,
+      status: order.status
+    });
+    setEditModalOpen(true);
+  };
+
+  const openDeleteModal = (order: Order) => {
+    setSelectedOrder(order);
+    setDeleteModalOpen(true);
+  };
+
+  const saveOrderEdits = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      await api.put(`/pedidos/${selectedOrder.id}`, editingOrder);
+      
+      // Atualizar lista localmente
+      setOrders(prev => prev.map(o => 
+        o.id === selectedOrder.id 
+          ? { ...o, ...editingOrder }
+          : o
+      ));
+
+      setEditModalOpen(false);
+      setSelectedOrder(null);
+      setEditingOrder({});
+
+      toast({
+        title: 'Sucesso',
+        description: 'Pedido atualizado com sucesso!'
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar pedido:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o pedido',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const deleteOrder = async () => {
+    if (!selectedOrder) return;
+
+    try {
+      await api.delete(`/pedidos/${selectedOrder.id}`);
+      
+      // Remover da lista localmente
+      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+
+      setDeleteModalOpen(false);
+      setSelectedOrder(null);
+
+      toast({
+        title: 'Sucesso',
+        description: 'Pedido excluído com sucesso!'
+      });
+    } catch (error) {
+      console.error('Erro ao excluir pedido:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o pedido',
         variant: 'destructive'
       });
     }
@@ -327,6 +406,22 @@ export default function OrderManagement() {
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
                         </Button>
+                        <Button
+                          onClick={() => openEditModal(order)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => openDeleteModal(order)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                         {order.status === 'pending' && (
                           <Button
                             onClick={() => confirmOrder(order)}
@@ -345,6 +440,90 @@ export default function OrderManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Edição */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Pedido</DialogTitle>
+            <DialogDescription>
+              Faça as alterações necessárias no pedido.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Nome do Cliente</label>
+              <Input
+                value={editingOrder.customer_name || ''}
+                onChange={(e) => setEditingOrder(prev => ({ ...prev, customer_name: e.target.value }))}
+                placeholder="Nome do cliente"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Telefone</label>
+              <Input
+                value={editingOrder.customer_phone || ''}
+                onChange={(e) => setEditingOrder(prev => ({ ...prev, customer_phone: e.target.value }))}
+                placeholder="Telefone do cliente"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Status</label>
+              <Select
+                value={editingOrder.status || 'pending'}
+                onValueChange={(value) => setEditingOrder(prev => ({ ...prev, status: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="confirmed">Confirmado</SelectItem>
+                  <SelectItem value="cancelled">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={saveOrderEdits}>
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Exclusão */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir Pedido</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedOrder && (
+              <div className="bg-muted p-4 rounded-lg">
+                <p><strong>Cliente:</strong> {selectedOrder.customer_name}</p>
+                <p><strong>Telefone:</strong> {selectedOrder.customer_phone}</p>
+                <p><strong>Total:</strong> {formatCurrency(selectedOrder.total_amount)}</p>
+                <p><strong>Status:</strong> {selectedOrder.status}</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={deleteOrder}>
+                Excluir
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
