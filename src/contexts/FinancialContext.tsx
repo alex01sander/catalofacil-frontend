@@ -167,7 +167,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshData = async () => {
+    console.log('[FinancialContext] refreshData chamado - forçando nova busca');
     globalFinancialCache.timestamp = 0; // Forçar nova busca global
+    globalFinancialCache.data = null; // Limpar dados do cache
     setData(prev => ({ ...prev, isLoading: true }));
     await fetchAllData();
   };
@@ -192,17 +194,20 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         const newTotalIncome = newCashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
         const newTotalExpenses = newCashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
         
-        return {
+        const updatedData = {
           ...prev,
           cashFlow: newCashFlow,
           totalIncome: newTotalIncome,
           totalExpenses: newTotalExpenses,
           balance: newTotalIncome - newTotalExpenses,
         };
+
+        // Atualizar cache global
+        globalFinancialCache.data = updatedData;
+        globalFinancialCache.timestamp = Date.now();
+        
+        return updatedData;
       });
-      
-      // Invalidar cache global
-      globalFinancialCache.timestamp = 0;
       
       toast({ title: 'Sucesso', description: 'Lançamento adicionado com sucesso!' });
     } catch (error) {
@@ -328,7 +333,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         const newTotalIncome = newCashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
         const newTotalExpenses = newCashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
         
-        return {
+        const updatedData = {
           ...prev,
           sales: newSales,
           cashFlow: newCashFlow,
@@ -336,10 +341,18 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
           totalExpenses: newTotalExpenses,
           balance: newTotalIncome - newTotalExpenses,
         };
+
+        // Atualizar cache global com os novos dados
+        globalFinancialCache.data = updatedData;
+        globalFinancialCache.timestamp = Date.now();
+        
+        console.log('[FinancialContext] Cache global atualizado com nova venda:', {
+          newTotalIncome,
+          cacheTimestamp: globalFinancialCache.timestamp
+        });
+
+        return updatedData;
       });
-      
-      // Invalidar cache global para forçar atualização na próxima busca
-      globalFinancialCache.timestamp = 0;
       
       console.log('[FinancialContext] Venda registrada com sucesso:', {
         sale: newSale,
