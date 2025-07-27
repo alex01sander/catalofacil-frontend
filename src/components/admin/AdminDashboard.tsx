@@ -57,12 +57,9 @@ const AdminDashboard = () => {
     fetchOrders();
   }, [user]);
 
-  // Calcular estatísticas reais combinando pedidos e vendas do contexto financeiro
-  // Receita total = entradas do caixa + pedidos confirmados
-  const confirmedOrdersTotal = orders
-    .filter(order => order.status === 'confirmed')
-    .reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-  const totalRevenue = financialData.totalIncome + confirmedOrdersTotal;
+  // Calcular estatísticas reais
+  // Receita total = apenas entradas do fluxo de caixa (já inclui vendas registradas)
+  const totalRevenue = financialData.totalIncome;
   
   const totalProducts = products.filter(p => p.is_active).length;
   // Contar apenas pedidos confirmados (as vendas do contexto já incluem os pedidos confirmados)
@@ -77,11 +74,10 @@ const AdminDashboard = () => {
   console.log('- Total de vendas:', totalOrders);
   console.log('- Receita total:', totalRevenue);
   console.log('- Receita do fluxo de caixa:', financialData.totalIncome);
-  console.log('- Receita dos pedidos confirmados:', confirmedOrdersTotal);
   console.log('- Pedidos:', orders.map(o => ({ id: o.id, status: o.status, total: o.total_amount })));
   console.log('- Vendas do contexto:', financialData.sales);
 
-  // Dados para gráficos baseados nos dados reais (combinando orders e sales do contexto)
+  // Dados para gráficos baseados nos dados reais do fluxo de caixa
   const currentMonth = new Date().getMonth();
   const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   
@@ -90,21 +86,7 @@ const AdminDashboard = () => {
     const monthIndex = (currentMonth - 5 + i + 12) % 12;
     const monthName = monthNames[monthIndex];
     
-    // Vendas dos pedidos confirmados
-    const monthOrders = orders.filter(order => {
-      const orderMonth = new Date(order.created_at).getMonth();
-      return orderMonth === monthIndex && order.status === 'confirmed';
-    });
-    const monthOrdersTotal = monthOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-    
-    // Vendas registradas manualmente do contexto
-    const monthSales = financialData.sales.filter(sale => {
-      const saleMonth = new Date(sale.sale_date).getMonth();
-      return saleMonth === monthIndex;
-    });
-    const monthSalesTotal = monthSales.reduce((sum, sale) => sum + Number(sale.total_price || 0), 0);
-    
-    // Entradas do fluxo de caixa
+    // Entradas do fluxo de caixa (já inclui todas as vendas registradas)
     const monthCashFlow = financialData.cashFlow.filter(entry => {
       const entryMonth = new Date(entry.date).getMonth();
       return entryMonth === monthIndex && entry.type === 'income';
@@ -113,7 +95,7 @@ const AdminDashboard = () => {
     
     return {
       name: monthName,
-      vendas: monthOrdersTotal + monthSalesTotal + monthCashFlowTotal
+      vendas: monthCashFlowTotal
     };
   });
 
@@ -192,34 +174,14 @@ const AdminDashboard = () => {
     }));
   };
 
-  // Atividades recentes baseadas nos dados reais do contexto financeiro
-  const recentActivities = [
-    ...orders.filter(order => order.status === 'confirmed').slice(0, 2).map(order => {
-      // Quantidade total de itens (soma das quantidades)
-      const totalQuantity = order.order_items && order.order_items.length 
-        ? order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0)
-        : 1;
-      const qtdItens = `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'itens'}`;
-      return {
-        action: "Nova venda realizada",
-        product: `Pedido #${order.id.slice(0, 8)} — ${qtdItens} — R$ ${Number(order.total_amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})} — Cliente: ${order.customer_name}`,
-        time: new Date(order.created_at).toLocaleDateString('pt-BR')
-      };
-    }),
-    ...financialData.sales.slice(0, 2).map(sale => {
-      // Para vendas manuais, mostrar produto, valor e cliente (se houver)
-      return {
-        action: "Venda registrada",
-        product: `${sale.product_name} — R$ ${Number(sale.total_price).toLocaleString('pt-BR', {minimumFractionDigits: 2})} — Cliente: ${sale.customer_name || '-'}`,
-        time: new Date(sale.created_at).toLocaleDateString('pt-BR')
-      };
-    }),
-    ...financialData.cashFlow.slice(0, 2).map(entry => ({
+  // Atividades recentes baseadas no fluxo de caixa
+  const recentActivities = financialData.cashFlow
+    .slice(0, 4)
+    .map(entry => ({
       action: entry.type === 'income' ? "Entrada registrada" : "Despesa registrada",
       product: entry.description,
       time: new Date(entry.date).toLocaleDateString('pt-BR')
-    }))
-  ].slice(0, 4); // Limitar a 4 atividades
+    }));
 
   if (productsLoading || categoriesLoading || ordersLoading || financialData.isLoading) {
     return (
