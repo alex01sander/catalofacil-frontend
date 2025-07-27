@@ -321,44 +321,20 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
       
-      // Atualizar dados localmente sem fazer nova requisição
-      const newSale = res.data;
-      const newCashFlowEntry = cashFlowRes.data;
+      console.log('[FinancialContext] Venda e fluxo de caixa salvos, forçando busca real da API...');
       
-      setData(prev => {
-        const newSales = [newSale, ...prev.sales];
-        const newCashFlow = [newCashFlowEntry, ...prev.cashFlow];
-        
-        // Recalcular totais
-        const newTotalIncome = newCashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
-        const newTotalExpenses = newCashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
-        
-        const updatedData = {
-          ...prev,
-          sales: newSales,
-          cashFlow: newCashFlow,
-          totalIncome: newTotalIncome,
-          totalExpenses: newTotalExpenses,
-          balance: newTotalIncome - newTotalExpenses,
-        };
-
-        // Atualizar cache global com os novos dados
-        globalFinancialCache.data = updatedData;
-        globalFinancialCache.timestamp = Date.now();
-        
-        console.log('[FinancialContext] Cache global atualizado com nova venda:', {
-          newTotalIncome,
-          cacheTimestamp: globalFinancialCache.timestamp
-        });
-
-        return updatedData;
-      });
+      // FORÇAR BUSCA REAL DA API - Ignorar cache completamente
+      globalFinancialCache.timestamp = 0;
+      globalFinancialCache.data = null;
+      globalFinancialCache.isFetching = false;
       
-      console.log('[FinancialContext] Venda registrada com sucesso:', {
-        sale: newSale,
-        cashFlow: newCashFlowEntry,
-        totalIncome: newSale.total_price
-      });
+      // Aguardar um pouco para garantir que o banco foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Buscar dados atualizados da API
+      await fetchAllData();
+      
+      console.log('[FinancialContext] Dados atualizados da API após venda');
       
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {
