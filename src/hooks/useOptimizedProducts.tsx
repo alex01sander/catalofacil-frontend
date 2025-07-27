@@ -46,18 +46,20 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       console.log('[useOptimizedProducts] Buscando produtos:', url);
       const res = await api.get(url);
       
+      let productsData = [];
       // Verificar se é resposta paginada ou array direto
       if (res.data && res.data.data && Array.isArray(res.data.data)) {
-        setProducts(res.data.data);
+        productsData = res.data.data;
       } else if (Array.isArray(res.data)) {
-        setProducts(res.data);
+        productsData = res.data;
       } else {
-        setProducts([]);
+        productsData = [];
       }
       
+      setProducts(productsData);
       lastFetchTime.current = now;
       cacheKey.current = newCacheKey;
-      console.log(`[useOptimizedProducts] ✅ ${products.length} produtos carregados`);
+      console.log(`[useOptimizedProducts] ✅ ${productsData.length} produtos carregados`);
       
     } catch (err) {
       console.error('[useOptimizedProducts] Erro na fetchProducts:', err);

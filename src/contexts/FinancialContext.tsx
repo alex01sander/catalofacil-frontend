@@ -100,7 +100,15 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const creditAccounts = creditRes.data?.data ? creditRes.data.data : (Array.isArray(creditRes.data) ? creditRes.data : []);
       const expenses = expensesRes.data?.data ? expensesRes.data.data : (Array.isArray(expensesRes.data) ? expensesRes.data : []);
       const sales = salesRes.data?.data ? salesRes.data.data : (Array.isArray(salesRes.data) ? salesRes.data : []);
-      const products = productsRes.data?.data ? productsRes.data.data : (Array.isArray(productsRes.data) ? productsRes.data : []);
+      
+      let products = [];
+      if (productsRes.data && productsRes.data.data && Array.isArray(productsRes.data.data)) {
+        products = productsRes.data.data;
+      } else if (Array.isArray(productsRes.data)) {
+        products = productsRes.data;
+      } else {
+        products = [];
+      }
       
       const totalIncome = cashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);

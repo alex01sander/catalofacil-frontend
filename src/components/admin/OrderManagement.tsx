@@ -91,6 +91,91 @@ const OrderManagement = () => {
     }
   }, [user]);
 
+  // Função temporária para registrar vendas dos pedidos já confirmados
+  const registerExistingConfirmedOrders = async () => {
+    if (!user || !user.token) {
+      return;
+    }
+
+    try {
+      console.log('[OrderManagement] 🔄 Registrando vendas dos pedidos já confirmados...');
+      
+      // Buscar todos os pedidos confirmados
+      const { data: confirmedOrders } = await api.get('/pedidos?status=confirmed&include=order_items');
+      
+      if (!confirmedOrders || confirmedOrders.length === 0) {
+        console.log('[OrderManagement] Nenhum pedido confirmado encontrado');
+        return;
+      }
+
+      console.log(`[OrderManagement] 📊 Encontrados ${confirmedOrders.length} pedidos confirmados`);
+
+      // Buscar vendas já registradas
+      const { data: existingSales } = await api.get('/vendas');
+      const existingSalesData = existingSales?.data || existingSales || [];
+      
+      console.log(`[OrderManagement] 📊 Vendas já registradas: ${existingSalesData.length}`);
+
+      let vendasRegistradas = 0;
+
+      // Para cada pedido confirmado
+      for (const order of confirmedOrders) {
+        if (!order.order_items || order.order_items.length === 0) {
+          continue;
+        }
+
+        // Para cada item do pedido
+        for (const item of order.order_items) {
+          // Verificar se já existe uma venda para este item
+          const saleExists = existingSalesData.some((sale: any) => {
+            const sameProduct = sale.product_id === item.product_id;
+            const sameQuantity = sale.quantity === item.quantity;
+            const sameDate = new Date(sale.sale_date).toDateString() === new Date(order.created_at).toDateString();
+            return sameProduct && sameQuantity && sameDate;
+          });
+
+          if (saleExists) {
+            continue;
+          }
+
+          // Registrar nova venda
+          try {
+            await registerSale({
+              product_id: item.product_id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              date: new Date(order.created_at).toISOString().split('T')[0],
+              payment_method: 'whatsapp',
+              customer_name: order.customer_name
+            });
+            vendasRegistradas++;
+          } catch (error) {
+            console.error(`[OrderManagement] Erro ao registrar venda:`, error);
+          }
+        }
+      }
+
+      console.log(`[OrderManagement] ✅ ${vendasRegistradas} vendas registradas dos pedidos existentes`);
+      
+      if (vendasRegistradas > 0) {
+        toast.success(`${vendasRegistradas} vendas registradas dos pedidos existentes!`);
+        // Recarregar dados
+        await fetchOrders();
+        window.location.reload();
+      }
+
+    } catch (error) {
+      console.error('[OrderManagement] Erro ao registrar vendas existentes:', error);
+    }
+  };
+
+  // Executar uma vez quando o componente carrega para corrigir dados existentes
+  useEffect(() => {
+    if (user && orders.length > 0) {
+      registerExistingConfirmedOrders();
+    }
+  }, [user, orders.length]);
+
   const fetchOrders = async () => {
      try {
        setLoading(true);
