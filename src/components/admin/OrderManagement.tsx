@@ -16,16 +16,22 @@ interface Order {
   id: string;
   customer_name: string;
   customer_phone: string;
-  items: Array<{
-    product_id: string;
-    product_name: string;
-    quantity: number;
-    unit_price: number;
-  }>;
-  total: number;
+  total_amount: number;
   status: 'pending' | 'confirmed' | 'cancelled';
   created_at: string;
   updated_at: string;
+  order_items?: Array<{
+    id: string;
+    product_id: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+    product?: {
+      id: string;
+      name: string;
+      stock: number;
+    };
+  }>;
 }
 
 interface Product {
@@ -55,7 +61,8 @@ export default function OrderManagement() {
 
   const fetchOrders = async () => {
     try {
-      const response = await api.get('/pedidos');
+      // Buscar pedidos com os itens incluídos
+      const response = await api.get('/pedidos?include=order_items');
       const ordersData = response.data?.data || response.data || [];
       setOrders(ordersData);
     } catch (error) {
@@ -83,7 +90,7 @@ export default function OrderManagement() {
   const confirmOrder = async (order: Order) => {
     try {
       // Verificar se o pedido tem itens
-      if (!order.items || order.items.length === 0) {
+      if (!order.order_items || order.order_items.length === 0) {
         toast({
           title: 'Erro',
           description: 'Este pedido não possui itens para confirmar',
@@ -96,9 +103,12 @@ export default function OrderManagement() {
       await api.put(`/pedidos/${order.id}`, { status: 'confirmed' });
 
       // Registrar vendas para cada item do pedido
-      for (const item of order.items) {
+      for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
+          // Buscar nome do produto se não estiver disponível no item
+          const productName = item.product?.name || product.name;
+          
           // Registrar venda
           await registerSale({
             product_id: item.product_id,
@@ -122,7 +132,7 @@ export default function OrderManagement() {
 
       // Atualizar lista de produtos localmente
       setProducts(prev => prev.map(p => {
-        const item = order.items?.find(i => i.product_id === p.id);
+        const item = order.order_items?.find(i => i.product_id === p.id);
         if (item) {
           return { ...p, stock: p.stock - item.quantity };
         }
@@ -292,12 +302,18 @@ export default function OrderManagement() {
                     <td className="py-3 px-4 font-medium">{order.customer_name}</td>
                     <td className="py-3 px-4">{order.customer_phone}</td>
                     <td className="py-3 px-4">
-                      {order.items && order.items.length > 0 ? (
-                        order.items.map((item, index) => (
-                          <div key={index} className="text-sm">
-                            {item.quantity}x {item.product_name}
-                          </div>
-                        ))
+                      {order.order_items && order.order_items.length > 0 ? (
+                        order.order_items.map((item, index) => {
+                          // Buscar nome do produto se não estiver disponível no item
+                          const product = products.find(p => p.id === item.product_id);
+                          const productName = item.product?.name || product?.name || 'Produto não encontrado';
+                          
+                          return (
+                            <div key={index} className="text-sm">
+                              {item.quantity}x {productName}
+                            </div>
+                          );
+                        })
                       ) : (
                         <div className="text-sm text-muted-foreground">
                           Nenhum item
@@ -305,7 +321,7 @@ export default function OrderManagement() {
                       )}
                     </td>
                     <td className="py-3 px-4">{getStatusBadge(order.status)}</td>
-                    <td className="py-3 px-4 font-medium">{formatCurrency(order.total)}</td>
+                    <td className="py-3 px-4 font-medium">{formatCurrency(order.total_amount)}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm">
