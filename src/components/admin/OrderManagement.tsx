@@ -38,6 +38,7 @@ interface Order {
 interface Product {
   id: string;
   name: string;
+  price: number;
   stock: number;
 }
 
@@ -57,6 +58,14 @@ export default function OrderManagement() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingOrder, setEditingOrder] = useState<Partial<Order>>({});
+  const [editingItems, setEditingItems] = useState<Array<{
+    id?: string;
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>>([]);
 
   // Buscar pedidos apenas uma vez ao carregar
   useEffect(() => {
@@ -168,6 +177,16 @@ export default function OrderManagement() {
       customer_phone: order.customer_phone,
       status: order.status
     });
+    // Mapear order_items para o formato correto
+    const mappedItems = (order.order_items || []).map(item => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.product?.name || products.find(p => p.id === item.product_id)?.name || 'Produto não encontrado',
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price
+    }));
+    setEditingItems(mappedItems);
     setEditModalOpen(true);
   };
 
@@ -180,18 +199,42 @@ export default function OrderManagement() {
     if (!selectedOrder) return;
 
     try {
-      await api.put(`/pedidos/${selectedOrder.id}`, editingOrder);
+      // Preparar dados para atualização
+      const updateData = {
+        ...editingOrder,
+        order_items: editingItems.map(item => ({
+          id: item.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price
+        }))
+      };
+
+      await api.put(`/pedidos/${selectedOrder.id}`, updateData);
       
       // Atualizar lista localmente
       setOrders(prev => prev.map(o => 
         o.id === selectedOrder.id 
-          ? { ...o, ...editingOrder }
+          ? { 
+              ...o, 
+              ...editingOrder,
+              order_items: editingItems.map(item => ({
+                id: item.id,
+                product_id: item.product_id,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total_price: item.total_price,
+                product: products.find(p => p.id === item.product_id)
+              }))
+            }
           : o
       ));
 
       setEditModalOpen(false);
       setSelectedOrder(null);
       setEditingOrder({});
+      setEditingItems([]);
 
       toast({
         title: 'Sucesso',
@@ -231,6 +274,42 @@ export default function OrderManagement() {
         variant: 'destructive'
       });
     }
+  };
+
+  const addItemToEdit = () => {
+    const newItem = {
+      product_id: '',
+      product_name: '',
+      quantity: 1,
+      unit_price: 0,
+      total_price: 0
+    };
+    setEditingItems(prev => [...prev, newItem]);
+  };
+
+  const removeItemFromEdit = (index: number) => {
+    setEditingItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateItemInEdit = (index: number, field: string, value: any) => {
+    setEditingItems(prev => prev.map((item, i) => {
+      if (i === index) {
+        const updatedItem = { ...item, [field]: value };
+        // Recalcular total_price se quantity ou unit_price mudaram
+        if (field === 'quantity' || field === 'unit_price') {
+          updatedItem.total_price = updatedItem.quantity * updatedItem.unit_price;
+        }
+        // Atualizar product_name se product_id mudou
+        if (field === 'product_id') {
+          const product = products.find(p => p.id === value);
+          updatedItem.product_name = product?.name || 'Produto não encontrado';
+          updatedItem.unit_price = product?.price || 0;
+          updatedItem.total_price = updatedItem.quantity * updatedItem.unit_price;
+        }
+        return updatedItem;
+      }
+      return item;
+    }));
   };
 
   const filteredOrders = orders.filter(order => {
@@ -426,8 +505,9 @@ export default function OrderManagement() {
                           <Button
                             onClick={() => confirmOrder(order)}
                             size="sm"
-                            className="bg-green-500 hover:bg-green-600"
+                            className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
                           >
+                            <CheckCircle className="h-4 w-4 mr-2" />
                             Confirmar
                           </Button>
                         )}
@@ -443,30 +523,34 @@ export default function OrderManagement() {
 
       {/* Modal de Edição */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Pedido</DialogTitle>
             <DialogDescription>
               Faça as alterações necessárias no pedido.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Nome do Cliente</label>
-              <Input
-                value={editingOrder.customer_name || ''}
-                onChange={(e) => setEditingOrder(prev => ({ ...prev, customer_name: e.target.value }))}
-                placeholder="Nome do cliente"
-              />
+          <div className="space-y-6">
+            {/* Informações do Cliente */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Nome do Cliente</label>
+                <Input
+                  value={editingOrder.customer_name || ''}
+                  onChange={(e) => setEditingOrder(prev => ({ ...prev, customer_name: e.target.value }))}
+                  placeholder="Nome do cliente"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Telefone</label>
+                <Input
+                  value={editingOrder.customer_phone || ''}
+                  onChange={(e) => setEditingOrder(prev => ({ ...prev, customer_phone: e.target.value }))}
+                  placeholder="Telefone do cliente"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium">Telefone</label>
-              <Input
-                value={editingOrder.customer_phone || ''}
-                onChange={(e) => setEditingOrder(prev => ({ ...prev, customer_phone: e.target.value }))}
-                placeholder="Telefone do cliente"
-              />
-            </div>
+            
             <div>
               <label className="text-sm font-medium">Status</label>
               <Select
@@ -483,12 +567,101 @@ export default function OrderManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end gap-2">
+
+            {/* Gestão de Produtos */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-sm font-medium">Produtos do Pedido</label>
+                <Button
+                  onClick={addItemToEdit}
+                  size="sm"
+                  variant="outline"
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  + Adicionar Produto
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                {editingItems.map((item, index) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Item {index + 1}</span>
+                      <Button
+                        onClick={() => removeItemFromEdit(index)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Produto</label>
+                        <Select
+                          value={item.product_id}
+                          onValueChange={(value) => updateItemInEdit(index, 'product_id', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um produto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map(product => (
+                              <SelectItem key={product.id} value={product.id}>
+                                {product.name} - R$ {formatCurrency(product.price)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <label className="text-xs text-muted-foreground">Quantidade</label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => updateItemInEdit(index, 'quantity', parseInt(e.target.value) || 1)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-xs text-muted-foreground">Preço Unitário</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={item.unit_price}
+                          onChange={(e) => updateItemInEdit(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <span className="text-sm font-medium">
+                        Total: {formatCurrency(item.total_price)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {editingItems.length > 0 && (
+                <div className="text-right pt-4 border-t">
+                  <span className="text-lg font-bold">
+                    Total do Pedido: {formatCurrency(editingItems.reduce((sum, item) => sum + item.total_price, 0))}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setEditModalOpen(false)}>
                 Cancelar
               </Button>
               <Button onClick={saveOrderEdits}>
-                Salvar
+                Salvar Alterações
               </Button>
             </div>
           </div>
