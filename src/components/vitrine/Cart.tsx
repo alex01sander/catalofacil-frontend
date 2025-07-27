@@ -66,6 +66,8 @@ const Cart = () => {
       console.log('[Cart] Itens do carrinho:', items);
       
       // Montar payload conforme schema do Prisma
+      // NOTA: payment_method NÃO é enviado aqui pois não existe na tabela 'orders'
+      // O payment_method será usado apenas na tabela 'cash_flow' quando o pedido for processado
       const payload: any = {
         store_id: storeId, // ID da loja
         customer_name: formData.name,

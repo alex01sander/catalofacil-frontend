@@ -270,8 +270,11 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
 
   const registerSale = async (saleData: any) => {
     if (!user || !token) {
+      console.log('[FinancialContext] ❌ registerSale - user ou token não disponível');
       return;
     }
+    
+    console.log('[FinancialContext] 🛒 INICIANDO REGISTRO DE VENDA:', saleData);
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
@@ -279,19 +282,24 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       // Buscar nome do produto pelo product_id
       let selectedProduct = data.products.find((p) => p.id === saleData.product_id);
       
+      console.log('[FinancialContext] 🔍 Produto encontrado no cache:', selectedProduct ? 'SIM' : 'NÃO');
+      
       // Se não encontrou no cache local, buscar na API
       if (!selectedProduct) {
         try {
+          console.log('[FinancialContext] 🔍 Buscando produto na API...');
           const productRes = await api.get(`/products/${saleData.product_id}`);
           selectedProduct = productRes.data;
+          console.log('[FinancialContext] ✅ Produto encontrado na API:', selectedProduct.name);
         } catch (productError) {
-          console.error('Erro ao buscar produto:', productError);
+          console.error('[FinancialContext] ❌ Erro ao buscar produto:', productError);
           // Usar dados fornecidos como fallback
           selectedProduct = {
             id: saleData.product_id,
             name: saleData.product_name || 'Produto não encontrado',
             store_id: null
           };
+          console.log('[FinancialContext] ⚠️ Usando fallback para produto:', selectedProduct.name);
         }
       }
       
@@ -308,7 +316,10 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         customer_name: saleData.customer_name || 'Cliente não informado'
       };
       
+      console.log('[FinancialContext] 📤 Enviando venda para API:', payload);
+      
       const res = await api.post('/vendas', payload);
+      console.log('[FinancialContext] ✅ Venda salva na API:', res.data);
       
       // Lançar também no fluxo de caixa
       const cashFlowPayload = {
@@ -322,9 +333,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         payment_method: saleData.payment_method || 'cash'
       };
       
-      const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
+      console.log('[FinancialContext] 📤 Enviando fluxo de caixa para API:', cashFlowPayload);
       
-      console.log('[FinancialContext] Venda e fluxo de caixa salvos, forçando busca real da API...');
+      const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
+      console.log('[FinancialContext] ✅ Fluxo de caixa salvo na API:', cashFlowRes.data);
+      
+      console.log('[FinancialContext] 🔄 FORÇANDO BUSCA REAL DA API...');
       
       // FORÇAR BUSCA REAL DA API - Ignorar cache completamente
       globalFinancialCache.timestamp = 0;
@@ -337,12 +351,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       // Buscar dados atualizados da API
       await fetchAllData();
       
-      console.log('[FinancialContext] Dados atualizados da API após venda');
+      console.log('[FinancialContext] ✅ Dados atualizados da API após venda');
       
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {
-      console.error('Erro ao registrar venda:', error);
-      console.error('Detalhes do erro:', {
+      console.error('[FinancialContext] ❌ Erro ao registrar venda:', error);
+      console.error('[FinancialContext] ❌ Detalhes do erro:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status

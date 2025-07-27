@@ -105,6 +105,9 @@ export default function OrderManagement() {
 
   const confirmOrder = async (order: Order) => {
     try {
+      console.log('[OrderManagement] 🔍 INICIANDO CONFIRMAÇÃO DO PEDIDO:', order.id);
+      console.log('[OrderManagement] 📦 Itens do pedido:', order.order_items);
+      
       // Verificar se o pedido tem itens
       if (!order.order_items || order.order_items.length === 0) {
         toast({
@@ -115,22 +118,30 @@ export default function OrderManagement() {
         return;
       }
 
+      console.log('[OrderManagement] ✅ Pedido tem itens, atualizando status...');
+      
       // Atualizar status do pedido
       await api.put(`/pedidos/${order.id}`, { status: 'confirmed' });
+      console.log('[OrderManagement] ✅ Status do pedido atualizado para confirmed');
 
       // Registrar vendas para cada item do pedido
+      console.log('[OrderManagement] 🛒 Iniciando registro de vendas...');
       for (const item of order.order_items) {
+        console.log('[OrderManagement] 📋 Processando item:', item);
+        
         const product = products.find(p => p.id === item.product_id);
         if (product) {
           // Buscar nome do produto se não estiver disponível no item
           const productName = item.product?.name || product.name;
           
-          console.log('[OrderManagement] Registrando venda:', {
+          console.log('[OrderManagement] 🎯 Registrando venda:', {
             product_id: item.product_id,
             product_name: productName,
             quantity: item.quantity,
             unit_price: item.unit_price,
-            total: item.quantity * item.unit_price
+            total: item.quantity * item.unit_price,
+            customer_name: order.customer_name,
+            date: order.created_at
           });
           
           // Registrar venda
@@ -143,12 +154,15 @@ export default function OrderManagement() {
             customer_name: order.customer_name,
             payment_method: 'cash'
           });
+          
+          console.log('[OrderManagement] ✅ Venda registrada para produto:', productName);
 
           // Atualizar estoque do produto
           const newStock = product.stock - item.quantity;
           await api.put(`/products/${item.product_id}`, { stock: newStock });
+          console.log('[OrderManagement] ✅ Estoque atualizado:', { produto: productName, estoque_anterior: product.stock, estoque_novo: newStock });
         } else {
-          console.error('[OrderManagement] Produto não encontrado:', item.product_id);
+          console.error('[OrderManagement] ❌ Produto não encontrado:', item.product_id);
           toast({
             title: 'Aviso',
             description: `Produto ${item.product_id} não encontrado`,
@@ -157,6 +171,8 @@ export default function OrderManagement() {
         }
       }
 
+      console.log('[OrderManagement] 🔄 Atualizando lista de pedidos localmente...');
+      
       // Atualizar lista de pedidos localmente
       setOrders(prev => prev.map(o => 
         o.id === order.id ? { ...o, status: 'confirmed' } : o
@@ -171,13 +187,20 @@ export default function OrderManagement() {
         return p;
       }));
 
+      console.log('[OrderManagement] 🎉 CONFIRMAÇÃO CONCLUÍDA COM SUCESSO!');
+      
       toast({
         title: 'Sucesso',
         description: 'Pedido confirmado e vendas registradas automaticamente!'
       });
 
     } catch (error) {
-      console.error('Erro ao confirmar pedido:', error);
+      console.error('[OrderManagement] ❌ Erro ao confirmar pedido:', error);
+      console.error('[OrderManagement] ❌ Detalhes do erro:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       toast({
         title: 'Erro',
         description: 'Não foi possível confirmar o pedido',

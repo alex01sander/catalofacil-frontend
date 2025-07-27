@@ -12,6 +12,7 @@ import { API_URL } from '@/constants/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinancial } from "@/contexts/FinancialContext";
 import api from '@/services/api';
+import { toast } from "@/components/ui/use-toast";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -69,6 +70,29 @@ const AdminDashboard = () => {
   const confirmedOrders = orders.filter(order => order.status === 'confirmed').length;
   const totalOrders = confirmedOrders; // Remover duplicação com financialData.sales.length
   const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
+
+  // Função para testar se as vendas estão sendo contabilizadas
+  const testSalesCounting = () => {
+    console.log('[AdminDashboard] 🔍 TESTE DE CONTABILIZAÇÃO DE VENDAS:');
+    console.log('[AdminDashboard] 📊 Dados financeiros:', {
+      totalIncome: financialData.totalIncome,
+      salesCount: financialData.sales.length,
+      cashFlowIncomeCount: financialData.cashFlow.filter(e => e.type === 'income').length,
+      cashFlowIncomeTotal: financialData.cashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0)
+    });
+    console.log('[AdminDashboard] 📦 Pedidos:', {
+      totalOrders: orders.length,
+      confirmedOrders: confirmedOrders,
+      pendingOrders: orders.filter(o => o.status === 'pending').length
+    });
+    console.log('[AdminDashboard] 🛒 Vendas detalhadas:', financialData.sales);
+    console.log('[AdminDashboard] 💰 Fluxo de caixa (entradas):', financialData.cashFlow.filter(e => e.type === 'income'));
+    
+    toast({
+      title: 'Teste de Contabilização',
+      description: `Receita: R$ ${financialData.totalIncome.toFixed(2)} | Vendas: ${financialData.sales.length} | Entradas: ${financialData.cashFlow.filter(e => e.type === 'income').length}`,
+    });
+  };
 
   // Dados para gráficos baseados nos dados reais do fluxo de caixa
   const currentMonth = new Date().getMonth();
@@ -192,6 +216,18 @@ const AdminDashboard = () => {
       <div>
         <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent tracking-tight">📊 Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-1">Visão geral completa do seu negócio</p>
+        
+        {/* Botão de teste para debug */}
+        <div className="mt-4">
+          <Button 
+            onClick={testSalesCounting}
+            variant="outline" 
+            size="sm"
+            className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+          >
+            🔍 Testar Contabilização de Vendas
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
