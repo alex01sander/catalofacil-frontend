@@ -70,8 +70,11 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchAllData = async () => {
     if (!user || !token) {
+      console.log('[FinancialContext] fetchAllData - user ou token não disponível');
       return;
     }
+
+    console.log('[FinancialContext] fetchAllData iniciado para user:', user.id);
 
     // Verificar cache global primeiro
     const now = Date.now();
@@ -83,15 +86,18 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (cacheValid && globalFinancialCache.data) {
-      console.log('[FinancialContext] Usando cache global');
+      console.log('[FinancialContext] Usando cache global válido');
       setData(globalFinancialCache.data);
       return;
     }
     
+    console.log('[FinancialContext] Cache inválido ou inexistente, buscando dados da API');
     globalFinancialCache.isFetching = true;
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
+      
+      console.log('[FinancialContext] Fazendo requisições paralelas...');
       
       // Fazer requisições em paralelo para melhor performance
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
@@ -101,6 +107,8 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         api.get('/vendas'),
         api.get('/products')
       ]);
+      
+      console.log('[FinancialContext] Requisições concluídas, processando dados...');
       
       // Garantir que todos os dados sejam arrays - tratar resposta paginada
       const cashFlow = cashFlowRes.data?.data ? cashFlowRes.data.data : (Array.isArray(cashFlowRes.data) ? cashFlowRes.data : []);
@@ -119,8 +127,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       const totalIncome = cashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
-      const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.total_debt), 0);
-      
+      const balance = totalIncome - totalExpenses;
+      const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+
       const newData = {
         cashFlow,
         creditAccounts,
@@ -129,20 +138,29 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         products,
         totalIncome,
         totalExpenses,
-        balance: totalIncome - totalExpenses,
+        balance,
         totalDebt,
         isLoading: false,
       };
-      
-      // Atualizar cache global
+
+      console.log('[FinancialContext] Dados processados:', {
+        cashFlowCount: cashFlow.length,
+        salesCount: sales.length,
+        productsCount: products.length,
+        totalIncome,
+        totalExpenses,
+        balance
+      });
+
+      // Atualizar cache global e estado local
       globalFinancialCache.data = newData;
       globalFinancialCache.timestamp = now;
-      
       setData(newData);
       
     } catch (error) {
-      console.error('Erro ao buscar dados financeiros:', error);
+      console.error('[FinancialContext] Erro ao buscar dados financeiros:', error);
       setData(prev => ({ ...prev, isLoading: false }));
+      toast({ title: 'Erro', description: 'Não foi possível carregar os dados financeiros', variant: 'destructive' });
     } finally {
       globalFinancialCache.isFetching = false;
     }
@@ -368,12 +386,20 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user) {
-      // Debounce para evitar múltiplas requisições
-      const timeoutId = setTimeout(() => {
-        fetchAllData();
-      }, 2000); // 2 segundos de debounce
+      console.log('[FinancialContext] useEffect disparado, user:', user.id);
       
-      return () => clearTimeout(timeoutId);
+      // Debounce reduzido para melhor UX no carregamento inicial
+      const timeoutId = setTimeout(() => {
+        console.log('[FinancialContext] Iniciando fetchAllData após debounce');
+        fetchAllData();
+      }, 500); // Reduzido de 2000ms para 500ms
+      
+      return () => {
+        console.log('[FinancialContext] Limpando timeout');
+        clearTimeout(timeoutId);
+      };
+    } else {
+      console.log('[FinancialContext] useEffect - user não disponível');
     }
   }, [user]);
 
