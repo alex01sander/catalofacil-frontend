@@ -335,8 +335,19 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       console.log('[FinancialContext] 📤 Enviando fluxo de caixa para API:', cashFlowPayload);
       
-      const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
-      console.log('[FinancialContext] ✅ Fluxo de caixa salvo na API:', cashFlowRes.data);
+      try {
+        const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
+        console.log('[FinancialContext] ✅ Fluxo de caixa salvo na API:', cashFlowRes.data);
+      } catch (cashFlowError) {
+        console.error('[FinancialContext] ❌ ERRO ao salvar fluxo de caixa:', cashFlowError);
+        console.error('[FinancialContext] ❌ Detalhes do erro de fluxo de caixa:', {
+          message: cashFlowError.message,
+          response: cashFlowError.response?.data,
+          status: cashFlowError.response?.status
+        });
+        // Continuar mesmo se o fluxo de caixa falhar
+        console.log('[FinancialContext] ⚠️ Continuando sem fluxo de caixa...');
+      }
       
       console.log('[FinancialContext] 🔄 FORÇANDO BUSCA REAL DA API...');
       

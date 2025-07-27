@@ -18,7 +18,7 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const { products, loading: productsLoading } = useOptimizedProducts();
   const { categories, loading: categoriesLoading } = useOptimizedCategories();
-  const { data: financialData } = useFinancial();
+  const { data: financialData, refreshData } = useFinancial();
   
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -92,6 +92,67 @@ const AdminDashboard = () => {
       title: 'Teste de Contabilização',
       description: `Receita: R$ ${financialData.totalIncome.toFixed(2)} | Vendas: ${financialData.sales.length} | Entradas: ${financialData.cashFlow.filter(e => e.type === 'income').length}`,
     });
+  };
+
+  // Função para forçar criação de entradas no fluxo de caixa
+  const forceCreateCashFlowEntries = async () => {
+    console.log('[AdminDashboard] 🔧 FORÇANDO CRIAÇÃO DE ENTRADAS NO FLUXO DE CAIXA...');
+    
+    try {
+      // Buscar vendas que não têm entrada no fluxo de caixa
+      const salesWithoutCashFlow = financialData.sales.filter(sale => {
+        const hasCashFlowEntry = financialData.cashFlow.some(cf => 
+          cf.description.includes(sale.id) || 
+          cf.description.includes(sale.product_name)
+        );
+        return !hasCashFlowEntry;
+      });
+      
+      console.log('[AdminDashboard] 📋 Vendas sem fluxo de caixa:', salesWithoutCashFlow);
+      
+      if (salesWithoutCashFlow.length === 0) {
+        toast({
+          title: 'Nenhuma venda pendente',
+          description: 'Todas as vendas já têm entradas no fluxo de caixa',
+        });
+        return;
+      }
+      
+      // Criar entradas no fluxo de caixa para cada venda
+      for (const sale of salesWithoutCashFlow) {
+        const cashFlowPayload = {
+          user_id: user?.id,
+          store_id: sale.store_id,
+          type: 'income',
+          category: 'Venda',
+          description: `Venda: ${sale.product_name} - ID: ${sale.id} - Cliente: ${sale.customer_name || 'Cliente não informado'}`,
+          amount: String(Number(sale.total_price)),
+          date: sale.sale_date,
+          payment_method: 'cash'
+        };
+        
+        console.log('[AdminDashboard] 📤 Criando entrada no fluxo de caixa:', cashFlowPayload);
+        
+        await api.post('/fluxo-caixa', cashFlowPayload);
+        console.log('[AdminDashboard] ✅ Entrada criada para venda:', sale.id);
+      }
+      
+      // Atualizar dados
+      await refreshData();
+      
+      toast({
+        title: 'Sucesso!',
+        description: `${salesWithoutCashFlow.length} entradas criadas no fluxo de caixa`,
+      });
+      
+    } catch (error) {
+      console.error('[AdminDashboard] ❌ Erro ao criar entradas no fluxo de caixa:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar as entradas no fluxo de caixa',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Dados para gráficos baseados nos dados reais do fluxo de caixa
@@ -218,7 +279,7 @@ const AdminDashboard = () => {
         <p className="text-lg text-muted-foreground mt-1">Visão geral completa do seu negócio</p>
         
         {/* Botão de teste para debug */}
-        <div className="mt-4">
+        <div className="mt-4 flex gap-2">
           <Button 
             onClick={testSalesCounting}
             variant="outline" 
@@ -226,6 +287,15 @@ const AdminDashboard = () => {
             className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
           >
             🔍 Testar Contabilização de Vendas
+          </Button>
+          
+          <Button 
+            onClick={forceCreateCashFlowEntries}
+            variant="outline" 
+            size="sm"
+            className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100"
+          >
+            🔧 Forçar Entradas no Fluxo de Caixa
           </Button>
         </div>
       </div>
