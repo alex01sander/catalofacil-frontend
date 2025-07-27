@@ -288,6 +288,7 @@ const OrderManagement = () => {
       
       // Registrar venda para cada item (registerSale já adiciona ao fluxo de caixa)
       console.log('[OrderManagement] Registrando vendas para os itens...');
+      let vendasRegistradas = 0;
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
@@ -302,11 +303,16 @@ const OrderManagement = () => {
               customer_name: order.customer_name
             });
             console.log(`[OrderManagement] ✅ Venda registrada com sucesso para ${product.name}`);
+            vendasRegistradas++;
           } catch (error) {
             console.error(`[OrderManagement] ❌ Erro ao registrar venda para ${product.name}:`, error);
+            console.error(`[OrderManagement] Detalhes do erro:`, error.response?.data || error.message);
           }
+        } else {
+          console.warn(`[OrderManagement] ⚠️ Produto não encontrado para item: ${item.product_id}`);
         }
       }
+      console.log(`[OrderManagement] 📊 Total de vendas registradas para este pedido: ${vendasRegistradas}/${order.order_items.length}`);
              toast.success('Pedido confirmado com sucesso!');
       await fetchOrders();
       await refetchProducts();
