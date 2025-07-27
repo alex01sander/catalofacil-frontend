@@ -33,6 +33,7 @@ interface FinancialContextType {
   updateExpense: (id: string, updates: any) => Promise<void>;
   registerSale: (saleData: any) => Promise<void>;
   addCreditTransaction: (accountId: string, type: 'debt' | 'payment', amount: number, description?: string) => Promise<void>;
+  syncSalesWithCashFlow: () => Promise<void>;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -190,11 +191,77 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshData = async () => {
-    console.log('[FinancialContext] refreshData chamado - forçando nova busca');
-    globalFinancialCache.timestamp = 0; // Forçar nova busca global
-    globalFinancialCache.data = null; // Limpar dados do cache
+    console.log('[FinancialContext] Forçando atualização dos dados...');
+    globalFinancialCache.timestamp = 0;
+    globalFinancialCache.data = null;
     setData(prev => ({ ...prev, isLoading: true }));
     await fetchAllData();
+  };
+
+  // Função para sincronizar vendas existentes com fluxo de caixa
+  const syncSalesWithCashFlow = async () => {
+    if (!user?.id) return;
+
+    try {
+      console.log('[FinancialContext] Iniciando sincronização de vendas...');
+      
+      // Buscar todas as vendas e entradas de fluxo de caixa
+      const [salesRes, cashFlowRes] = await Promise.all([
+        api.get('/vendas'),
+        api.get('/fluxo-caixa')
+      ]);
+
+      const sales = salesRes.data?.data || salesRes.data || [];
+      const cashFlow = cashFlowRes.data?.data || cashFlowRes.data || [];
+      
+      // Encontrar vendas sem entrada correspondente no fluxo de caixa
+      const salesWithoutCashFlow = sales.filter(sale => {
+        const hasCorrespondingEntry = cashFlow.some(entry => 
+          entry.type === 'income' && 
+          entry.description && 
+          entry.description.includes(`Venda: ${sale.product_name}`) &&
+          Math.abs(Number(entry.amount) - Number(sale.total_price)) < 0.01
+        );
+        return !hasCorrespondingEntry;
+      });
+
+      console.log('[FinancialContext] Vendas sem fluxo de caixa:', salesWithoutCashFlow.length);
+
+      // Registrar entrada no fluxo de caixa para cada venda órfã
+      for (const sale of salesWithoutCashFlow) {
+        const cashFlowEntry = {
+          type: 'income',
+          amount: Number(sale.total_price),
+          description: `Venda: ${sale.product_name} (Sincronização automática)`,
+          date: sale.sale_date || new Date().toISOString().split('T')[0],
+          user_id: user.id
+        };
+
+        await api.post('/fluxo-caixa', cashFlowEntry);
+        console.log('[FinancialContext] Entrada sincronizada:', sale.product_name, sale.total_price);
+      }
+
+      if (salesWithoutCashFlow.length > 0) {
+        console.log(`[FinancialContext] ✅ ${salesWithoutCashFlow.length} vendas sincronizadas!`);
+        
+        // Forçar atualização dos dados
+        globalFinancialCache.timestamp = 0;
+        globalFinancialCache.data = null;
+        globalFinancialCache.isFetching = false;
+        
+        // Aguardar processamento e buscar dados atualizados
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await fetchAllData();
+        
+        toast({ title: 'Sucesso', description: `${salesWithoutCashFlow.length} vendas sincronizadas com o fluxo de caixa!` });
+      } else {
+        console.log('[FinancialContext] Todas as vendas já estão sincronizadas');
+      }
+
+    } catch (error) {
+      console.error('[FinancialContext] Erro na sincronização:', error);
+      toast({ title: 'Erro', description: 'Erro ao sincronizar vendas', variant: 'destructive' });
+    }
   };
 
   const addCashFlowEntry = async (entry: any) => {
@@ -322,7 +389,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         quantity: Number(saleData.quantity),
         unit_price: Number(saleData.unit_price),
         total_price: Number(saleData.quantity) * Number(saleData.unit_price),
-        sale_date: saleData.date, // Enviar como string em vez de Date object
+        sale_date: saleData.date,
         status: 'completed',
         store_id: selectedProduct.store_id || null,
         customer_name: saleData.customer_name || 'Cliente não informado'
@@ -337,8 +404,8 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         type: 'income',
         category: 'Venda',
         description: `Venda: ${payload.product_name} - Cliente: ${payload.customer_name}`,
-        amount: String(Number(payload.total_price)), // Converter para string como addCashFlowEntry
-        date: new Date(payload.sale_date).toISOString(), // Converter para ISO string como addCashFlowEntry
+        amount: String(Number(payload.total_price)),
+        date: new Date(payload.sale_date).toISOString(),
         payment_method: saleData.payment_method || 'cash'
       };
       
@@ -404,7 +471,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const timeoutId = setTimeout(() => {
         console.log('[FinancialContext] Iniciando fetchAllData após debounce');
         fetchAllData();
-      }, 500); // Reduzido de 2000ms para 500ms
+      }, 500);
       
       return () => {
         console.log('[FinancialContext] Limpando timeout');
@@ -423,6 +490,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     updateExpense,
     registerSale,
     addCreditTransaction,
+    syncSalesWithCashFlow, // Adicionar a nova função
   };
 
   return (
