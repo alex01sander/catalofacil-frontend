@@ -69,25 +69,6 @@ const AdminDashboard = () => {
   const confirmedOrders = orders.filter(order => order.status === 'confirmed').length;
   const totalOrders = confirmedOrders; // Remover duplicação com financialData.sales.length
   const conversionRate = totalOrders > 0 ? ((totalOrders / (totalProducts || 1)) * 100).toFixed(1) : "0.0";
-  
-  // Debug das vendas
-  console.log('🔍 DEBUG DASHBOARD VENDAS:');
-  console.log('- Total de pedidos carregados:', orders.length);
-  console.log('- Pedidos confirmados:', confirmedOrders);
-  console.log('- Pedidos pendentes:', orders.filter(o => o.status === 'pending').length);
-  console.log('- Pedidos cancelados:', orders.filter(o => o.status === 'cancelled').length);
-  console.log('- Vendas do contexto:', financialData.sales.length);
-  console.log('- Total de vendas:', totalOrders);
-  console.log('- Receita total:', totalRevenue);
-  console.log('- Receita do fluxo de caixa:', financialData.totalIncome);
-  console.log('- Detalhes dos pedidos:', orders.map(o => ({ 
-    id: o.id, 
-    status: o.status, 
-    total: o.total_amount,
-    customer: o.customer_name,
-    date: o.created_at
-  })));
-  console.log('- Vendas do contexto:', financialData.sales);
 
   // Dados para gráficos baseados nos dados reais do fluxo de caixa
   const currentMonth = new Date().getMonth();

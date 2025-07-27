@@ -91,121 +91,7 @@ const OrderManagement = () => {
     }
   }, [user]);
 
-  // Função para registrar vendas de pedidos confirmados automaticamente
-  const registerConfirmedOrdersSales = async () => {
-    if (!user || !user.token) {
-      console.log('[OrderManagement] Usuário não autenticado para registrar vendas');
-      return;
-    }
-
-    try {
-      console.log('[OrderManagement] 🔄 Verificando pedidos confirmados para registrar vendas...');
-      
-      // Buscar todos os pedidos confirmados
-      const { data: confirmedOrders } = await api.get('/pedidos?status=confirmed&include=order_items');
-      
-      if (!confirmedOrders || confirmedOrders.length === 0) {
-        console.log('[OrderManagement] Nenhum pedido confirmado encontrado');
-        return;
-      }
-
-      console.log(`[OrderManagement] 📊 Encontrados ${confirmedOrders.length} pedidos confirmados`);
-
-      // Buscar vendas já registradas para comparar
-      const { data: existingSales } = await api.get('/vendas');
-      const existingSalesData = existingSales?.data || existingSales || [];
-      
-      console.log(`[OrderManagement] 📊 Vendas já registradas: ${existingSalesData.length}`);
-
-      let vendasRegistradas = 0;
-      let vendasJaExistentes = 0;
-      let erros = 0;
-
-      // Para cada pedido confirmado
-      for (const order of confirmedOrders) {
-        console.log(`[OrderManagement] 🔍 Processando pedido ${order.id} - ${order.customer_name}`);
-        
-        if (!order.order_items || order.order_items.length === 0) {
-          console.warn(`[OrderManagement] ⚠️ Pedido ${order.id} não tem itens`);
-          continue;
-        }
-
-        console.log(`[OrderManagement] 📦 Pedido ${order.id} tem ${order.order_items.length} itens`);
-
-        // Para cada item do pedido
-        for (const item of order.order_items) {
-          console.log(`[OrderManagement] 🎯 Processando item: ${item.product_id} - Qtd: ${item.quantity} - Preço: R$ ${item.unit_price}`);
-          
-          const product = products.find(p => p.id === item.product_id);
-          if (!product) {
-            console.warn(`[OrderManagement] ⚠️ Produto não encontrado: ${item.product_id}`);
-            continue;
-          }
-
-          console.log(`[OrderManagement] ✅ Produto encontrado: ${product.name}`);
-
-          // Verificar se já existe uma venda para este item (lógica mais flexível)
-          const saleExists = existingSalesData.some((sale: any) => {
-            // Comparar por produto, quantidade e data aproximada (mesmo dia)
-            const sameProduct = sale.product_id === item.product_id;
-            const sameQuantity = sale.quantity === item.quantity;
-            const sameDate = new Date(sale.sale_date).toDateString() === new Date(order.created_at).toDateString();
-            const sameCustomer = sale.customer_name === order.customer_name;
-            
-            return sameProduct && sameQuantity && sameDate;
-          });
-
-          if (saleExists) {
-            console.log(`[OrderManagement] ✅ Venda já registrada para ${product.name}`);
-            vendasJaExistentes++;
-            continue;
-          }
-
-          // Registrar nova venda
-          console.log(`[OrderManagement] 📝 Registrando venda para ${product.name} - ${item.quantity}x R$ ${item.unit_price}`);
-          try {
-            const saleData = {
-              product_id: item.product_id,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              date: new Date(order.created_at).toISOString().split('T')[0],
-              payment_method: 'whatsapp',
-              customer_name: order.customer_name
-            };
-            
-            console.log('[OrderManagement] Dados da venda a ser registrada:', saleData);
-            
-            await registerSale(saleData);
-            console.log(`[OrderManagement] ✅ Venda registrada com sucesso para ${product.name}`);
-            vendasRegistradas++;
-          } catch (error) {
-            console.error(`[OrderManagement] ❌ Erro ao registrar venda para ${product.name}:`, error);
-            erros++;
-          }
-        }
-      }
-
-      console.log(`[OrderManagement] 📊 Resumo: ${vendasRegistradas} novas vendas registradas, ${vendasJaExistentes} já existiam, ${erros} erros`);
-      
-      if (vendasRegistradas > 0) {
-        console.log(`[OrderManagement] ✅ ${vendasRegistradas} vendas registradas automaticamente!`);
-        // Recarregar dados
-        await fetchOrders();
-      }
-
-    } catch (error) {
-      console.error('[OrderManagement] Erro ao registrar vendas de pedidos confirmados:', error);
-    }
-  };
-
-  // Executar sincronização automática quando o componente carrega
-  useEffect(() => {
-    if (user && orders.length > 0) {
-      registerConfirmedOrdersSales();
-    }
-  }, [user, orders.length]);
-
-     const fetchOrders = async () => {
+  const fetchOrders = async () => {
      try {
        setLoading(true);
        console.log('[OrderManagement] Iniciando busca de pedidos...');
@@ -354,24 +240,19 @@ const OrderManagement = () => {
 
    // Confirmar pedido
   const confirmOrder = async (order: Order) => {
-    console.log('[OrderManagement] confirmOrder - user:', user);
-    console.log('[OrderManagement] confirmOrder - user.token:', user?.token);
-    
     if (!user || !user.token) {
-      console.error('[OrderManagement] confirmOrder - Usuário não autenticado');
       toast.error("Usuário não autenticado");
       return;
     }
      
-     // Verificar se o pedido tem itens
-     if (!order.order_items || order.order_items.length === 0) {
-       toast.error("Este pedido não possui itens. Não é possível confirmar.");
-       return;
-     }
+    // Verificar se o pedido tem itens
+    if (!order.order_items || order.order_items.length === 0) {
+      toast.error("Este pedido não possui itens. Não é possível confirmar.");
+      return;
+    }
     
     try {
       console.log('[OrderManagement] Confirmando pedido:', order.id);
-      console.log('[OrderManagement] Itens do pedido:', order.order_items);
       
       // Verificar estoque
       const stockIssues = [];
@@ -381,59 +262,44 @@ const OrderManagement = () => {
           stockIssues.push(`${item.product?.name}: estoque insuficiente (${product.stock} disponível, ${item.quantity} solicitado)`);
         }
       }
-             if (stockIssues.length > 0) {
-         toast.error(`Estoque insuficiente: ${stockIssues.join(', ')}`);
-         return;
-       }
+      
+      if (stockIssues.length > 0) {
+        toast.error(`Estoque insuficiente: ${stockIssues.join(', ')}`);
+        return;
+      }
+
       // Atualizar status do pedido
       await api.put(`/pedidos/${order.id}`, { status: 'confirmed' });
-      // Atualizar estoque
+      
+      // Atualizar estoque e registrar vendas
       for (const item of order.order_items) {
         const product = products.find(p => p.id === item.product_id);
         if (product) {
+          // Atualizar estoque
           const newStock = Math.max(0, product.stock - item.quantity);
           const isActive = newStock > 0;
-          console.log(`[OrderManagement] Atualizando estoque do produto ${product.name}: ${product.stock} -> ${newStock} (quantidade vendida: ${item.quantity}), ativo: ${isActive}`);
           await api.put(`/products/${item.product_id}`, { stock: newStock, is_active: isActive });
-        } else {
-          console.warn(`[OrderManagement] Produto não encontrado para item: ${item.product_id}`);
+          
+          // Registrar venda automaticamente
+          await registerSale({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            date: new Date().toISOString().split('T')[0],
+            payment_method: 'whatsapp',
+            customer_name: order.customer_name
+          });
         }
       }
       
-      // Registrar venda para cada item (registerSale já adiciona ao fluxo de caixa)
-      console.log('[OrderManagement] Registrando vendas para os itens...');
-      let vendasRegistradas = 0;
-      for (const item of order.order_items) {
-        const product = products.find(p => p.id === item.product_id);
-        if (product) {
-          console.log(`[OrderManagement] Registrando venda: ${product.name} - ${item.quantity}x R$ ${item.unit_price}`);
-          try {
-            await registerSale({
-              product_id: item.product_id,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              date: new Date().toISOString().split('T')[0],
-              payment_method: 'whatsapp',
-              customer_name: order.customer_name
-            });
-            console.log(`[OrderManagement] ✅ Venda registrada com sucesso para ${product.name}`);
-            vendasRegistradas++;
-          } catch (error) {
-            console.error(`[OrderManagement] ❌ Erro ao registrar venda para ${product.name}:`, error);
-            console.error(`[OrderManagement] Detalhes do erro:`, error.response?.data || error.message);
-          }
-        } else {
-          console.warn(`[OrderManagement] ⚠️ Produto não encontrado para item: ${item.product_id}`);
-        }
-      }
-      console.log(`[OrderManagement] 📊 Total de vendas registradas para este pedido: ${vendasRegistradas}/${order.order_items.length}`);
-             toast.success('Pedido confirmado com sucesso!');
+      toast.success('Pedido confirmado e vendas registradas automaticamente!');
       await fetchOrders();
       await refetchProducts();
-         } catch (error) {
-       console.error('[OrderManagement] Erro ao confirmar pedido:', error);
-       toast.error('Erro ao confirmar pedido. Verifique o console para mais detalhes.');
-     }
+      
+    } catch (error) {
+      console.error('[OrderManagement] Erro ao confirmar pedido:', error);
+      toast.error('Erro ao confirmar pedido');
+    }
   };
 
   // Cancelar pedido

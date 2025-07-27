@@ -66,30 +66,22 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   const [isFetching, setIsFetching] = useState(false);
 
   const fetchAllData = async () => {
-    console.log('=== FinancialContext fetchAllData ===');
-    console.log('user:', user);
-    console.log('token:', token);
-    
     if (!user || !token) {
-      console.log('❌ Sem usuário ou token, saindo...');
       return;
     }
 
     // Evitar múltiplas requisições simultâneas
     if (isFetching) {
-      console.log('🔄 Já está buscando dados, aguardando...');
       return;
     }
 
     // Cache de 30 segundos para evitar requisições excessivas
     const now = Date.now();
     if (now - lastFetchTime < 30000 && data.cashFlow.length > 0) {
-      console.log('⏰ Dados em cache, usando dados existentes');
       return;
     }
     
     setIsFetching(true);
-    console.log('✅ Iniciando busca de dados financeiros...');
     
     try {
       const headers = { Authorization: `Bearer ${token}` };
@@ -103,8 +95,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         api.get('/products')
       ]);
       
-      console.log('✅ Dados financeiros carregados com sucesso');
-      
       // Garantir que todos os dados sejam arrays - tratar resposta paginada
       const cashFlow = cashFlowRes.data?.data ? cashFlowRes.data.data : (Array.isArray(cashFlowRes.data) ? cashFlowRes.data : []);
       const creditAccounts = creditRes.data?.data ? creditRes.data.data : (Array.isArray(creditRes.data) ? creditRes.data : []);
@@ -116,7 +106,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.total_debt), 0);
       
-      console.log('✅ Definindo dados e parando loading');
       setData({
         cashFlow,
         creditAccounts,
@@ -132,8 +121,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       setLastFetchTime(now);
     } catch (error) {
-      console.error('❌ Erro ao buscar dados financeiros:', error);
-      console.log('✅ Parando loading mesmo com erro');
+      console.error('Erro ao buscar dados financeiros:', error);
       setData(prev => ({ ...prev, isLoading: false }));
     } finally {
       setIsFetching(false);
@@ -141,7 +129,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshData = async () => {
-    console.log('🔄 RefreshData chamado');
     setLastFetchTime(0); // Forçar nova busca
     setData(prev => ({ ...prev, isLoading: true }));
     await fetchAllData();
@@ -159,7 +146,6 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const res = await api.post('/fluxo-caixa', payload);
       // Recarregar dados para garantir consistência
       await refreshData();
-      console.log('[FinancialContext] Dados recarregados após adicionar lançamento');
       toast({ title: 'Sucesso', description: 'Lançamento adicionado com sucesso!' });
     } catch (error) {
       console.error('Erro ao adicionar lançamento:', error);
@@ -200,10 +186,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const registerSale = async (saleData: any) => {
-    console.log('[FinancialContext] 🚀 Iniciando registerSale com dados:', saleData);
-    
     if (!user || !token) {
-      console.log('[FinancialContext] ❌ Sem usuário ou token');
       return;
     }
     
@@ -211,16 +194,10 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const headers = { Authorization: `Bearer ${token}` };
       
       // Buscar nome do produto pelo product_id
-      console.log('[FinancialContext] 🔍 Buscando produto com ID:', saleData.product_id);
-      console.log('[FinancialContext] 📦 Produtos disponíveis:', data.products.map(p => ({ id: p.id, name: p.name })));
-      
       const selectedProduct = data.products.find((p) => p.id === saleData.product_id);
       if (!selectedProduct) {
-        console.error('[FinancialContext] ❌ Produto não encontrado:', saleData.product_id);
         throw new Error('Produto não encontrado');
       }
-      
-      console.log('[FinancialContext] ✅ Produto encontrado:', selectedProduct.name);
       
       const payload = {
         product_id: saleData.product_id,
@@ -235,10 +212,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         customer_name: saleData.customer_name || 'Cliente não informado'
       };
       
-      console.log('[FinancialContext] 📤 Payload para API de vendas:', payload);
-      
       const res = await api.post('/vendas', payload);
-      console.log('[FinancialContext] ✅ Venda registrada na API:', res.data);
       
       // Lançar também no fluxo de caixa
       const cashFlowPayload = {
@@ -252,20 +226,15 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         payment_method: saleData.payment_method || 'cash'
       };
       
-      console.log('[FinancialContext] 📤 Payload para fluxo de caixa:', cashFlowPayload);
-      
       const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
-      console.log('[FinancialContext] ✅ Entrada no fluxo de caixa registrada:', cashFlowRes.data);
       
       // Recarregar dados para garantir que tudo esteja atualizado
-      console.log('[FinancialContext] 🔄 Recarregando dados...');
       await refreshData();
-      console.log('[FinancialContext] ✅ Dados recarregados após venda');
       
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {
-      console.error('[FinancialContext] ❌ Erro ao registrar venda:', error);
-      console.error('[FinancialContext] ❌ Detalhes do erro:', {
+      console.error('Erro ao registrar venda:', error);
+      console.error('Detalhes do erro:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status
@@ -297,21 +266,10 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    console.log('=== FinancialContext useEffect ===');
-    console.log('user:', user);
-    console.log('data.isLoading:', data.isLoading);
-    
     if (user) {
-      console.log('✅ Usuário encontrado, buscando dados...');
       fetchAllData();
-    } else {
-      console.log('❌ Sem usuário, não buscando dados');
     }
   }, [user]);
-
-  console.log('=== FinancialContext RETURN ===');
-  console.log('data.isLoading:', data.isLoading);
-  console.log('data:', data);
 
   const value = {
     data,
