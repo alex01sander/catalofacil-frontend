@@ -164,8 +164,28 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       };
       const headers = { Authorization: `Bearer ${token}` };
       const res = await api.post('/fluxo-caixa', payload);
-      // Recarregar dados para garantir consistência
-      await refreshData();
+      
+      // Atualizar dados localmente
+      const newEntry = res.data;
+      setData(prev => {
+        const newCashFlow = [newEntry, ...prev.cashFlow];
+        
+        // Recalcular totais
+        const newTotalIncome = newCashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
+        const newTotalExpenses = newCashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
+        
+        return {
+          ...prev,
+          cashFlow: newCashFlow,
+          totalIncome: newTotalIncome,
+          totalExpenses: newTotalExpenses,
+          balance: newTotalIncome - newTotalExpenses,
+        };
+      });
+      
+      // Invalidar cache global
+      globalFinancialCache.timestamp = 0;
+      
       toast({ title: 'Sucesso', description: 'Lançamento adicionado com sucesso!' });
     } catch (error) {
       console.error('Erro ao adicionar lançamento:', error);
@@ -181,7 +201,17 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const payload = { ...expense, user_id: user.id };
       delete payload["userId"];
       const res = await api.post('/despesas', payload);
-      setData(prev => ({ ...prev, expenses: [res.data, ...prev.expenses] }));
+      
+      // Atualizar dados localmente
+      const newExpense = res.data;
+      setData(prev => ({ 
+        ...prev, 
+        expenses: [newExpense, ...prev.expenses] 
+      }));
+      
+      // Invalidar cache global
+      globalFinancialCache.timestamp = 0;
+      
       toast({ title: 'Sucesso', description: 'Despesa adicionada com sucesso!' });
     } catch (error) {
       console.error('Erro ao adicionar despesa:', error);
@@ -194,10 +224,17 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const res = await api.put(`/despesas/${id}`, updates);
+      
+      // Atualizar dados localmente
+      const updatedExpense = res.data;
       setData(prev => ({
         ...prev,
-        expenses: prev.expenses.map(exp => exp.id === id ? res.data : exp)
+        expenses: prev.expenses.map(exp => exp.id === id ? updatedExpense : exp)
       }));
+      
+      // Invalidar cache global
+      globalFinancialCache.timestamp = 0;
+      
       toast({ title: 'Sucesso', description: 'Despesa atualizada com sucesso!' });
     } catch (error) {
       console.error('Erro ao atualizar despesa:', error);
@@ -248,8 +285,30 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
       
-      // Recarregar dados para garantir que tudo esteja atualizado
-      await refreshData();
+      // Atualizar dados localmente sem fazer nova requisição
+      const newSale = res.data;
+      const newCashFlowEntry = cashFlowRes.data;
+      
+      setData(prev => {
+        const newSales = [newSale, ...prev.sales];
+        const newCashFlow = [newCashFlowEntry, ...prev.cashFlow];
+        
+        // Recalcular totais
+        const newTotalIncome = newCashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
+        const newTotalExpenses = newCashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
+        
+        return {
+          ...prev,
+          sales: newSales,
+          cashFlow: newCashFlow,
+          totalIncome: newTotalIncome,
+          totalExpenses: newTotalExpenses,
+          balance: newTotalIncome - newTotalExpenses,
+        };
+      });
+      
+      // Invalidar cache global para forçar atualização na próxima busca
+      globalFinancialCache.timestamp = 0;
       
       toast({ title: 'Sucesso', description: 'Venda registrada!' });
     } catch (error: any) {
@@ -277,7 +336,10 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         amount,
         description: description || ''
       });
-      setData(prev => ({ ...prev, creditAccounts: prev.creditAccounts })); // Atualização real pode ser feita via refreshData
+      
+      // Invalidar cache global para forçar atualização na próxima busca
+      globalFinancialCache.timestamp = 0;
+      
       toast({ title: 'Sucesso', description: `${type === 'debt' ? 'Débito' : 'Pagamento'} registrado com sucesso!` });
     } catch (error: any) {
       console.error('Erro ao registrar transação:', error);
