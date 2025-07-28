@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Search } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Search, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
@@ -101,6 +101,64 @@ const CashFlowTab = () => {
     });
   };
 
+  // Função para identificar e corrigir vendas sem fluxo de caixa
+  const fixMissingCashFlowEntries = async () => {
+    console.log('[CashFlowTab] 🔧 VERIFICANDO VENDAS SEM FLUXO DE CAIXA...');
+    
+    try {
+      // Buscar vendas que não têm entrada no fluxo de caixa
+      const salesWithoutCashFlow = financialData.sales.filter(sale => {
+        const hasCashFlowEntry = financialData.cashFlow.some(cf => 
+          cf.description.includes(sale.id) || 
+          cf.description.includes(sale.product_name)
+        );
+        return !hasCashFlowEntry;
+      });
+      
+      console.log('[CashFlowTab] 📋 Vendas sem fluxo de caixa:', salesWithoutCashFlow);
+      
+      if (salesWithoutCashFlow.length === 0) {
+        toast({
+          title: 'Nenhuma venda pendente',
+          description: 'Todas as vendas já têm entradas no fluxo de caixa',
+        });
+        return;
+      }
+      
+      // Criar entradas no fluxo de caixa para cada venda
+      for (const sale of salesWithoutCashFlow) {
+        const cashFlowPayload = {
+          user_id: user?.id,
+          store_id: sale.store_id,
+          type: 'income',
+          category: 'Venda',
+          description: `Venda: ${sale.product_name} - ID: ${sale.id} - Cliente: ${sale.customer_name || 'Cliente não informado'}`,
+          amount: String(Number(sale.total_price)),
+          date: sale.sale_date,
+          payment_method: 'cash'
+        };
+        
+        console.log('[CashFlowTab] 📤 Criando entrada no fluxo de caixa:', cashFlowPayload);
+        
+        await addCashFlowEntry(cashFlowPayload);
+        console.log('[CashFlowTab] ✅ Entrada criada para venda:', sale.id);
+      }
+      
+      toast({
+        title: 'Sucesso!',
+        description: `${salesWithoutCashFlow.length} entradas criadas no fluxo de caixa`,
+      });
+      
+    } catch (error) {
+      console.error('[CashFlowTab] ❌ Erro ao corrigir fluxo de caixa:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível corrigir o fluxo de caixa',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -183,6 +241,10 @@ const CashFlowTab = () => {
           <Button onClick={debugCashFlow} variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50">
             <Search className="h-4 w-4 mr-2" />
             Debug
+          </Button>
+          <Button onClick={fixMissingCashFlowEntries} variant="outline" className="border-purple-500 text-purple-600 hover:bg-purple-50">
+            <Wrench className="h-4 w-4 mr-2" />
+            Corrigir Vendas
           </Button>
         </div>
       </div>
