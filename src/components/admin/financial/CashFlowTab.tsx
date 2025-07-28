@@ -103,17 +103,37 @@ const CashFlowTab = () => {
 
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await registerSale(saleData);
-    setShowSaleForm(false);
-    setSaleData({
-      product_id: '',
-      quantity: '1',
-      unit_price: '',
-      payment_method: 'cash',
-      date: new Date().toISOString().split('T')[0],
-    });
-    // Atualiza dashboard e caixa
-    window.location.reload();
+    
+    console.log('[CashFlowTab] 🛒 INICIANDO REGISTRO DE VENDA VIA FORMULÁRIO');
+    console.log('[CashFlowTab] 📋 Dados da venda:', saleData);
+    console.log('[CashFlowTab] 🔍 Produto selecionado:', saleData.product_id);
+    console.log('[CashFlowTab] 🔍 Quantidade:', saleData.quantity);
+    console.log('[CashFlowTab] 🔍 Preço unitário:', saleData.unit_price);
+    
+    try {
+      await registerSale(saleData);
+      console.log('[CashFlowTab] ✅ Venda registrada com sucesso!');
+      
+      setShowSaleForm(false);
+      setSaleData({
+        product_id: '',
+        quantity: '1',
+        unit_price: '',
+        payment_method: 'cash',
+        date: new Date().toISOString().split('T')[0],
+      });
+      
+      console.log('[CashFlowTab] 🔄 Recarregando página...');
+      // Atualiza dashboard e caixa
+      window.location.reload();
+    } catch (error) {
+      console.error('[CashFlowTab] ❌ Erro ao registrar venda:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível registrar a venda',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
