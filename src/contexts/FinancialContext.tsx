@@ -201,23 +201,47 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
 
   const addCashFlowEntry = async (entry: any) => {
     if (!user || !token) return;
+    
+    console.log('[FinancialContext] 📤 ADICIONANDO ENTRADA NO FLUXO DE CAIXA:', entry);
+    console.log('[FinancialContext] 🔍 Tipo da entrada:', entry.type);
+    console.log('[FinancialContext] 🔍 Amount da entrada:', entry.amount);
+    
     try {
       const payload = {
         ...entry,
         amount: String(Number(entry.amount)),
         date: new Date(entry.date).toISOString(),
       };
+      
+      console.log('[FinancialContext] 📤 Payload enviado para API:', payload);
+      
       const headers = { Authorization: `Bearer ${token}` };
       const res = await api.post('/fluxo-caixa', payload);
+      
+      console.log('[FinancialContext] ✅ Resposta da API:', res.data);
+      console.log('[FinancialContext] 🔍 Tipo retornado pela API:', res.data.type);
+      console.log('[FinancialContext] 🔍 Amount retornado pela API:', res.data.amount);
       
       // Atualizar dados localmente
       const newEntry = res.data;
       setData(prev => {
         const newCashFlow = [newEntry, ...prev.cashFlow];
         
-        // Recalcular totais
-        const newTotalIncome = newCashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
-        const newTotalExpenses = newCashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
+        console.log('[FinancialContext] 🔄 Recalculando totais...');
+        console.log('[FinancialContext] 📊 Total de entradas antes:', prev.totalIncome);
+        console.log('[FinancialContext] 📊 Total de saídas antes:', prev.totalExpenses);
+        
+        // Recalcular totais (suportando ambos os formatos)
+        const newTotalIncome = newCashFlow
+          .filter(e => e.type === 'income' || e.type === 'entrada')
+          .reduce((sum, e) => sum + Number(e.amount), 0);
+        const newTotalExpenses = newCashFlow
+          .filter(e => e.type === 'expense' || e.type === 'saida')
+          .reduce((sum, e) => sum + Number(e.amount), 0);
+        
+        console.log('[FinancialContext] 📊 Total de entradas depois:', newTotalIncome);
+        console.log('[FinancialContext] 📊 Total de saídas depois:', newTotalExpenses);
+        console.log('[FinancialContext] 📊 Saldo calculado:', newTotalIncome - newTotalExpenses);
         
         const updatedData = {
           ...prev,
@@ -236,7 +260,12 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       toast({ title: 'Sucesso', description: 'Lançamento adicionado com sucesso!' });
     } catch (error) {
-      console.error('Erro ao adicionar lançamento:', error);
+      console.error('[FinancialContext] ❌ Erro ao adicionar lançamento:', error);
+      console.error('[FinancialContext] ❌ Detalhes do erro:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       toast({ title: 'Erro', description: 'Não foi possível adicionar o lançamento', variant: 'destructive' });
     }
   };
