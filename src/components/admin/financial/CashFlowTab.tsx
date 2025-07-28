@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
@@ -36,6 +36,31 @@ const CashFlowTab = () => {
     payment_method: 'cash',
     date: new Date().toISOString().split('T')[0],
   });
+
+  // Função para debug do fluxo de caixa
+  const debugCashFlow = () => {
+    console.log('🔍 DEBUG FLUXO DE CAIXA:');
+    console.log('📊 Total de entradas:', financialData.cashFlow.filter(e => e.type === 'income').length);
+    console.log('📊 Total de saídas:', financialData.cashFlow.filter(e => e.type === 'expense').length);
+    console.log('💰 Entradas:', financialData.cashFlow.filter(e => e.type === 'income'));
+    console.log('💸 Saídas:', financialData.cashFlow.filter(e => e.type === 'expense'));
+    console.log('🛒 Vendas:', financialData.sales);
+    
+    // Verificar se há vendas sendo exibidas como saídas
+    const vendasComoSaidas = financialData.cashFlow.filter(e => 
+      e.type === 'expense' && e.description.toLowerCase().includes('venda')
+    );
+    if (vendasComoSaidas.length > 0) {
+      console.error('❌ PROBLEMA ENCONTRADO: Vendas sendo exibidas como saídas:', vendasComoSaidas);
+    } else {
+      console.log('✅ Nenhuma venda encontrada como saída');
+    }
+    
+    toast({
+      title: 'Debug Concluído',
+      description: `Entradas: ${financialData.cashFlow.filter(e => e.type === 'income').length} | Saídas: ${financialData.cashFlow.filter(e => e.type === 'expense').length}`,
+    });
+  };
 
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +120,10 @@ const CashFlowTab = () => {
           <Button onClick={() => setShowForm(!showForm)} className="bg-green-600 hover:bg-green-700">
             <Plus className="h-4 w-4 mr-2" />
             Lançamento Rápido
+          </Button>
+          <Button onClick={debugCashFlow} variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50">
+            <Search className="h-4 w-4 mr-2" />
+            Debug
           </Button>
         </div>
       </div>

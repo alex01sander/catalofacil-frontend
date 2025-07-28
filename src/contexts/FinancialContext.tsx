@@ -325,7 +325,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       const cashFlowPayload = {
         user_id: user?.id,
         store_id: payload.store_id,
-        type: 'income',
+        type: 'income', // ✅ CORRETO: Vendas devem ser income
         category: 'Venda',
         description: `Venda: ${payload.product_name} - ID: ${res.data.id} - Cliente: ${payload.customer_name}`,
         amount: String(Number(payload.total_price)),
@@ -334,10 +334,21 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       };
       
       console.log('[FinancialContext] 📤 Enviando fluxo de caixa para API:', cashFlowPayload);
+      console.log('[FinancialContext] 🔍 Verificando tipo:', cashFlowPayload.type);
+      console.log('[FinancialContext] 🔍 Verificando amount:', cashFlowPayload.amount);
       
       try {
         const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
         console.log('[FinancialContext] ✅ Fluxo de caixa salvo na API:', cashFlowRes.data);
+        console.log('[FinancialContext] 🔍 Tipo retornado pela API:', cashFlowRes.data.type);
+        console.log('[FinancialContext] 🔍 Amount retornado pela API:', cashFlowRes.data.amount);
+        
+        // Verificar se a API alterou o tipo
+        if (cashFlowRes.data.type !== 'income') {
+          console.error('[FinancialContext] ❌ PROBLEMA: API alterou tipo de income para:', cashFlowRes.data.type);
+        } else {
+          console.log('[FinancialContext] ✅ Tipo correto retornado pela API');
+        }
       } catch (cashFlowError) {
         console.error('[FinancialContext] ❌ ERRO ao salvar fluxo de caixa:', cashFlowError);
         console.error('[FinancialContext] ❌ Detalhes do erro de fluxo de caixa:', {
