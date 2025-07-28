@@ -56,6 +56,38 @@ const CashFlowTab = () => {
       console.log('✅ Nenhuma venda encontrada como saída');
     }
     
+    // DEBUG DETALHADO - Verificar todos os dados brutos
+    console.log('🔍 DADOS BRUTOS DO FLUXO DE CAIXA:');
+    financialData.cashFlow.forEach((entry, index) => {
+      console.log(`📋 Entrada ${index + 1}:`, {
+        id: entry.id,
+        type: entry.type,
+        type_original: entry.type,
+        description: entry.description,
+        amount: entry.amount,
+        amount_original: entry.amount,
+        category: entry.category,
+        date: entry.date,
+        payment_method: entry.payment_method
+      });
+    });
+    
+    // Verificar se há problemas de tipo
+    const tiposInesperados = financialData.cashFlow.filter(e => 
+      e.type !== 'income' && e.type !== 'expense'
+    );
+    if (tiposInesperados.length > 0) {
+      console.error('❌ TIPOS INESPERADOS ENCONTRADOS:', tiposInesperados);
+    }
+    
+    // Verificar se há problemas de amount
+    const amountsNegativos = financialData.cashFlow.filter(e => 
+      Number(e.amount) < 0
+    );
+    if (amountsNegativos.length > 0) {
+      console.error('❌ AMOUNTS NEGATIVOS ENCONTRADOS:', amountsNegativos);
+    }
+    
     toast({
       title: 'Debug Concluído',
       description: `Entradas: ${financialData.cashFlow.filter(e => e.type === 'income').length} | Saídas: ${financialData.cashFlow.filter(e => e.type === 'expense').length}`,
@@ -448,7 +480,18 @@ const CashFlowTab = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {financialData.cashFlow.map((entry) => (
+              {financialData.cashFlow.map((entry) => {
+                // LOG TEMPORÁRIO para debug
+                console.log('🎨 RENDERIZANDO ENTRY:', {
+                  id: entry.id,
+                  type: entry.type,
+                  description: entry.description,
+                  amount: entry.amount,
+                  isIncome: entry.type === 'income',
+                  isExpense: entry.type === 'expense'
+                });
+                
+                return (
                 <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -478,7 +521,7 @@ const CashFlowTab = () => {
                     <p className="text-sm text-gray-500">{entry.payment_method}</p>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </CardContent>

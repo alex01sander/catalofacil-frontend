@@ -125,6 +125,22 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         products = [];
       }
       
+      // DEBUG DETALHADO - Verificar dados brutos do fluxo de caixa
+      console.log('[FinancialContext] 🔍 DADOS BRUTOS DO FLUXO DE CAIXA:');
+      cashFlow.forEach((entry, index) => {
+        console.log(`📋 Entrada ${index + 1}:`, {
+          id: entry.id,
+          type: entry.type,
+          type_original: entry.type,
+          description: entry.description,
+          amount: entry.amount,
+          amount_original: entry.amount,
+          category: entry.category,
+          date: entry.date,
+          payment_method: entry.payment_method
+        });
+      });
+      
       const totalIncome = cashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
       const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
       const balance = totalIncome - totalExpenses;
