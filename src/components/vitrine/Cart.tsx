@@ -51,15 +51,8 @@ const Cart = () => {
   };
 
   const handleQuantityUpdate = (itemId: string, newQuantity: number) => {
-    // Validar quantidade antes de atualizar
-    if (newQuantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
-    
-    // Garantir que a quantidade seja um número válido
-    const validQuantity = Math.max(1, Math.floor(newQuantity));
-    updateQuantity(itemId, validQuantity);
+    // A validação de estoque agora é feita no CartContext
+    updateQuantity(itemId, newQuantity);
   };
 
   const handleSubmit = async () => {

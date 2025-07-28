@@ -7,6 +7,7 @@ export interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  stock: number; // Adicionar stock para validação
 }
 
 interface CartContextType {
@@ -43,12 +44,25 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       return;
     }
 
+    // Validar estoque
+    const productStock = product.stock || 0;
+    if (productStock === 0) {
+      toast.error('Produto fora de estoque!');
+      return;
+    }
+
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
+        const newQuantity = existingItem.quantity + quantity;
+        // Validar se não excede o estoque
+        if (newQuantity > productStock) {
+          toast.error(`Quantidade máxima disponível: ${productStock} unidades`);
+          return prevItems;
+        }
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity }
             : item
         );
       }
@@ -57,7 +71,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         name: product.name,
         price: product.price,
         image: product.image,
-        quantity: quantity
+        quantity: quantity,
+        stock: productStock
       }];
     });
     
@@ -76,11 +91,21 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       removeFromCart(id);
       return;
     }
-    setItems(prevItems =>
-      prevItems.map(item =>
+
+    setItems(prevItems => {
+      const item = prevItems.find(item => item.id === id);
+      if (!item) return prevItems;
+
+      // Validar se não excede o estoque
+      if (quantity > item.stock) {
+        toast.error(`Quantidade máxima disponível: ${item.stock} unidades`);
+        return prevItems;
+      }
+
+      return prevItems.map(item =>
         item.id === id ? { ...item, quantity } : item
-      )
-    );
+      );
+    });
   };
 
   const clearCart = () => {
