@@ -34,8 +34,8 @@ export function usePublicProducts(slug: string) {
         // Normalizar dados dos produtos para garantir tipos corretos
         const normalizedProducts = productsData.map(product => ({
           ...product,
-          stock: typeof product.stock === 'number' ? product.stock : 0,
-          price: typeof product.price === 'number' ? product.price : 0,
+          stock: product.stock !== null && product.stock !== undefined ? Number(product.stock) : 0,
+          price: product.price !== null && product.price !== undefined ? Number(product.price) : 0,
           is_active: product.is_active === true || product.is_active === 'true',
           images: Array.isArray(product.images) ? product.images : [],
           category_id: product.category_id || null
