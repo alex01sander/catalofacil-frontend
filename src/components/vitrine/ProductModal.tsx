@@ -35,6 +35,7 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
   // Garantir que o estoque seja sempre um número válido
   const stock = typeof product.stock === 'number' ? product.stock : 0;
   const price = typeof product.price === 'number' ? product.price : 0;
+  const isInactive = product.is_active === false;
 
   // Resetar quantidade quando o modal abrir ou produto mudar
   useEffect(() => {
@@ -53,6 +54,11 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
     // Validar quantidade antes de adicionar
     if (quantity <= 0 || quantity > stock) {
       console.error('Quantidade inválida:', quantity);
+      return;
+    }
+
+    // Não permitir adicionar produtos inativos ou sem estoque
+    if (isInactive || stock === 0) {
       return;
     }
 
@@ -130,21 +136,30 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
               </span>
             </div>
             
-            {stock < 10 && stock > 0 && (
-              <Badge className="bg-orange-500">
-                Últimas unidades disponíveis!
-              </Badge>
-            )}
+            {/* Badges de status */}
+            <div className="flex flex-wrap gap-2">
+              {stock < 10 && stock > 0 && (
+                <Badge className="bg-orange-500">
+                  Últimas unidades disponíveis!
+                </Badge>
+              )}
 
-            {stock === 0 && (
-              <Badge className="bg-red-500">
-                Fora de estoque
-              </Badge>
-            )}
+              {stock === 0 && (
+                <Badge className="bg-red-500">
+                  Fora de estoque
+                </Badge>
+              )}
+
+              {isInactive && (
+                <Badge className="bg-gray-500">
+                  Produto Inativo
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Quantity Selector */}
-          {stock > 0 && (
+          {stock > 0 && !isInactive && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Quantidade:
@@ -174,7 +189,7 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
           )}
 
           {/* Total Price */}
-          {stock > 0 && (
+          {stock > 0 && !isInactive && (
             <div className="bg-gray-50 p-3 rounded-lg">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total:</span>
@@ -190,10 +205,10 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
             <Button
               className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
               onClick={handleAddToCart}
-              disabled={stock === 0}
+              disabled={stock === 0 || isInactive}
             >
               <ShoppingCart className="h-5 w-5 mr-2" />
-              {stock === 0 ? 'Fora de Estoque' : 'Adicionar ao Carrinho'}
+              {isInactive ? 'Produto Inativo' : stock === 0 ? 'Fora de Estoque' : 'Adicionar ao Carrinho'}
             </Button>
             
             <Button
