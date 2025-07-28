@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -32,17 +32,39 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
   const { addToCart } = useCart();
   const isMobile = useIsMobile();
 
+  // Garantir que o estoque seja sempre um número válido
+  const stock = typeof product.stock === 'number' ? product.stock : 0;
+  const price = typeof product.price === 'number' ? product.price : 0;
+
+  // Resetar quantidade quando o modal abrir ou produto mudar
+  useEffect(() => {
+    if (isOpen) {
+      setQuantity(1);
+      setSelectedImage(0);
+    }
+  }, [isOpen, product.id]);
+
   // Combinar images em uma única array
   const allImages = product.images && product.images.length > 0 
     ? product.images 
     : [product.image];
 
   const handleAddToCart = () => {
-    // Adiciona a quantidade selecionada ao carrinho
-    for (let i = 0; i < quantity; i++) {
-      addToCart(product);
+    // Validar quantidade antes de adicionar
+    if (quantity <= 0 || quantity > stock) {
+      console.error('Quantidade inválida:', quantity);
+      return;
     }
+
+    // Adicionar a quantidade selecionada ao carrinho
+    addToCart(product, quantity);
     onClose();
+  };
+
+  const handleQuantityChange = (newQuantity: number) => {
+    // Garantir que a quantidade seja sempre um número válido
+    const validQuantity = Math.max(1, Math.min(stock, newQuantity));
+    setQuantity(validQuantity);
   };
 
   const ProductContent = () => (
@@ -101,66 +123,77 @@ const ProductModal = ({ product, isOpen, onClose }: ProductModalProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-green-600`}>
-                R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
+                R$ {price.toFixed(2).replace('.', ',')}
               </span>
               <span className="text-sm text-gray-500">
-                {product.stock} em estoque
+                {stock} em estoque
               </span>
             </div>
             
-            {product.stock < 10 && (
+            {stock < 10 && stock > 0 && (
               <Badge className="bg-orange-500">
                 Últimas unidades disponíveis!
+              </Badge>
+            )}
+
+            {stock === 0 && (
+              <Badge className="bg-red-500">
+                Fora de estoque
               </Badge>
             )}
           </div>
 
           {/* Quantity Selector */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Quantidade:
-            </label>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
-              >
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-              <span className="px-4 py-2 border rounded text-center min-w-[60px]">
-                {quantity}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                disabled={quantity >= product.stock}
-              >
-                <ChevronUp className="h-4 w-4" />
-              </Button>
+          {stock > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Quantidade:
+              </label>
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                  disabled={quantity <= 1}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                <span className="px-4 py-2 border rounded text-center min-w-[60px]">
+                  {quantity}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  disabled={quantity >= stock}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Total Price */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Total:</span>
-              <span className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-green-600`}>
-                R$ {(product.price * quantity).toFixed(2).replace('.', ',')}
-              </span>
+          {stock > 0 && (
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Total:</span>
+                <span className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-green-600`}>
+                  R$ {(price * quantity).toFixed(2).replace('.', ',')}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="space-y-3">
             <Button
               className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
               onClick={handleAddToCart}
+              disabled={stock === 0}
             >
               <ShoppingCart className="h-5 w-5 mr-2" />
-              Adicionar ao Carrinho
+              {stock === 0 ? 'Fora de Estoque' : 'Adicionar ao Carrinho'}
             </Button>
             
             <Button

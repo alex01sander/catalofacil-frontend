@@ -11,7 +11,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: any) => void;
+  addToCart: (product: any, quantity?: number) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -36,13 +36,19 @@ interface CartProviderProps {
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: any, quantity: number = 1) => {
+    // Validar quantidade
+    if (quantity <= 0) {
+      console.error('Quantidade inválida:', quantity);
+      return;
+    }
+
     setItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
@@ -51,10 +57,14 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         name: product.name,
         price: product.price,
         image: product.image,
-        quantity: 1
+        quantity: quantity
       }];
     });
-    toast.success("Adicionado ao carrinho!");
+    
+    const message = quantity === 1 
+      ? "Adicionado ao carrinho!" 
+      : `${quantity} unidades adicionadas ao carrinho!`;
+    toast.success(message);
   };
 
   const removeFromCart = (id: string) => {

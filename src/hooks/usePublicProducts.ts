@@ -21,13 +21,36 @@ export function usePublicProducts(slug: string) {
         console.log('[usePublicProducts] Produtos públicos recebidos:', res.data);
         console.log('[usePublicProducts] Quantidade de produtos:', res.data?.length);
         
+        // Verificar se é resposta paginada ou array direto
+        let productsData = [];
+        if (res.data && res.data.data && Array.isArray(res.data.data)) {
+          productsData = res.data.data;
+        } else if (Array.isArray(res.data)) {
+          productsData = res.data;
+        } else {
+          productsData = [];
+        }
+
+        // Normalizar dados dos produtos para garantir tipos corretos
+        const normalizedProducts = productsData.map(product => ({
+          ...product,
+          stock: typeof product.stock === 'number' ? product.stock : 0,
+          price: typeof product.price === 'number' ? product.price : 0,
+          is_active: product.is_active === true || product.is_active === 'true',
+          images: Array.isArray(product.images) ? product.images : [],
+          category_id: product.category_id || null
+        }));
+        
         // Log detalhado da estrutura de cada produto
-        if (res.data && res.data.length > 0) {
-          console.log('[usePublicProducts] ESTRUTURA DO PRIMEIRO PRODUTO:', JSON.stringify(res.data[0], null, 2));
-          res.data.forEach((product, index) => {
-            console.log(`[usePublicProducts] Produto ${index + 1}:`, {
+        if (normalizedProducts.length > 0) {
+          console.log('[usePublicProducts] ESTRUTURA DO PRIMEIRO PRODUTO NORMALIZADO:', JSON.stringify(normalizedProducts[0], null, 2));
+          normalizedProducts.forEach((product, index) => {
+            console.log(`[usePublicProducts] Produto ${index + 1} normalizado:`, {
               id: product.id,
               name: product.name,
+              stock: product.stock,
+              price: product.price,
+              is_active: product.is_active,
               category_id: product.category_id,
               category: product.category,
               categories: product.categories
@@ -35,14 +58,7 @@ export function usePublicProducts(slug: string) {
           });
         }
         
-        // Verificar se é resposta paginada ou array direto
-        if (res.data && res.data.data && Array.isArray(res.data.data)) {
-          setProducts(res.data.data);
-        } else if (Array.isArray(res.data)) {
-          setProducts(res.data);
-        } else {
-          setProducts([]);
-        }
+        setProducts(normalizedProducts);
       })
       .catch(error => {
         console.error('[usePublicProducts] Erro ao buscar produtos:', error);

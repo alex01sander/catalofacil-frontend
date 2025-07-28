@@ -38,12 +38,30 @@ const Cart = () => {
     paymentMethod: 'pix',
     deliveryMethod: 'delivery'
   });
+
+  // Garantir que totalItems e totalPrice sejam números válidos
+  const validTotalItems = typeof totalItems === 'number' ? totalItems : 0;
+  const validTotalPrice = typeof totalPrice === 'number' ? totalPrice : 0;
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
+
+  const handleQuantityUpdate = (itemId: string, newQuantity: number) => {
+    // Validar quantidade antes de atualizar
+    if (newQuantity <= 0) {
+      removeFromCart(itemId);
+      return;
+    }
+    
+    // Garantir que a quantidade seja um número válido
+    const validQuantity = Math.max(1, Math.floor(newQuantity));
+    updateQuantity(itemId, validQuantity);
+  };
+
   const handleSubmit = async () => {
     if (!formData.name || !formData.phone || formData.deliveryMethod === 'delivery' && !formData.address) {
       toast.error('Por favor, preencha todos os campos obrigatórios');
@@ -72,14 +90,18 @@ const Cart = () => {
         store_id: storeId, // ID da loja
         customer_name: formData.name,
         customer_phone: formData.phone,
-        total_amount: totalPrice,
+        total_amount: validTotalPrice,
         status: 'pending',
-        order_items: items.map(item => ({
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: Number(item.price), // Garantir que seja número
-          total_price: Number(item.price) * item.quantity // Garantir que seja número
-        }))
+        order_items: items.map(item => {
+          const itemPrice = typeof item.price === 'number' ? item.price : 0;
+          const itemQuantity = typeof item.quantity === 'number' ? item.quantity : 1;
+          return {
+            product_id: item.id,
+            quantity: itemQuantity,
+            unit_price: itemPrice, // Garantir que seja número
+            total_price: itemPrice * itemQuantity // Garantir que seja número
+          };
+        })
       };
 
       // Adicionar store_owner_id apenas se disponível nos dados da loja (não usar user.id temporário)
@@ -139,7 +161,11 @@ const Cart = () => {
       // 2. WhatsApp
       // Garantir que o número está no formato internacional (apenas dígitos)
       const whatsappNumber = (store.whatsapp_number || "5511999999999").replace(/\D/g, "");
-      const orderSummary = items.map(item => `• ${item.name} — Qtd: ${item.quantity} — R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
+      const orderSummary = items.map(item => {
+        const itemPrice = typeof item.price === 'number' ? item.price : 0;
+        const itemQuantity = typeof item.quantity === 'number' ? item.quantity : 1;
+        return `• ${item.name} — Qtd: ${itemQuantity} — R$ ${(itemPrice * itemQuantity).toFixed(2).replace('.', ',')}`;
+      }).join('\n');
       const paymentMethodText = {
         pix: 'PIX',
         money: 'Dinheiro',
@@ -157,7 +183,7 @@ const Cart = () => {
         `*📦 Itens do Pedido:*\n` +
         `${orderSummary}\n\n` +
         `*💰 Resumo Financeiro:*\n` +
-        `• Total: *R$ ${totalPrice.toFixed(2).replace('.', ',')}*\n` +
+        `• Total: *R$ ${validTotalPrice.toFixed(2).replace('.', ',')}*\n` +
         `• Forma de Pagamento: ${paymentMethodText}\n` +
         `• Forma de Entrega: ${deliveryMethodText}\n` +
         `\n` +
@@ -170,7 +196,7 @@ const Cart = () => {
       setLastOrder({
         ...formData,
         items: [...items],
-        total: totalPrice,
+        total: validTotalPrice,
         paymentMethodText,
         deliveryMethodText,
         orderId: order.id
@@ -194,14 +220,15 @@ const Cart = () => {
       toast.error(`Erro ao criar pedido: ${errorMessage}`);
     }
   };
+
   return (
     <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="sm" className="relative p-2 text-neutral-950 bg-zinc-50">
             <ShoppingCart className="h-5 w-5" />
-            {totalItems > 0 && <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white border-2 border-white">
-                {totalItems}
+            {validTotalItems > 0 && <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white border-2 border-white">
+                {validTotalItems}
               </Badge>}
           </Button>
         </SheetTrigger>
@@ -221,38 +248,45 @@ const Cart = () => {
             // Visualização do Carrinho
             <>
                     <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4">
-                      {items.map(item => <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
-                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border">
-                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-sm text-gray-900 truncate">{item.name}</h3>
-                            <p className="text-violet-600 font-bold text-lg">
-                              R$ {Number(item.price || 0).toFixed(2).replace('.', ',')}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <div className="flex items-center gap-2 bg-white rounded-lg border p-1">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="w-8 text-center font-medium">{item.quantity}</span>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                                <Plus className="h-3 w-3" />
+                      {items.map(item => {
+                        const itemPrice = typeof item.price === 'number' ? item.price : 0;
+                        const itemQuantity = typeof item.quantity === 'number' ? item.quantity : 1;
+                        
+                        return (
+                          <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border">
+                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-sm text-gray-900 truncate">{item.name}</h3>
+                              <p className="text-violet-600 font-bold text-lg">
+                                R$ {itemPrice.toFixed(2).replace('.', ',')}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="flex items-center gap-2 bg-white rounded-lg border p-1">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleQuantityUpdate(item.id, itemQuantity - 1)}>
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center font-medium">{itemQuantity}</span>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleQuantityUpdate(item.id, itemQuantity + 1)}>
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
                           </div>
-                        </div>)}
+                        );
+                      })}
                     </div>
                     
                     <div className="border-t pt-4 pb-6 px-6 space-y-4 bg-white flex-shrink-0">
                       <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                         <span className="text-lg font-semibold">Total:</span>
                         <span className="text-xl font-bold text-violet-600">
-                          R$ {totalPrice.toFixed(2).replace('.', ',')}
+                          R$ {validTotalPrice.toFixed(2).replace('.', ',')}
                         </span>
                       </div>
                       <Button className="w-full h-12 text-base font-semibold bg-violet-600 hover:bg-violet-700" onClick={() => setShowCheckoutForm(true)}>
@@ -269,26 +303,33 @@ const Cart = () => {
                         Resumo do Pedido
                       </h3>
                       <div className="space-y-2 mb-4">
-                        {items.map(item => <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border shrink-0">
-                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        {items.map(item => {
+                          const itemPrice = typeof item.price === 'number' ? item.price : 0;
+                          const itemQuantity = typeof item.quantity === 'number' ? item.quantity : 1;
+                          
+                          return (
+                            <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border shrink-0">
+                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
+                                <p className="text-xs text-gray-500">Qtd: {itemQuantity}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-sm text-violet-600">
+                                  R$ {(itemPrice * itemQuantity).toFixed(2).replace('.', ',')}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
-                              <p className="text-xs text-gray-500">Qtd: {item.quantity}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-sm text-violet-600">
-                                R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                              </p>
-                            </div>
-                          </div>)}
+                          );
+                        })}
                       </div>
                       <div className="pt-3 border-t">
                         <div className="flex justify-between items-center p-3 bg-violet-50 rounded-lg">
                           <span className="font-bold text-lg text-gray-900">Total:</span>
                           <span className="font-bold text-xl text-violet-600">
-                            R$ {totalPrice.toFixed(2).replace('.', ',')}
+                            R$ {validTotalPrice.toFixed(2).replace('.', ',')}
                           </span>
                         </div>
                       </div>
@@ -414,9 +455,13 @@ const Cart = () => {
                 <div><b>Forma de Pagamento:</b> {lastOrder.paymentMethodText}</div>
                 <div className="pt-2"><b>Itens:</b>
                   <ul className="list-disc ml-5">
-                    {lastOrder.items.map((item: any) => (
-                      <li key={item.id}>{item.name} (Qtd: {item.quantity}) - R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}</li>
-                    ))}
+                    {lastOrder.items.map((item: any) => {
+                      const itemPrice = typeof item.price === 'number' ? item.price : 0;
+                      const itemQuantity = typeof item.quantity === 'number' ? item.quantity : 1;
+                      return (
+                        <li key={item.id}>{item.name} (Qtd: {itemQuantity}) - R$ {(itemPrice * itemQuantity).toFixed(2).replace('.', ',')}</li>
+                      );
+                    })}
                   </ul>
                 </div>
                 <div className="pt-2"><b>Total:</b> R$ {lastOrder.total.toFixed(2).replace('.', ',')}</div>

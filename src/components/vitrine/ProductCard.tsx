@@ -41,8 +41,15 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
     return null;
   }
 
+  // Garantir que stock e price sejam números válidos
+  const stock = typeof product.stock === 'number' ? product.stock : 0;
+  const price = typeof product.price === 'number' ? product.price : 0;
+  const isOutOfStock = stock === 0;
+
   const handleAddToCart = () => {
-    addToCart(product);
+    if (!isOutOfStock) {
+      addToCart(product);
+    }
   };
 
   const handleViewDetails = () => {
@@ -66,11 +73,18 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           }}
         />
 
-        {product.stock > 0 && product.stock < 10 && (
+        {stock > 0 && stock < 10 && (
           <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-orange-500 text-xs">
             Últimas
           </Badge>
         )}
+
+        {isOutOfStock && (
+          <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-red-500 text-xs">
+            Fora de estoque
+          </Badge>
+        )}
+
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
       </div>
       
@@ -86,7 +100,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
 
         <div className="mb-3 md:mb-4">
           <span className="text-lg md:text-2xl font-bold text-green-600">
-            R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
+            R$ {price.toFixed(2).replace('.', ',')}
           </span>
         </div>
 
@@ -104,10 +118,15 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           <Button
             size="sm"
             onClick={handleAddToCart}
-            className="w-full md:flex-1 bg-green-600 hover:bg-green-700 text-xs md:text-sm h-8 md:h-9"
+            disabled={isOutOfStock}
+            className={`w-full md:flex-1 text-xs md:text-sm h-8 md:h-9 ${
+              isOutOfStock 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
             <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            Comprar
+            {isOutOfStock ? 'Fora de estoque' : 'Comprar'}
           </Button>
         </div>
       </CardContent>
