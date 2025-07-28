@@ -141,8 +141,14 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         });
       });
       
-      const totalIncome = cashFlow.filter(e => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0);
-      const totalExpenses = cashFlow.filter(e => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0);
+      // Calcular totais
+      const totalIncome = cashFlow
+        .filter(entry => entry.type === 'income' || entry.type === 'entrada')
+        .reduce((sum, entry) => sum + Number(entry.amount), 0);
+      
+      const totalExpenses = cashFlow
+        .filter(entry => entry.type === 'expense' || entry.type === 'saida')
+        .reduce((sum, entry) => sum + Number(entry.amount), 0);
       const balance = totalIncome - totalExpenses;
       const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
 

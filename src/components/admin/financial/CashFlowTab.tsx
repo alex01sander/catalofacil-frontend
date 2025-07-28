@@ -40,15 +40,20 @@ const CashFlowTab = () => {
   // Função para debug do fluxo de caixa
   const debugCashFlow = () => {
     console.log('🔍 DEBUG FLUXO DE CAIXA:');
-    console.log('📊 Total de entradas:', financialData.cashFlow.filter(e => e.type === 'income').length);
-    console.log('📊 Total de saídas:', financialData.cashFlow.filter(e => e.type === 'expense').length);
-    console.log('💰 Entradas:', financialData.cashFlow.filter(e => e.type === 'income'));
-    console.log('💸 Saídas:', financialData.cashFlow.filter(e => e.type === 'expense'));
+    
+    // Função auxiliar para verificar se é entrada
+    const isIncome = (type: string) => type === 'income' || type === 'entrada';
+    const isExpense = (type: string) => type === 'expense' || type === 'saida';
+    
+    console.log('📊 Total de entradas:', financialData.cashFlow.filter(e => isIncome(e.type)).length);
+    console.log('📊 Total de saídas:', financialData.cashFlow.filter(e => isExpense(e.type)).length);
+    console.log('💰 Entradas:', financialData.cashFlow.filter(e => isIncome(e.type)));
+    console.log('💸 Saídas:', financialData.cashFlow.filter(e => isExpense(e.type)));
     console.log('🛒 Vendas:', financialData.sales);
     
     // Verificar se há vendas sendo exibidas como saídas
     const vendasComoSaidas = financialData.cashFlow.filter(e => 
-      e.type === 'expense' && e.description.toLowerCase().includes('venda')
+      isExpense(e.type) && e.description.toLowerCase().includes('venda')
     );
     if (vendasComoSaidas.length > 0) {
       console.error('❌ PROBLEMA ENCONTRADO: Vendas sendo exibidas como saídas:', vendasComoSaidas);
@@ -68,13 +73,15 @@ const CashFlowTab = () => {
         amount_original: entry.amount,
         category: entry.category,
         date: entry.date,
-        payment_method: entry.payment_method
+        payment_method: entry.payment_method,
+        isIncome: isIncome(entry.type),
+        isExpense: isExpense(entry.type)
       });
     });
     
     // Verificar se há problemas de tipo
     const tiposInesperados = financialData.cashFlow.filter(e => 
-      e.type !== 'income' && e.type !== 'expense'
+      !isIncome(e.type) && !isExpense(e.type)
     );
     if (tiposInesperados.length > 0) {
       console.error('❌ TIPOS INESPERADOS ENCONTRADOS:', tiposInesperados);
@@ -90,7 +97,7 @@ const CashFlowTab = () => {
     
     toast({
       title: 'Debug Concluído',
-      description: `Entradas: ${financialData.cashFlow.filter(e => e.type === 'income').length} | Saídas: ${financialData.cashFlow.filter(e => e.type === 'expense').length}`,
+      description: `Entradas: ${financialData.cashFlow.filter(e => isIncome(e.type)).length} | Saídas: ${financialData.cashFlow.filter(e => isExpense(e.type)).length}`,
     });
   };
 
@@ -481,23 +488,17 @@ const CashFlowTab = () => {
           ) : (
             <div className="space-y-3">
               {financialData.cashFlow.map((entry) => {
-                // LOG TEMPORÁRIO para debug
-                console.log('🎨 RENDERIZANDO ENTRY:', {
-                  id: entry.id,
-                  type: entry.type,
-                  description: entry.description,
-                  amount: entry.amount,
-                  isIncome: entry.type === 'income',
-                  isExpense: entry.type === 'expense'
-                });
-                
-                return (
+                 // Determinar se é entrada ou saída (suportando ambos os formatos)
+                 const isIncome = entry.type === 'income' || entry.type === 'entrada';
+                 const isExpense = entry.type === 'expense' || entry.type === 'saida';
+                 
+                 return (
                 <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      entry.type === 'income' ? 'bg-green-100' : 'bg-red-100'
+                      isIncome ? 'bg-green-100' : 'bg-red-100'
                     }`}>
-                      {entry.type === 'income' ? 
+                      {isIncome ? 
                         <TrendingUp className="h-5 w-5 text-green-600" /> : 
                         <TrendingDown className="h-5 w-5 text-red-600" />
                       }
@@ -515,8 +516,8 @@ const CashFlowTab = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-bold ${entry.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                      {entry.type === 'income' ? '+' : '-'} R$ {Number(entry.amount).toFixed(2).replace('.', ',')}
+                    <p className={`font-bold ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
+                      {isIncome ? '+' : '-'} R$ {Number(entry.amount).toFixed(2).replace('.', ',')}
                     </p>
                     <p className="text-sm text-gray-500">{entry.payment_method}</p>
                   </div>
