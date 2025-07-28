@@ -45,10 +45,9 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
   const stock = typeof product.stock === 'number' ? product.stock : 0;
   const price = typeof product.price === 'number' ? product.price : 0;
   const isOutOfStock = stock === 0;
-  const isInactive = product.is_active === false;
 
   const handleAddToCart = () => {
-    if (!isOutOfStock && !isInactive) {
+    if (!isOutOfStock) {
       addToCart(product);
     }
   };
@@ -60,9 +59,7 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
   };
 
   return (
-    <Card className={`group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${
-      isInactive ? 'opacity-60' : ''
-    }`}>
+    <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
       <div className="relative overflow-hidden cursor-pointer" onClick={handleViewDetails}>
         <img
           src={imgSrc}
@@ -76,26 +73,17 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           }}
         />
 
-        {/* Badges de status */}
-        <div className="absolute top-1 right-1 md:top-2 md:right-2 flex flex-col gap-1">
-          {stock > 0 && stock < 10 && (
-            <Badge className="bg-orange-500 text-xs">
-              Últimas
-            </Badge>
-          )}
+        {stock > 0 && stock < 10 && (
+          <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-orange-500 text-xs">
+            Últimas
+          </Badge>
+        )}
 
-          {isOutOfStock && (
-            <Badge className="bg-red-500 text-xs">
-              Fora de estoque
-            </Badge>
-          )}
-
-          {isInactive && (
-            <Badge className="bg-gray-500 text-xs">
-              Inativo
-            </Badge>
-          )}
-        </div>
+        {isOutOfStock && (
+          <Badge className="absolute top-1 right-1 md:top-2 md:right-2 bg-red-500 text-xs">
+            Fora de estoque
+          </Badge>
+        )}
 
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
       </div>
@@ -130,15 +118,15 @@ const ProductCard = ({ product, onViewDetails }: ProductCardProps) => {
           <Button
             size="sm"
             onClick={handleAddToCart}
-            disabled={isOutOfStock || isInactive}
+            disabled={isOutOfStock}
             className={`w-full md:flex-1 text-xs md:text-sm h-8 md:h-9 ${
-              isOutOfStock || isInactive
+              isOutOfStock
                 ? 'bg-gray-400 cursor-not-allowed' 
                 : 'bg-green-600 hover:bg-green-700'
             }`}
           >
             <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-            {isInactive ? 'Inativo' : isOutOfStock ? 'Fora de estoque' : 'Comprar'}
+            {isOutOfStock ? 'Fora de estoque' : 'Comprar'}
           </Button>
         </div>
       </CardContent>
