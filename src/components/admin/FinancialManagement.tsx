@@ -6,7 +6,27 @@ import CreditTab from "./financial/CreditTab";
 import ExpensesTab from "./financial/ExpensesTab";
 import ReportsTab from "./financial/ReportsTab";
 
-const FinancialManagement = () => {
+interface FinancialManagementProps {
+  activeTab?: string;
+}
+
+const FinancialManagement = ({ activeTab }: FinancialManagementProps) => {
+  // Mapear os novos tipos de view para os valores das tabs
+  const getDefaultTab = () => {
+    switch (activeTab) {
+      case "financial-cash":
+        return "cash-flow";
+      case "financial-credit":
+        return "credit";
+      case "financial-expenses":
+        return "expenses";
+      case "financial-reports":
+        return "reports";
+      default:
+        return "cash-flow";
+    }
+  };
+
   return (
     <FinancialProvider>
       <div className="space-y-6">
@@ -15,7 +35,7 @@ const FinancialManagement = () => {
           <p className="text-gray-600">Controle completo das suas finanças</p>
         </div>
 
-        <Tabs defaultValue="cash-flow" className="w-full">
+        <Tabs defaultValue={getDefaultTab()} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="cash-flow" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />

@@ -9,7 +9,7 @@ import OrderManagement from "@/components/admin/OrderManagement";
 import FinancialManagement from "@/components/admin/FinancialManagement";
 import StoreSettings from "@/components/admin/StoreSettings";
 
-type AdminView = "dashboard" | "products" | "categories" | "orders" | "financial" | "settings";
+type AdminView = "dashboard" | "products" | "categories" | "orders" | "financial" | "financial-cash" | "financial-credit" | "financial-expenses" | "financial-reports" | "settings";
 
 const Admin = () => {
   const [currentView, setCurrentView] = useState<AdminView>("dashboard");
@@ -25,7 +25,11 @@ const Admin = () => {
       case "orders":
         return <OrderManagement />;
       case "financial":
-        return <FinancialManagement />;
+      case "financial-cash":
+      case "financial-credit":
+      case "financial-expenses":
+      case "financial-reports":
+        return <FinancialManagement activeTab={currentView} />;
       case "settings":
         return <StoreSettings />;
       default:
