@@ -84,6 +84,37 @@ const formatDateFromISO = (dateStr: string): string => {
   return `${day}/${month}/${year}`;
 };
 
+// Função para formatar data enquanto digita
+const formatDateInput = (value: string): string => {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '');
+  
+  // Aplica a máscara DD/MM/AAAA
+  if (numbers.length <= 2) {
+    return numbers;
+  } else if (numbers.length <= 4) {
+    return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+  } else if (numbers.length <= 8) {
+    return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+  } else {
+    return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+  }
+};
+
+// Função para validar se a data é válida
+const isValidDate = (dateStr: string): boolean => {
+  const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+  if (!dateRegex.test(dateStr)) return false;
+  
+  const [day, month, year] = dateStr.split('/').map(Number);
+  const date = new Date(year, month - 1, day);
+  
+  return date.getDate() === day && 
+         date.getMonth() === month - 1 && 
+         date.getFullYear() === year &&
+         year >= 2020 && year <= 2030;
+};
+
 const CreditTab = () => {
   const { toast } = useToast();
   const { data, addCreditTransaction, refreshData } = useFinancial();
@@ -146,12 +177,22 @@ const CreditTab = () => {
   // Calcular data final automaticamente
   useEffect(() => {
     if (formData.first_payment_date && formData.installments && parseFloat(formData.installments) > 0 && formData.frequency) {
+      // Validar formato da data
+      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+      if (!dateRegex.test(formData.first_payment_date)) return;
+      
       const firstDateISO = formatDateToISO(formData.first_payment_date);
       if (!firstDateISO) return;
       
       const firstDate = new Date(firstDateISO);
       let finalDate = new Date(firstDate);
       const installments = parseFloat(formData.installments);
+      
+      console.log('[CreditTab] 📅 Calculando data final:', {
+        firstDate: formData.first_payment_date,
+        installments,
+        frequency: formData.frequency
+      });
       
       switch (formData.frequency) {
         case 'daily':
@@ -168,19 +209,27 @@ const CreditTab = () => {
           break;
       }
       
+      const finalDateFormatted = formatDateToBR(finalDate);
+      
       setFormData(prev => ({
         ...prev,
-        final_due_date: formatDateToBR(finalDate)
+        final_due_date: finalDateFormatted
       }));
       
-      console.log('[CreditTab] 📅 Data final calculada:', {
+      console.log('[CreditTab] ✅ Data final calculada:', {
         frequency: formData.frequency,
         installments: formData.installments,
         firstDate: formData.first_payment_date,
-        finalDate: formatDateToBR(finalDate)
+        finalDate: finalDateFormatted
       });
     }
   }, [formData.first_payment_date, formData.installments, formData.frequency]);
+
+  // Gerar opções de parcelas de 1x até 24x
+  const installmentOptions = Array.from({ length: 24 }, (_, i) => i + 1).map(num => ({
+    value: num.toString(),
+    label: `${num}x`
+  }));
 
   // Adicionar produto à lista
   const handleAddProduct = () => {
@@ -257,9 +306,8 @@ const CreditTab = () => {
     }
 
     // Validar formato de data
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!dateRegex.test(formData.first_payment_date)) {
-      toast({ title: 'Erro', description: 'Data da primeira cobrança deve estar no formato DD/MM/AAAA', variant: 'destructive' });
+    if (!isValidDate(formData.first_payment_date)) {
+      toast({ title: 'Erro', description: 'Data da primeira cobrança deve estar no formato DD/MM/AAAA e ser uma data válida', variant: 'destructive' });
       return;
     }
 
@@ -672,17 +720,21 @@ const CreditTab = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="installments">Parcelas (vezes que vai pagar) *</Label>
-                    <Input
-                      id="installments"
-                      type="text"
+                    <Select
                       value={formData.installments}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        setFormData(prev => ({ ...prev, installments: value || '1' }));
-                      }}
-                      placeholder="Ex: 3"
-                      className="mt-1"
-                    />
+                      onValueChange={(value: string) => setFormData(prev => ({ ...prev, installments: value }))}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Escolha o número de parcelas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {installmentOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="installment_value">Valor de cada parcela</Label>
@@ -731,15 +783,16 @@ const CreditTab = () => {
                       type="text"
                       value={formData.first_payment_date}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        // Permitir apenas números e barras
-                        const formatted = value.replace(/[^\d/]/g, '');
+                        const formatted = formatDateInput(e.target.value);
                         setFormData(prev => ({ ...prev, first_payment_date: formatted }));
                       }}
                       placeholder="DD/MM/AAAA"
-                      className="mt-1"
+                      className={`mt-1 ${formData.first_payment_date && !isValidDate(formData.first_payment_date) ? 'border-red-500' : ''}`}
                     />
                     <p className="text-xs text-gray-500 mt-1">Formato: DD/MM/AAAA</p>
+                    {formData.first_payment_date && !isValidDate(formData.first_payment_date) && (
+                      <p className="text-xs text-red-500 mt-1">Data inválida</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="final_due_date">Data de vencimento final</Label>
@@ -753,6 +806,59 @@ const CreditTab = () => {
                     <p className="text-xs text-gray-500 mt-1">Calculado automaticamente</p>
                   </div>
                 </div>
+                
+                {/* Exemplo de cálculo */}
+                {formData.first_payment_date && isValidDate(formData.first_payment_date) && formData.installments && formData.frequency && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-blue-800 mb-2">📅 Exemplo de Parcelas:</h4>
+                    <div className="text-xs text-blue-700 space-y-1">
+                      {(() => {
+                        const installments = parseFloat(formData.installments);
+                        const firstDateISO = formatDateToISO(formData.first_payment_date);
+                        if (!firstDateISO) return null;
+                        
+                        const firstDate = new Date(firstDateISO);
+                        const examples = [];
+                        
+                        for (let i = 1; i <= Math.min(installments, 3); i++) {
+                          let dueDate = new Date(firstDate);
+                          
+                          switch (formData.frequency) {
+                            case 'daily':
+                              dueDate.setDate(firstDate.getDate() + (i - 1));
+                              break;
+                            case 'weekly':
+                              dueDate.setDate(firstDate.getDate() + (i - 1) * 7);
+                              break;
+                            case 'biweekly':
+                              dueDate.setDate(firstDate.getDate() + (i - 1) * 14);
+                              break;
+                            case 'monthly':
+                              dueDate.setMonth(firstDate.getMonth() + (i - 1));
+                              break;
+                          }
+                          
+                          examples.push(
+                            <div key={i} className="flex justify-between">
+                              <span>{i}ª parcela:</span>
+                              <span className="font-medium">{formatDateToBR(dueDate)}</span>
+                            </div>
+                          );
+                        }
+                        
+                        if (installments > 3) {
+                          examples.push(
+                            <div key="more" className="text-blue-600 italic">
+                              ... e mais {installments - 3} parcelas
+                            </div>
+                          );
+                        }
+                        
+                        return examples;
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Observações */}
