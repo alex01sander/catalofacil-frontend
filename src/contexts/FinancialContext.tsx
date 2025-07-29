@@ -207,15 +207,19 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     console.log('[FinancialContext] 🔍 Amount da entrada:', entry.amount);
     
     try {
+      // Garantir que os dados estão no formato correto
       const payload = {
-        ...entry,
-        amount: String(Number(entry.amount)),
+        user_id: entry.user_id,
+        type: entry.type,
+        category: entry.category,
+        description: entry.description,
+        amount: String(Number(entry.amount)), // Garantir que é string numérica
         date: new Date(entry.date).toISOString(),
+        payment_method: entry.payment_method || 'cash'
       };
       
       console.log('[FinancialContext] 📤 Payload enviado para API:', payload);
       
-      const headers = { Authorization: `Bearer ${token}` };
       const res = await api.post('/fluxo-caixa', payload);
       
       console.log('[FinancialContext] ✅ Resposta da API:', res.data);

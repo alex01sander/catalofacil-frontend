@@ -238,26 +238,61 @@ const CashFlowTab = () => {
     e.preventDefault();
     if (!user) return;
 
-    await addCashFlowEntry({
-      user_id: user.id,
-      store_id: null,
-      type: formData.type,
-      category: formData.category,
-      description: formData.description,
-      amount: parseFloat(formData.amount),
-      date: formData.date,
-      payment_method: formData.payment_method
-    });
-    
-    setShowForm(false);
-    setFormData({
-      type: 'income',
-      category: '',
-      description: '',
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      payment_method: 'cash'
-    });
+    // Validação dos campos obrigatórios
+    if (!formData.description.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'A descrição é obrigatória',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      toast({
+        title: 'Erro',
+        description: 'O valor deve ser maior que zero',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!formData.category.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'A categoria é obrigatória',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    console.log('[CashFlowTab] 📤 ENVIANDO LANÇAMENTO RÁPIDO:', formData);
+
+    try {
+      await addCashFlowEntry({
+        user_id: user.id,
+        // Remover store_id se não for necessário ou usar um valor válido
+        type: formData.type,
+        category: formData.category.trim(),
+        description: formData.description.trim(),
+        amount: String(parseFloat(formData.amount)), // Garantir que é string
+        date: formData.date,
+        payment_method: formData.payment_method
+      });
+      
+      setShowForm(false);
+      setFormData({
+        type: 'income',
+        category: '',
+        description: '',
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        payment_method: 'cash'
+      });
+    } catch (error) {
+      console.error('[CashFlowTab] ❌ Erro no lançamento rápido:', error);
+      // O erro já é tratado no FinancialContext
+    }
   };
 
   if (financialData.isLoading) return <div>Carregando...</div>;
