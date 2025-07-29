@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Users, DollarSign, Search, FileDown, MessageCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Users, DollarSign, Search, FileDown, MessageCircle, Calendar, MapPin, Phone, User, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFinancial } from "@/contexts/FinancialContext";
 import ClientHistoryModal from "./ClientHistoryModal";
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-import axios from 'axios'; // Added axios import
+import axios from 'axios';
 import { API_URL } from '@/constants/api';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
@@ -21,9 +22,37 @@ type CreditAccount = {
   id: string;
   customer_name: string;
   customer_phone: string;
+  customer_address?: string;
   total_debt: number;
   created_at: string;
 };
+
+type InstallmentFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
+
+interface NewDebtFormData {
+  // Dados do Cliente
+  is_new_customer: boolean;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  existing_customer_id: string;
+  
+  // Detalhes da Venda
+  product_description: string;
+  total_value: string;
+  
+  // Parcelamento
+  installments: number;
+  installment_value: string;
+  frequency: InstallmentFrequency;
+  
+  // Datas
+  first_payment_date: string;
+  final_due_date: string;
+  
+  // Observações
+  observations: string;
+}
 
 const CreditTab = () => {
   const { toast } = useToast();
@@ -33,43 +62,22 @@ const CreditTab = () => {
   const [selectedClient, setSelectedClient] = useState<CreditAccount | null>(null);
   const [showClientHistory, setShowClientHistory] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState({
+  
+  const [formData, setFormData] = useState<NewDebtFormData>({
     is_new_customer: true,
     customer_name: '',
     customer_phone: '',
+    customer_address: '',
     existing_customer_id: '',
-    type: 'debt' as 'debt' | 'payment',
-    amount: '',
-    description: '',
-    payment_method: 'pix' as 'pix' | 'cash' | 'card',
+    product_description: '',
+    total_value: '',
+    installments: 1,
+    installment_value: '',
+    frequency: 'monthly',
+    first_payment_date: new Date().toISOString().split('T')[0],
+    final_due_date: '',
+    observations: ''
   });
-  const [selectedProducts, setSelectedProducts] = useState<{ product_id: string, quantity: number }[]>([]);
-  const [productToAdd, setProductToAdd] = useState('');
-  const [quantityToAdd, setQuantityToAdd] = useState(1);
-
-  // Função para atualizar produtos selecionados
-  const handleProductChange = (productId: string, quantity: number) => {
-    setSelectedProducts((prev) => {
-      const exists = prev.find(p => p.product_id === productId);
-      if (exists) {
-        return prev.map(p => p.product_id === productId ? { ...p, quantity } : p);
-      } else {
-        return [...prev, { product_id: productId, quantity }];
-      }
-    });
-  };
-
-  // Calcular valor total dos produtos selecionados
-  const totalValue = selectedProducts.reduce((sum, item) => {
-    const prod = data.products.find(p => p.id === item.product_id);
-    return sum + (prod ? Number(prod.price) * item.quantity : 0);
-  }, 0);
-
-  useEffect(() => {
-    if (formData.type === 'debt') {
-      setFormData(f => ({ ...f, amount: totalValue.toString() }));
-    }
-  }, [selectedProducts, formData.type]);
 
   const accounts = data.creditAccounts;
   const filteredAccounts = accounts.filter(account => 
@@ -77,55 +85,151 @@ const CreditTab = () => {
     (account.customer_phone || '').includes(searchTerm)
   );
 
+  // Calcular valor da parcela automaticamente
+  useEffect(() => {
+    if (formData.total_value && formData.installments > 0) {
+      const total = parseFloat(formData.total_value);
+      const installmentValue = total / formData.installments;
+      setFormData(prev => ({
+        ...prev,
+        installment_value: installmentValue.toFixed(2)
+      }));
+    }
+  }, [formData.total_value, formData.installments]);
+
+  // Calcular data final automaticamente
+  useEffect(() => {
+    if (formData.first_payment_date && formData.installments > 0 && formData.frequency) {
+      const firstDate = new Date(formData.first_payment_date);
+      let finalDate = new Date(firstDate);
+      
+      switch (formData.frequency) {
+        case 'daily':
+          finalDate.setDate(firstDate.getDate() + (formData.installments - 1));
+          break;
+        case 'weekly':
+          finalDate.setDate(firstDate.getDate() + (formData.installments - 1) * 7);
+          break;
+        case 'biweekly':
+          finalDate.setDate(firstDate.getDate() + (formData.installments - 1) * 14);
+          break;
+        case 'monthly':
+          finalDate.setMonth(firstDate.getMonth() + (formData.installments - 1));
+          break;
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        final_due_date: finalDate.toISOString().split('T')[0]
+      }));
+    }
+  }, [formData.first_payment_date, formData.installments, formData.frequency]);
+
+  // Preencher dados do cliente quando selecionado
+  const handleClientSelect = (client: CreditAccount) => {
+    setSelectedClient(client);
+    setFormData(prev => ({
+      ...prev,
+      is_new_customer: false,
+      customer_name: client.customer_name,
+      customer_phone: client.customer_phone,
+      customer_address: client.customer_address || '',
+      existing_customer_id: client.id
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validações
+    if (!formData.customer_name.trim()) {
+      toast({ title: 'Erro', description: 'Nome do cliente é obrigatório', variant: 'destructive' });
+      return;
+    }
+    
+    if (!formData.customer_phone.trim()) {
+      toast({ title: 'Erro', description: 'Telefone do cliente é obrigatório', variant: 'destructive' });
+      return;
+    }
+    
+    if (!formData.product_description.trim()) {
+      toast({ title: 'Erro', description: 'Descrição do produto/serviço é obrigatória', variant: 'destructive' });
+      return;
+    }
+    
+    if (!formData.total_value || parseFloat(formData.total_value) <= 0) {
+      toast({ title: 'Erro', description: 'Valor total deve ser maior que zero', variant: 'destructive' });
+      return;
+    }
+    
+    if (formData.installments <= 0) {
+      toast({ title: 'Erro', description: 'Número de parcelas deve ser maior que zero', variant: 'destructive' });
+      return;
+    }
+
     try {
-      const amount = parseFloat(formData.amount);
+      console.log('[CreditTab] 📤 ENVIANDO NOVA OPERAÇÃO DE DÉBITO:', formData);
+      
+      let creditAccountId = formData.existing_customer_id;
+      
+      // Se for cliente novo, criar primeiro
       if (formData.is_new_customer) {
-        // 1. Cria o cliente
-        const res = await api.post(
-          '/credit-accounts',
-          {
-            customer_name: formData.customer_name,
-            customer_phone: formData.customer_phone,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const creditAccountId = res.data.id;
-        // Atualiza lista após cadastro
-        await refreshData();
-        // 2. Só registra a transação se valor > 0
-        if (amount > 0) {
-          await addCreditTransaction(creditAccountId, formData.type, amount, formData.description);
-        } else {
-          toast({ title: 'Atenção', description: 'O valor do débito deve ser maior que zero para registrar dívida.', variant: 'destructive' });
-        }
-      } else {
-        // Cliente já existe, só registra a transação
-        await addCreditTransaction(formData.existing_customer_id, formData.type, amount, formData.description);
+        const createClientRes = await api.post('/credit-accounts', {
+          customer_name: formData.customer_name,
+          customer_phone: formData.customer_phone,
+          customer_address: formData.customer_address
+        });
+        creditAccountId = createClientRes.data.id;
+        console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
       }
-      setShowTransactionForm(false);
+      
+      // Criar a operação de débito
+      const debtOperation = {
+        credit_account_id: creditAccountId,
+        type: 'debt',
+        amount: parseFloat(formData.total_value),
+        description: formData.product_description,
+        installments: formData.installments,
+        installment_value: parseFloat(formData.installment_value),
+        frequency: formData.frequency,
+        first_payment_date: formData.first_payment_date,
+        final_due_date: formData.final_due_date,
+        observations: formData.observations
+      };
+      
+      console.log('[CreditTab] 📤 Operação de débito:', debtOperation);
+      
+      const debtRes = await api.post('/credit-transactions', debtOperation);
+      console.log('[CreditTab] ✅ Débito registrado:', debtRes.data);
+      
+      // Atualizar dados
+      await refreshData();
+      
+      // Limpar formulário
       setFormData({
         is_new_customer: true,
         customer_name: '',
         customer_phone: '',
+        customer_address: '',
         existing_customer_id: '',
-        type: 'debt',
-        amount: '',
-        description: '',
-        payment_method: 'pix',
+        product_description: '',
+        total_value: '',
+        installments: 1,
+        installment_value: '',
+        frequency: 'monthly',
+        first_payment_date: new Date().toISOString().split('T')[0],
+        final_due_date: '',
+        observations: ''
       });
-    } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response?.status === 400 && error.response.data?.error?.includes('telefone')) {
-        toast({ title: 'Erro', description: error.response.data.error, variant: 'destructive' });
-      } else {
-        toast({ title: 'Erro', description: 'Erro ao processar operação', variant: 'destructive' });
-      }
-      console.error('Erro ao processar operação:', error);
+      
+      setShowTransactionForm(false);
+      setSelectedClient(null);
+      
+      toast({ title: 'Sucesso', description: 'Operação de débito registrada com sucesso!' });
+      
+    } catch (error) {
+      console.error('[CreditTab] ❌ Erro ao registrar débito:', error);
+      toast({ title: 'Erro', description: 'Não foi possível registrar a operação', variant: 'destructive' });
     }
   };
 
@@ -136,45 +240,22 @@ const CreditTab = () => {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    
-    doc.setFontSize(20);
-    doc.text('Relatório do Crediário', 20, 30);
-    
-    doc.setFontSize(12);
-    doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 45);
-    
-    let yPosition = 65;
-    
-    filteredAccounts.forEach((account, index) => {
-      if (yPosition > 250) {
-        doc.addPage();
-        yPosition = 30;
-      }
-      
-      doc.text(`${index + 1}. ${account.customer_name}`, 20, yPosition);
-      doc.text(`Telefone: ${account.customer_phone || 'N/A'}`, 30, yPosition + 10);
-      doc.text(`Saldo: R$ ${Number(account.total_debt).toFixed(2)}`, 30, yPosition + 20);
-      
-      yPosition += 35;
-    });
-    
-    doc.save('crediario-relatorio.pdf');
+    doc.text('Relatório de Crediário', 20, 20);
+    doc.text(`Total de clientes: ${accounts.length}`, 20, 40);
+    doc.text(`Total em dívida: R$ ${accounts.reduce((sum, acc) => sum + acc.total_debt, 0).toFixed(2)}`, 20, 50);
+    doc.save('crediario.pdf');
   };
 
   const exportToExcel = () => {
-    const worksheetData = filteredAccounts.map(account => ({
-      'Cliente': account.customer_name,
-      'Telefone': account.customer_phone || '',
-      'Saldo Devedor': Number(account.total_debt).toFixed(2),
-      'Status': Number(account.total_debt) > 0 ? 'Em débito' : 'Quitado',
-      'Data Cadastro': new Date(account.created_at).toLocaleDateString('pt-BR')
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Crediário');
-    
-    XLSX.writeFile(workbook, 'crediario-relatorio.xlsx');
+    const ws = XLSX.utils.json_to_sheet(accounts.map(acc => ({
+      Nome: acc.customer_name,
+      Telefone: acc.customer_phone,
+      'Total em Dívida': acc.total_debt,
+      'Data de Criação': new Date(acc.created_at).toLocaleDateString('pt-BR')
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Crediário');
+    XLSX.writeFile(wb, 'crediario.xlsx');
   };
 
   const totalDebt = data.totalDebt;
@@ -270,220 +351,281 @@ const CreditTab = () => {
         </CardContent>
       </Card>
 
-      {/* Formulário Moderno */}
+      {/* Formulário de Nova Operação */}
       {showTransactionForm && (
-        <Card className="shadow-xl border-orange-200">
-          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b py-2 px-4">
-            <CardTitle className="text-lg flex items-center gap-3">
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <Plus className="h-4 w-4 text-orange-600" />
-              </div>
+        <Card className="border-2 border-orange-200 shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b border-orange-200">
+            <CardTitle className="flex items-center text-orange-700">
+              <Plus className="h-5 w-5 mr-2" />
               Nova Operação do Crediário
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
               {/* Tipo de Operação */}
-              <div className="grid grid-cols-2 gap-2">
-                <Card 
-                  className={`cursor-pointer transition-all py-2 px-2 ${formData.type === 'debt' 
-                    ? 'border-red-500 bg-red-50' 
-                    : 'border-muted hover:border-red-300'
-                  }`}
-                  onClick={() => setFormData({...formData, type: 'debt'})}
-                >
-                  <CardContent className="p-2 text-center">
-                    <div className="text-lg mb-1">📝</div>
-                    <h3 className="font-medium text-base">Novo Débito</h3>
-                    <p className="text-xs text-muted-foreground">Cliente ficou devendo</p>
-                  </CardContent>
-                </Card>
-                <Card 
-                  className={`cursor-pointer transition-all py-2 px-2 ${formData.type === 'payment' 
-                    ? 'border-green-500 bg-green-50' 
-                    : 'border-muted hover:border-green-300'
-                  }`}
-                  onClick={() => setFormData({...formData, type: 'payment'})}
-                >
-                  <CardContent className="p-2 text-center">
-                    <div className="text-lg mb-1">💰</div>
-                    <h3 className="font-medium text-base">Pagamento</h3>
-                    <p className="text-xs text-muted-foreground">Cliente pagou</p>
-                  </CardContent>
-                </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  true ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-red-700">Novo Débito</h3>
+                      <p className="text-sm text-red-600">Cliente ficou devendo</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition-all hover:border-gray-300">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-700">Pagamento</h3>
+                      <p className="text-sm text-gray-600">Cliente pagou</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Cliente */}
-              <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
-                <Switch
-                  id="customer-type"
-                  checked={formData.is_new_customer}
-                  onCheckedChange={(checked) => setFormData({...formData, is_new_customer: checked})}
-                />
-                <Label htmlFor="customer-type" className="font-medium text-sm">
-                  {formData.is_new_customer ? "👤 Cliente novo" : "📋 Cliente existente"}
-                </Label>
-              </div>
+              {/* Dados do Cliente */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                  <User className="h-5 w-5 mr-2" />
+                  Dados do Cliente
+                </h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={formData.is_new_customer}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_new_customer: checked }))}
+                  />
+                  <Label>Cliente novo</Label>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {formData.is_new_customer ? (
-                  <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="customer_name" className="text-xs">Nome do Cliente</Label>
+                      <Label htmlFor="customer_name">Nome do Cliente *</Label>
                       <Input
+                        id="customer_name"
                         value={formData.customer_name}
-                        onChange={(e) => setFormData({...formData, customer_name: e.target.value})}
-                        placeholder="Digite o nome completo"
-                        className="h-9 text-sm"
-                        required
+                        onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                        placeholder="Ex: Alex Sander"
+                        className="mt-1"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="customer_phone" className="text-xs">WhatsApp</Label>
+                      <Label htmlFor="customer_phone">WhatsApp *</Label>
                       <Input
+                        id="customer_phone"
                         value={formData.customer_phone}
-                        onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
-                        placeholder="(11) 99999-9999"
-                        className="h-9 text-sm"
+                        onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
+                        placeholder="Ex: 51992401184"
+                        className="mt-1"
                       />
                     </div>
-                  </>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="customer_address">Endereço</Label>
+                      <Input
+                        id="customer_address"
+                        value={formData.customer_address}
+                        onChange={(e) => setFormData(prev => ({ ...prev, customer_address: e.target.value }))}
+                        placeholder="Ex: Rua Padre Raulino Reitz, nº 123"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
                 ) : (
-                  <div className="col-span-2">
-                    <Label htmlFor="existing_customer" className="text-xs">Selecionar Cliente</Label>
-                    <Select 
-                      value={formData.existing_customer_id} 
-                      onValueChange={(value) => setFormData({...formData, existing_customer_id: value})}
-                    >
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue placeholder="Escolha o cliente da lista" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{account.customer_name}</span>
-                              <Badge variant={Number(account.total_debt) > 0 ? "destructive" : "default"} className="ml-2">
-                                {Number(account.total_debt) > 0 
-                                  ? `Deve: R$ ${Number(account.total_debt).toFixed(2).replace('.', ',')}`
-                                  : 'Em dia'
-                                }
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4">
+                    <Label>Selecionar Cliente Existente</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-40 overflow-y-auto">
+                      {filteredAccounts.map((client) => (
+                        <div
+                          key={client.id}
+                          onClick={() => handleClientSelect(client)}
+                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                            selectedClient?.id === client.id
+                              ? 'border-orange-300 bg-orange-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="font-medium text-sm">{client.customer_name}</div>
+                          <div className="text-xs text-gray-600">{client.customer_phone}</div>
+                          <div className="text-xs text-red-600 font-medium">
+                            Dívida: R$ {Number(client.total_debt).toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Produtos */}
-              {formData.type === 'debt' && (
-                <div className="space-y-1">
-                  <Label className="text-xs">Produtos</Label>
-                  <div className="flex gap-2 items-end">
-                    <Select value={productToAdd} onValueChange={setProductToAdd}>
-                      <SelectTrigger className="w-40 h-9 text-sm">
-                        <SelectValue placeholder="Selecione um produto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data.products.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name} (R$ {Number(product.price).toFixed(2)})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={data.products.find(p => p.id === productToAdd)?.stock || 99}
-                      value={quantityToAdd}
-                      onChange={e => setQuantityToAdd(Number(e.target.value))}
-                      className="w-16 h-9 text-sm"
-                      placeholder="Qtd"
-                      disabled={!productToAdd}
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => {
-                        if (!productToAdd) return;
-                        handleProductChange(productToAdd, quantityToAdd);
-                        setProductToAdd('');
-                        setQuantityToAdd(1);
-                      }}
-                      disabled={!productToAdd}
-                    >Adicionar</Button>
-                  </div>
-                  {selectedProducts.length > 0 && (
-                    <ul className="mt-1 space-y-1">
-                      {selectedProducts.map(item => {
-                        const prod = data.products.find(p => p.id === item.product_id);
-                        if (!prod) return null;
-                        return (
-                          <li key={item.product_id} className="flex items-center gap-2 text-sm">
-                            <span>{prod.name} (Qtd: {item.quantity}) - R$ {(Number(prod.price) * item.quantity).toFixed(2)}</span>
-                            <Button type="button" size="sm" variant="destructive" onClick={() => setSelectedProducts(prev => prev.filter(p => p.product_id !== item.product_id))}>Remover</Button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  <div className="text-xs text-muted-foreground mt-1">Total: <b>R$ {totalValue.toFixed(2)}</b></div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="amount" className="text-xs">💵 Valor</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                    placeholder="0,00"
-                    className="h-9 text-sm"
-                    required
-                    disabled={formData.type === 'debt'}
-                  />
-                </div>
-                {formData.type === 'payment' && (
+              {/* Detalhes da Venda */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Detalhes da Venda
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="payment_method" className="text-xs">Forma de Pagamento</Label>
-                    <Select 
-                      value={formData.payment_method} 
-                      onValueChange={(value: 'pix' | 'cash' | 'card') => setFormData({...formData, payment_method: value})}
+                    <Label htmlFor="product_description">Descrição do produto ou serviço *</Label>
+                    <Textarea
+                      id="product_description"
+                      value={formData.product_description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, product_description: e.target.value }))}
+                      placeholder="Ex: Compra de mercadoria, Conserto de TV, etc."
+                      className="mt-1"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="total_value">Valor total *</Label>
+                    <Input
+                      id="total_value"
+                      type="number"
+                      step="0.01"
+                      value={formData.total_value}
+                      onChange={(e) => setFormData(prev => ({ ...prev, total_value: e.target.value }))}
+                      placeholder="R$ 0,00"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Parcelamento */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Parcelamento
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="installments">Parcelas (vezes que vai pagar) *</Label>
+                    <Input
+                      id="installments"
+                      type="number"
+                      min="1"
+                      value={formData.installments}
+                      onChange={(e) => setFormData(prev => ({ ...prev, installments: parseInt(e.target.value) || 1 }))}
+                      placeholder="Ex: 3"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="installment_value">Valor de cada parcela</Label>
+                    <Input
+                      id="installment_value"
+                      type="number"
+                      step="0.01"
+                      value={formData.installment_value}
+                      readOnly
+                      className="mt-1 bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Calculado automaticamente</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="frequency">Frequência *</Label>
+                    <Select
+                      value={formData.frequency}
+                      onValueChange={(value: InstallmentFrequency) => setFormData(prev => ({ ...prev, frequency: value }))}
                     >
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pix">🔵 PIX</SelectItem>
-                        <SelectItem value="cash">💵 Dinheiro</SelectItem>
-                        <SelectItem value="card">💳 Cartão</SelectItem>
+                        <SelectItem value="daily">Diária</SelectItem>
+                        <SelectItem value="weekly">Semanal</SelectItem>
+                        <SelectItem value="biweekly">Quinzenal</SelectItem>
+                        <SelectItem value="monthly">Mensal</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="description" className="text-xs">📝 Descrição</Label>
-                <Input
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Ex: Compra de produtos, Parcela do mês..."
-                  className="h-9 text-sm"
-                />
+              {/* Datas */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Datas
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="first_payment_date">Data da primeira cobrança *</Label>
+                    <Input
+                      id="first_payment_date"
+                      type="date"
+                      value={formData.first_payment_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, first_payment_date: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="final_due_date">Data de vencimento final</Label>
+                    <Input
+                      id="final_due_date"
+                      type="date"
+                      value={formData.final_due_date}
+                      readOnly
+                      className="mt-1 bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Calculado automaticamente</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex gap-2 justify-end mt-2">
-                <Button type="submit" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow h-10 px-6 text-base" size="sm">
-                  {formData.type === 'debt' ? 'Registrar Débito' : 'Registrar Pagamento'}
+              {/* Observações */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Observações
+                </h3>
+                
+                <div>
+                  <Label htmlFor="observations">Observações</Label>
+                  <Textarea
+                    id="observations"
+                    value={formData.observations}
+                    onChange={(e) => setFormData(prev => ({ ...prev, observations: e.target.value }))}
+                    placeholder="Ex: Combinado pagar toda sexta-feira, Vai pagar parcelado via Pix, Cliente pediu pra começar a pagar dia 5"
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowTransactionForm(false)}
+                >
+                  ❌ Cancelar
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowTransactionForm(false)} className="h-10 px-4 text-base">Cancelar</Button>
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                >
+                  💾 Salvar operação
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-green-500 text-green-600 hover:bg-green-50"
+                >
+                  📨 Enviar no WhatsApp
+                </Button>
               </div>
             </form>
           </CardContent>
