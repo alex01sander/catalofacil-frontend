@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Search, Wrench } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Search, Wrench, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinancial } from "@/contexts/FinancialContext";
@@ -18,7 +18,7 @@ import { ptBR } from "date-fns/locale";
 const CashFlowTab = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: financialData, addCashFlowEntry, registerSale } = useFinancial();
+  const { data: financialData, addCashFlowEntry, registerSale, refreshData } = useFinancial();
   const [showForm, setShowForm] = useState(false);
   const [showSaleForm, setShowSaleForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -50,6 +50,22 @@ const CashFlowTab = () => {
     console.log('💰 Entradas:', financialData.cashFlow.filter(e => isIncome(e.type)));
     console.log('💸 Saídas:', financialData.cashFlow.filter(e => isExpense(e.type)));
     console.log('🛒 Vendas:', financialData.sales);
+    
+    // DEBUG DETALHADO - Verificar vendas mais recentes
+    console.log('🕒 VENDAS MAIS RECENTES (últimas 5):');
+    const vendasRecentes = financialData.sales
+      .sort((a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime())
+      .slice(0, 5);
+    vendasRecentes.forEach((venda, index) => {
+      console.log(`📋 Venda ${index + 1}:`, {
+        id: venda.id,
+        product_name: venda.product_name,
+        total_price: venda.total_price,
+        sale_date: venda.sale_date,
+        customer_name: venda.customer_name,
+        created_at: venda.created_at
+      });
+    });
     
     // Verificar se há vendas sendo exibidas como saídas
     const vendasComoSaidas = financialData.cashFlow.filter(e => 
@@ -159,6 +175,30 @@ const CashFlowTab = () => {
     }
   };
 
+  // Função para forçar atualização dos dados
+  const forceRefreshData = async () => {
+    console.log('[CashFlowTab] 🔄 FORÇANDO ATUALIZAÇÃO DOS DADOS...');
+    
+    try {
+      // Forçar refresh dos dados
+      await refreshData();
+      console.log('[CashFlowTab] ✅ Dados atualizados');
+      
+      toast({
+        title: 'Dados Atualizados',
+        description: 'Os dados foram atualizados com sucesso',
+      });
+      
+    } catch (error) {
+      console.error('[CashFlowTab] ❌ Erro ao atualizar dados:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar os dados',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -245,6 +285,10 @@ const CashFlowTab = () => {
           <Button onClick={fixMissingCashFlowEntries} variant="outline" className="border-purple-500 text-purple-600 hover:bg-purple-50">
             <Wrench className="h-4 w-4 mr-2" />
             Corrigir Vendas
+          </Button>
+          <Button onClick={forceRefreshData} variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
           </Button>
         </div>
       </div>

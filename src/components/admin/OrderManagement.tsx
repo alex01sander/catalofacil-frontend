@@ -124,19 +124,15 @@ export default function OrderManagement() {
       await api.put(`/pedidos/${order.id}`, { status: 'confirmed' });
       console.log('[OrderManagement] ✅ Status do pedido atualizado para confirmed');
 
-      // Registrar vendas para cada item do pedido
-      console.log('[OrderManagement] 🛒 Iniciando registro de vendas...');
+      // Registrar vendas para cada item do pedido usando a nova rota
+      console.log('[OrderManagement] 🛒 Iniciando registro de vendas com nova rota...');
       for (const item of order.order_items) {
         console.log('[OrderManagement] 📋 Processando item:', item);
         
         const product = products.find(p => p.id === item.product_id);
         if (product) {
-          // Buscar nome do produto se não estiver disponível no item
-          const productName = item.product?.name || product.name;
-          
-          console.log('[OrderManagement] 🎯 Registrando venda:', {
+          console.log('[OrderManagement] 🎯 Registrando venda com nova rota:', {
             product_id: item.product_id,
-            product_name: productName,
             quantity: item.quantity,
             unit_price: item.unit_price,
             total: item.quantity * item.unit_price,
@@ -144,10 +140,9 @@ export default function OrderManagement() {
             date: order.created_at
           });
           
-          // Registrar venda
+          // Usar a nova rota que integra automaticamente com fluxo de caixa
           await registerSale({
             product_id: item.product_id,
-            product_name: productName, // Passar o nome do produto explicitamente
             quantity: item.quantity,
             unit_price: item.unit_price,
             date: order.created_at,
@@ -155,12 +150,11 @@ export default function OrderManagement() {
             payment_method: 'cash'
           });
           
-          console.log('[OrderManagement] ✅ Venda registrada para produto:', productName);
-
-          // Atualizar estoque do produto
-          const newStock = product.stock - item.quantity;
-          await api.put(`/products/${item.product_id}`, { stock: newStock });
-          console.log('[OrderManagement] ✅ Estoque atualizado:', { produto: productName, estoque_anterior: product.stock, estoque_novo: newStock });
+          console.log('[OrderManagement] ✅ Venda registrada com integração automática para produto:', product.name);
+          
+          // Não precisamos mais atualizar estoque manualmente
+          // A nova rota já faz isso automaticamente
+          console.log('[OrderManagement] ✅ Estoque atualizado automaticamente pela nova rota');
         } else {
           console.error('[OrderManagement] ❌ Produto não encontrado:', item.product_id);
           toast({

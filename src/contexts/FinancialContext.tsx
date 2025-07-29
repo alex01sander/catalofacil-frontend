@@ -320,121 +320,41 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const registerSale = async (saleData: any) => {
-    if (!user || !token) {
-      console.log('[FinancialContext] ❌ registerSale - user ou token não disponível');
-      return;
-    }
-    
-    console.log('[FinancialContext] 🛒 INICIANDO REGISTRO DE VENDA:', saleData);
+    console.log('[FinancialContext] 🛒 INICIANDO REGISTRO DE VENDA');
+    console.log('[FinancialContext] 📋 Dados da venda:', saleData);
     
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      
-      // Buscar nome do produto pelo product_id
-      let selectedProduct = data.products.find((p) => p.id === saleData.product_id);
-      
-      console.log('[FinancialContext] 🔍 Produto encontrado no cache:', selectedProduct ? 'SIM' : 'NÃO');
-      
-      // Se não encontrou no cache local, buscar na API
-      if (!selectedProduct) {
-        try {
-          console.log('[FinancialContext] 🔍 Buscando produto na API...');
-          const productRes = await api.get(`/products/${saleData.product_id}`);
-          selectedProduct = productRes.data;
-          console.log('[FinancialContext] ✅ Produto encontrado na API:', selectedProduct.name);
-        } catch (productError) {
-          console.error('[FinancialContext] ❌ Erro ao buscar produto:', productError);
-          // Usar dados fornecidos como fallback
-          selectedProduct = {
-            id: saleData.product_id,
-            name: saleData.product_name || 'Produto não encontrado',
-            store_id: null
-          };
-          console.log('[FinancialContext] ⚠️ Usando fallback para produto:', selectedProduct.name);
-        }
-      }
-      
+      // Usar a nova rota que integra automaticamente com fluxo de caixa
       const payload = {
         product_id: saleData.product_id,
-        user_id: user?.id,
-        product_name: selectedProduct.name,
         quantity: Number(saleData.quantity),
         unit_price: Number(saleData.unit_price),
         total_price: Number(saleData.quantity) * Number(saleData.unit_price),
-        sale_date: saleData.date,
-        status: 'completed',
-        store_id: selectedProduct.store_id || null,
-        customer_name: saleData.customer_name || 'Cliente não informado'
-      };
-      
-      console.log('[FinancialContext] 📤 Enviando venda para API:', payload);
-      
-      const res = await api.post('/vendas', payload);
-      console.log('[FinancialContext] ✅ Venda salva na API:', res.data);
-      
-      // Lançar também no fluxo de caixa
-      const cashFlowPayload = {
-        user_id: user?.id,
-        store_id: payload.store_id,
-        type: 'income', // ✅ CORRETO: Vendas devem ser income
-        category: 'Venda',
-        description: `Venda: ${payload.product_name} - ID: ${res.data.id} - Cliente: ${payload.customer_name}`,
-        amount: String(Number(payload.total_price)),
-        date: new Date(payload.sale_date).toISOString(),
+        customer_name: saleData.customer_name || 'Cliente não informado',
+        sale_date: saleData.date || new Date().toISOString(),
         payment_method: saleData.payment_method || 'cash'
+        // O backend pode inferir o store_id do usuário autenticado
       };
       
-      console.log('[FinancialContext] 📤 Enviando fluxo de caixa para API:', cashFlowPayload);
-      console.log('[FinancialContext] 🔍 Verificando tipo:', cashFlowPayload.type);
-      console.log('[FinancialContext] 🔍 Verificando amount:', cashFlowPayload.amount);
+      console.log('[FinancialContext] 📤 Enviando para nova rota /sales/product-sale:', payload);
       
-      try {
-        const cashFlowRes = await api.post('/fluxo-caixa', cashFlowPayload);
-        console.log('[FinancialContext] ✅ Fluxo de caixa salvo na API:', cashFlowRes.data);
-        console.log('[FinancialContext] 🔍 Tipo retornado pela API:', cashFlowRes.data.type);
-        console.log('[FinancialContext] 🔍 Amount retornado pela API:', cashFlowRes.data.amount);
-        
-        // Verificar se a API alterou o tipo
-        if (cashFlowRes.data.type !== 'income') {
-          console.error('[FinancialContext] ❌ PROBLEMA: API alterou tipo de income para:', cashFlowRes.data.type);
-        } else {
-          console.log('[FinancialContext] ✅ Tipo correto retornado pela API');
-        }
-      } catch (cashFlowError) {
-        console.error('[FinancialContext] ❌ ERRO ao salvar fluxo de caixa:', cashFlowError);
-        console.error('[FinancialContext] ❌ Detalhes do erro de fluxo de caixa:', {
-          message: cashFlowError.message,
-          response: cashFlowError.response?.data,
-          status: cashFlowError.response?.status
-        });
-        // Continuar mesmo se o fluxo de caixa falhar
-        console.log('[FinancialContext] ⚠️ Continuando sem fluxo de caixa...');
-      }
+      // Usar a nova rota que integra automaticamente
+      const res = await api.post('/sales/product-sale', payload);
+      console.log('[FinancialContext] ✅ Venda registrada com integração automática:', res.data);
       
-      console.log('[FinancialContext] 🔄 FORÇANDO BUSCA REAL DA API...');
+      // Não precisamos mais criar entrada manual no fluxo de caixa
+      // A nova rota já faz isso automaticamente
+      console.log('[FinancialContext] ✅ Fluxo de caixa integrado automaticamente');
       
-      // FORÇAR BUSCA REAL DA API - Ignorar cache completamente
-      globalFinancialCache.timestamp = 0;
-      globalFinancialCache.data = null;
-      globalFinancialCache.isFetching = false;
+      // Atualizar dados locais
+      await refreshData();
+      console.log('[FinancialContext] ✅ Dados atualizados');
       
-      // Aguardar um pouco para garantir que o banco foi atualizado
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      return res.data;
       
-      // Buscar dados atualizados da API
-      await fetchAllData();
-      
-      console.log('[FinancialContext] ✅ Dados atualizados da API após venda');
-      
-      toast({ title: 'Sucesso', description: 'Venda registrada!' });
-    } catch (error: any) {
-      console.error('[FinancialContext] ❌ Erro ao registrar venda:', error);
-      console.error('[FinancialContext] ❌ Detalhes do erro:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      toast({ title: 'Erro', description: error.message || 'Não foi possível registrar a venda', variant: 'destructive' });
+    } catch (error) {
+      console.error('[FinancialContext] ❌ ERRO ao registrar venda:', error);
+      throw error;
     }
   };
 
