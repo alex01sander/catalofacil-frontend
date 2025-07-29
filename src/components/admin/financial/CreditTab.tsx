@@ -461,10 +461,11 @@ const CreditTab = () => {
         }))
       };
       
-      console.log('[CreditTab] 📤 Operação de débito:', debtOperation);
+      console.log('[CreditTab] 📤 Operação de débito com parcelamento:', debtOperation);
       
-      const debtRes = await api.post('/credit-transactions', debtOperation);
-      console.log('[CreditTab] ✅ Débito registrado:', debtRes.data);
+      // Usar rota específica para parcelamento (não a rota simples de transações)
+      const debtRes = await api.post('/creditTransactions/debit-with-installments', debtOperation);
+      console.log('[CreditTab] ✅ Débito com parcelamento registrado:', debtRes.data);
       
       // Atualizar dados
       await refreshData();
@@ -489,7 +490,7 @@ const CreditTab = () => {
       setShowTransactionForm(false);
       setSelectedClient(null);
       
-      toast({ title: 'Sucesso', description: 'Operação de débito registrada com sucesso!' });
+      toast({ title: 'Sucesso', description: 'Operação de débito com parcelamento registrada com sucesso!' });
       
     } catch (error) {
       console.error('[CreditTab] ❌ Erro ao registrar débito:', error);
