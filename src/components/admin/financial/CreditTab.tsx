@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Users, DollarSign, Search, FileDown, MessageCircle, Calendar, MapPin, Phone, User, FileText } from "lucide-react";
+import { Plus, Users, DollarSign, Search, FileDown, MessageCircle, Calendar, MapPin, Phone, User, FileText, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFinancial } from "@/contexts/FinancialContext";
 import ClientHistoryModal from "./ClientHistoryModal";
@@ -29,6 +29,14 @@ type CreditAccount = {
 
 type InstallmentFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 
+interface SelectedProduct {
+  product_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
+
 interface NewDebtFormData {
   // Dados do Cliente
   is_new_customer: boolean;
@@ -38,11 +46,11 @@ interface NewDebtFormData {
   existing_customer_id: string;
   
   // Detalhes da Venda
-  product_description: string;
+  selected_products: SelectedProduct[];
   total_value: string;
   
   // Parcelamento
-  installments: number;
+  installments: string;
   installment_value: string;
   frequency: InstallmentFrequency;
   
@@ -54,6 +62,28 @@ interface NewDebtFormData {
   observations: string;
 }
 
+// Função para formatar data para dd/mm/yyyy
+const formatDateToBR = (date: Date): string => {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+// Função para converter data de dd/mm/yyyy para yyyy-mm-dd
+const formatDateToISO = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const [day, month, year] = dateStr.split('/');
+  return `${year}-${month}-${day}`;
+};
+
+// Função para converter data de yyyy-mm-dd para dd/mm/yyyy
+const formatDateFromISO = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
+};
+
 const CreditTab = () => {
   const { toast } = useToast();
   const { data, addCreditTransaction, refreshData } = useFinancial();
@@ -63,18 +93,22 @@ const CreditTab = () => {
   const [showClientHistory, setShowClientHistory] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Estados para seleção de produtos
+  const [productToAdd, setProductToAdd] = useState('');
+  const [quantityToAdd, setQuantityToAdd] = useState(1);
+  
   const [formData, setFormData] = useState<NewDebtFormData>({
     is_new_customer: true,
     customer_name: '',
     customer_phone: '',
     customer_address: '',
     existing_customer_id: '',
-    product_description: '',
+    selected_products: [],
     total_value: '',
-    installments: 1,
+    installments: '1',
     installment_value: '',
     frequency: 'monthly',
-    first_payment_date: new Date().toISOString().split('T')[0],
+    first_payment_date: formatDateToBR(new Date()),
     final_due_date: '',
     observations: ''
   });
@@ -85,11 +119,23 @@ const CreditTab = () => {
     (account.customer_phone || '').includes(searchTerm)
   );
 
+  // Calcular valor total dos produtos selecionados
+  const totalProductsValue = formData.selected_products.reduce((sum, product) => sum + product.total, 0);
+
+  // Atualizar valor total quando produtos mudam
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      total_value: totalProductsValue.toFixed(2)
+    }));
+  }, [totalProductsValue]);
+
   // Calcular valor da parcela automaticamente
   useEffect(() => {
-    if (formData.total_value && formData.installments > 0) {
+    if (formData.total_value && formData.installments && parseFloat(formData.installments) > 0) {
       const total = parseFloat(formData.total_value);
-      const installmentValue = total / formData.installments;
+      const installments = parseFloat(formData.installments);
+      const installmentValue = total / installments;
       setFormData(prev => ({
         ...prev,
         installment_value: installmentValue.toFixed(2)
@@ -99,38 +145,74 @@ const CreditTab = () => {
 
   // Calcular data final automaticamente
   useEffect(() => {
-    if (formData.first_payment_date && formData.installments > 0 && formData.frequency) {
-      const firstDate = new Date(formData.first_payment_date);
+    if (formData.first_payment_date && formData.installments && parseFloat(formData.installments) > 0 && formData.frequency) {
+      const firstDateISO = formatDateToISO(formData.first_payment_date);
+      if (!firstDateISO) return;
+      
+      const firstDate = new Date(firstDateISO);
       let finalDate = new Date(firstDate);
+      const installments = parseFloat(formData.installments);
       
       switch (formData.frequency) {
         case 'daily':
-          finalDate.setDate(firstDate.getDate() + (formData.installments - 1));
+          finalDate.setDate(firstDate.getDate() + (installments - 1));
           break;
         case 'weekly':
-          finalDate.setDate(firstDate.getDate() + (formData.installments - 1) * 7);
+          finalDate.setDate(firstDate.getDate() + (installments - 1) * 7);
           break;
         case 'biweekly':
-          finalDate.setDate(firstDate.getDate() + (formData.installments - 1) * 14);
+          finalDate.setDate(firstDate.getDate() + (installments - 1) * 14);
           break;
         case 'monthly':
-          finalDate.setMonth(firstDate.getMonth() + (formData.installments - 1));
+          finalDate.setMonth(firstDate.getMonth() + (installments - 1));
           break;
       }
       
       setFormData(prev => ({
         ...prev,
-        final_due_date: finalDate.toISOString().split('T')[0]
+        final_due_date: formatDateToBR(finalDate)
       }));
       
       console.log('[CreditTab] 📅 Data final calculada:', {
         frequency: formData.frequency,
         installments: formData.installments,
         firstDate: formData.first_payment_date,
-        finalDate: finalDate.toISOString().split('T')[0]
+        finalDate: formatDateToBR(finalDate)
       });
     }
   }, [formData.first_payment_date, formData.installments, formData.frequency]);
+
+  // Adicionar produto à lista
+  const handleAddProduct = () => {
+    if (!productToAdd) return;
+    
+    const product = data.products.find(p => p.id === productToAdd);
+    if (!product) return;
+    
+    const newProduct: SelectedProduct = {
+      product_id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      quantity: quantityToAdd,
+      total: Number(product.price) * quantityToAdd
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      selected_products: [...prev.selected_products, newProduct]
+    }));
+    
+    setProductToAdd('');
+    setQuantityToAdd(1);
+  };
+
+  // Remover produto da lista
+  const handleRemoveProduct = (productId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selected_products: prev.selected_products.filter(p => p.product_id !== productId)
+    }));
+  };
 
   // Preencher dados do cliente quando selecionado
   const handleClientSelect = (client: CreditAccount) => {
@@ -159,8 +241,8 @@ const CreditTab = () => {
       return;
     }
     
-    if (!formData.product_description.trim()) {
-      toast({ title: 'Erro', description: 'Descrição do produto/serviço é obrigatória', variant: 'destructive' });
+    if (formData.selected_products.length === 0) {
+      toast({ title: 'Erro', description: 'Adicione pelo menos um produto à venda', variant: 'destructive' });
       return;
     }
     
@@ -169,8 +251,15 @@ const CreditTab = () => {
       return;
     }
     
-    if (formData.installments <= 0) {
+    if (!formData.installments || parseFloat(formData.installments) <= 0) {
       toast({ title: 'Erro', description: 'Número de parcelas deve ser maior que zero', variant: 'destructive' });
+      return;
+    }
+
+    // Validar formato de data
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(formData.first_payment_date)) {
+      toast({ title: 'Erro', description: 'Data da primeira cobrança deve estar no formato DD/MM/AAAA', variant: 'destructive' });
       return;
     }
 
@@ -190,18 +279,27 @@ const CreditTab = () => {
         console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
       }
       
+      // Converter data para formato ISO
+      const firstPaymentDateISO = formatDateToISO(formData.first_payment_date);
+      const finalDueDateISO = formatDateToISO(formData.final_due_date);
+      
       // Criar a operação de débito
       const debtOperation = {
         credit_account_id: creditAccountId,
         type: 'debt',
         amount: parseFloat(formData.total_value),
-        description: formData.product_description,
-        installments: formData.installments,
+        description: `Venda de ${formData.selected_products.length} produtos`,
+        installments: parseFloat(formData.installments),
         installment_value: parseFloat(formData.installment_value),
         frequency: formData.frequency,
-        first_payment_date: formData.first_payment_date,
-        final_due_date: formData.final_due_date,
-        observations: formData.observations
+        first_payment_date: firstPaymentDateISO,
+        final_due_date: finalDueDateISO,
+        observations: formData.observations,
+        products: formData.selected_products.map(p => ({
+          product_id: p.product_id,
+          quantity: p.quantity,
+          price: p.price
+        }))
       };
       
       console.log('[CreditTab] 📤 Operação de débito:', debtOperation);
@@ -219,12 +317,12 @@ const CreditTab = () => {
         customer_phone: '',
         customer_address: '',
         existing_customer_id: '',
-        product_description: '',
+        selected_products: [],
         total_value: '',
-        installments: 1,
+        installments: '1',
         installment_value: '',
         frequency: 'monthly',
-        first_payment_date: new Date().toISOString().split('T')[0],
+        first_payment_date: formatDateToBR(new Date()),
         final_due_date: '',
         observations: ''
       });
@@ -422,7 +520,7 @@ const CreditTab = () => {
                         id="customer_name"
                         value={formData.customer_name}
                         onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
-                        placeholder="Ex: Alex Sander"
+                        placeholder="Ex: João Silva"
                         className="mt-1"
                       />
                     </div>
@@ -432,7 +530,7 @@ const CreditTab = () => {
                         id="customer_phone"
                         value={formData.customer_phone}
                         onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
-                        placeholder="Ex: 51992401184"
+                        placeholder="Ex: 11987654321"
                         className="mt-1"
                       />
                     </div>
@@ -442,7 +540,7 @@ const CreditTab = () => {
                         id="customer_address"
                         value={formData.customer_address}
                         onChange={(e) => setFormData(prev => ({ ...prev, customer_address: e.target.value }))}
-                        placeholder="Ex: Rua Padre Raulino Reitz, nº 123"
+                        placeholder="Ex: Rua das Flores, 123 - Centro"
                         className="mt-1"
                       />
                     </div>
@@ -473,36 +571,93 @@ const CreditTab = () => {
                 )}
               </div>
 
-              {/* Detalhes da Venda */}
+              {/* Seleção de Produtos */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                  <DollarSign className="h-5 w-5 mr-2" />
-                  Detalhes da Venda
+                  <FileText className="h-5 w-5 mr-2" />
+                  Produtos da Venda
                 </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="product_to_add">Selecionar Produto *</Label>
+                    <Select value={productToAdd} onValueChange={setProductToAdd}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Escolha um produto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.products.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name} - R$ {Number(product.price).toFixed(2)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="quantity_to_add">Quantidade *</Label>
+                    <Input
+                      id="quantity_to_add"
+                      type="number"
+                      min="1"
+                      value={quantityToAdd}
+                      onChange={(e) => setQuantityToAdd(parseInt(e.target.value) || 1)}
+                      placeholder="Ex: 2"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      onClick={handleAddProduct}
+                      disabled={!productToAdd}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="product_description">Descrição do produto ou serviço *</Label>
-                    <Textarea
-                      id="product_description"
-                      value={formData.product_description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, product_description: e.target.value }))}
-                      placeholder="Ex: Compra de mercadoria, Conserto de TV, etc."
-                      className="mt-1"
-                      rows={3}
-                    />
+                    <Label>Produtos Selecionados</Label>
+                    <div className="max-h-40 overflow-y-auto border rounded-lg p-2 mt-1">
+                      {formData.selected_products.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-4">Nenhum produto adicionado.</p>
+                      ) : (
+                        formData.selected_products.map((product) => (
+                          <div key={product.product_id} className="flex items-center justify-between p-2 border-b last:border-b-0">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{product.name}</span>
+                              <span className="text-sm text-gray-600">x{product.quantity}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-600">R$ {product.total.toFixed(2).replace('.', ',')}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveProduct(product.product_id)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <Label htmlFor="total_value">Valor total *</Label>
+                    <Label htmlFor="total_value">Valor Total da Venda</Label>
                     <Input
                       id="total_value"
                       type="number"
                       step="0.01"
                       value={formData.total_value}
-                      onChange={(e) => setFormData(prev => ({ ...prev, total_value: e.target.value }))}
-                      placeholder="R$ 0,00"
-                      className="mt-1"
+                      readOnly
+                      className="mt-1 bg-gray-50"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Calculado automaticamente</p>
                   </div>
                 </div>
               </div>
@@ -519,10 +674,12 @@ const CreditTab = () => {
                     <Label htmlFor="installments">Parcelas (vezes que vai pagar) *</Label>
                     <Input
                       id="installments"
-                      type="number"
-                      min="1"
+                      type="text"
                       value={formData.installments}
-                      onChange={(e) => setFormData(prev => ({ ...prev, installments: parseInt(e.target.value) || 1 }))}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        setFormData(prev => ({ ...prev, installments: value || '1' }));
+                      }}
                       placeholder="Ex: 3"
                       className="mt-1"
                     />
@@ -571,17 +728,24 @@ const CreditTab = () => {
                     <Label htmlFor="first_payment_date">Data da primeira cobrança *</Label>
                     <Input
                       id="first_payment_date"
-                      type="date"
+                      type="text"
                       value={formData.first_payment_date}
-                      onChange={(e) => setFormData(prev => ({ ...prev, first_payment_date: e.target.value }))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Permitir apenas números e barras
+                        const formatted = value.replace(/[^\d/]/g, '');
+                        setFormData(prev => ({ ...prev, first_payment_date: formatted }));
+                      }}
+                      placeholder="DD/MM/AAAA"
                       className="mt-1"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Formato: DD/MM/AAAA</p>
                   </div>
                   <div>
                     <Label htmlFor="final_due_date">Data de vencimento final</Label>
                     <Input
                       id="final_due_date"
-                      type="date"
+                      type="text"
                       value={formData.final_due_date}
                       readOnly
                       className="mt-1 bg-gray-50"
