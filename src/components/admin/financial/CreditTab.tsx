@@ -290,6 +290,13 @@ const CreditTab = () => {
       return;
     }
     
+    // Validar formato do telefone (apenas números)
+    const phoneRegex = /^\d+$/;
+    if (!phoneRegex.test(formData.customer_phone.replace(/\D/g, ''))) {
+      toast({ title: 'Erro', description: 'Telefone deve conter apenas números', variant: 'destructive' });
+      return;
+    }
+    
     if (formData.selected_products.length === 0) {
       toast({ title: 'Erro', description: 'Adicione pelo menos um produto à venda', variant: 'destructive' });
       return;
@@ -318,13 +325,28 @@ const CreditTab = () => {
       
       // Se for cliente novo, criar primeiro
       if (formData.is_new_customer) {
-        const createClientRes = await api.post('/credit-accounts', {
-          customer_name: formData.customer_name,
-          customer_phone: formData.customer_phone,
-          customer_address: formData.customer_address
-        });
-        creditAccountId = createClientRes.data.id;
-        console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
+        const clientData = {
+          customer_name: formData.customer_name.trim(),
+          customer_phone: formData.customer_phone.replace(/\D/g, ''), // Remove caracteres não numéricos
+          customer_address: formData.customer_address.trim() || null // Envia null se vazio
+        };
+        
+        console.log('[CreditTab] 📤 Criando cliente:', clientData);
+        
+        try {
+          const createClientRes = await api.post('/credit-accounts', clientData);
+          creditAccountId = createClientRes.data.id;
+          console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
+        } catch (error: any) {
+          console.error('[CreditTab] ❌ Erro ao criar cliente:', error);
+          console.error('[CreditTab] 📋 Resposta do servidor:', error.response?.data);
+          console.error('[CreditTab] 📋 Status:', error.response?.status);
+          
+          // Mostrar erro específico do backend
+          const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao criar cliente';
+          toast({ title: 'Erro', description: errorMessage, variant: 'destructive' });
+          return;
+        }
       }
       
       // Converter data para formato ISO
