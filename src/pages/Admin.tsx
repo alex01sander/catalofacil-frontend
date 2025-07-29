@@ -7,6 +7,9 @@ import ProductManagement from "@/components/admin/ProductManagement";
 import CategoryManagement from "@/components/admin/CategoryManagement";
 import OrderManagement from "@/components/admin/OrderManagement";
 import FinancialManagement from "@/components/admin/FinancialManagement";
+import CreditManagement from "@/components/admin/CreditManagement";
+import ExpensesManagement from "@/components/admin/ExpensesManagement";
+import ReportsManagement from "@/components/admin/ReportsManagement";
 import StoreSettings from "@/components/admin/StoreSettings";
 
 type AdminView = "dashboard" | "products" | "categories" | "orders" | "financial" | "financial-cash" | "financial-credit" | "financial-expenses" | "financial-reports" | "settings";
@@ -26,10 +29,13 @@ const Admin = () => {
         return <OrderManagement />;
       case "financial":
       case "financial-cash":
+        return <FinancialManagement />;
       case "financial-credit":
+        return <CreditManagement />;
       case "financial-expenses":
+        return <ExpensesManagement />;
       case "financial-reports":
-        return <FinancialManagement activeTab={currentView} />;
+        return <ReportsManagement />;
       case "settings":
         return <StoreSettings />;
       default:
