@@ -276,6 +276,58 @@ const CreditTab = () => {
     }));
   };
 
+  // Buscar cliente existente pelo telefone ou nome
+  const searchExistingClient = (phone: string, name: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanName = name.toLowerCase().trim();
+    
+    return accounts.find(account => 
+      account.customer_phone === cleanPhone || 
+      account.customer_name.toLowerCase() === cleanName
+    );
+  };
+
+  // Verificar cliente existente quando telefone ou nome mudam
+  const handleCustomerDataChange = (field: 'name' | 'phone', value: string) => {
+    setFormData(prev => ({ ...prev, [field === 'name' ? 'customer_name' : 'customer_phone']: value }));
+    
+    if (formData.is_new_customer && value.trim()) {
+      const existingClient = searchExistingClient(
+        field === 'phone' ? value : formData.customer_phone,
+        field === 'name' ? value : formData.customer_name
+      );
+      
+      if (existingClient) {
+        console.log('[CreditTab] 🔍 Cliente existente encontrado:', existingClient);
+        toast({
+          title: 'Cliente encontrado',
+          description: `Cliente "${existingClient.customer_name}" já existe. Deseja usar este cliente?`,
+          variant: 'default',
+          action: (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => {
+                  handleClientSelect(existingClient);
+                  toast({ title: 'Cliente selecionado', description: 'Cliente existente selecionado com sucesso!' });
+                }}
+              >
+                Usar existente
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => toast({ title: 'Continuando', description: 'Continuando com novo cliente' })}
+              >
+                Novo cliente
+              </Button>
+            </div>
+          )
+        });
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -323,27 +375,64 @@ const CreditTab = () => {
       
       let creditAccountId = formData.existing_customer_id;
       
-      // Se for cliente novo, criar primeiro
+      // Se for cliente novo, verificar se já existe antes de criar
       if (formData.is_new_customer) {
-        const clientData = {
-          customer_name: formData.customer_name.trim(),
-          customer_phone: formData.customer_phone.replace(/\D/g, ''), // Remove caracteres não numéricos
-          customer_address: formData.customer_address.trim() || null // Envia null se vazio
-        };
+        const phone = formData.customer_phone.replace(/\D/g, ''); // Remove caracteres não numéricos
         
-        console.log('[CreditTab] 📤 Criando cliente:', clientData);
+        console.log('[CreditTab] 🔍 Verificando se cliente já existe:', { phone, name: formData.customer_name });
         
         try {
-          const createClientRes = await api.post('/credit-accounts', clientData);
-          creditAccountId = createClientRes.data.id;
-          console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
+          // Verificar se o cliente já existe pelo telefone
+          const existingClients = accounts.filter(account => 
+            account.customer_phone === phone || 
+            account.customer_name.toLowerCase() === formData.customer_name.toLowerCase()
+          );
+          
+          if (existingClients.length > 0) {
+            const existingClient = existingClients[0];
+            console.log('[CreditTab] ✅ Cliente já existe:', existingClient);
+            
+            // Perguntar ao usuário se quer usar o cliente existente
+            if (window.confirm(`Cliente "${existingClient.customer_name}" já existe com o telefone ${existingClient.customer_phone}. Deseja usar este cliente existente?`)) {
+              creditAccountId = existingClient.id;
+              
+              // Atualizar formulário com dados do cliente existente
+              setFormData(prev => ({
+                ...prev,
+                is_new_customer: false,
+                customer_name: existingClient.customer_name,
+                customer_phone: existingClient.customer_phone,
+                customer_address: existingClient.customer_address || '',
+                existing_customer_id: existingClient.id
+              }));
+              
+              console.log('[CreditTab] ✅ Usando cliente existente:', creditAccountId);
+            } else {
+              console.log('[CreditTab] ❌ Usuário cancelou operação');
+              toast({ title: 'Operação cancelada', description: 'Operação cancelada pelo usuário', variant: 'default' });
+              return;
+            }
+          } else {
+            // Cliente não existe, criar novo
+            const clientData = {
+              customer_name: formData.customer_name.trim(),
+              customer_phone: phone,
+              customer_address: formData.customer_address.trim() || null // Envia null se vazio
+            };
+            
+            console.log('[CreditTab] 📤 Criando novo cliente:', clientData);
+            
+            const createClientRes = await api.post('/credit-accounts', clientData);
+            creditAccountId = createClientRes.data.id;
+            console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
+          }
         } catch (error: any) {
-          console.error('[CreditTab] ❌ Erro ao criar cliente:', error);
+          console.error('[CreditTab] ❌ Erro ao verificar/criar cliente:', error);
           console.error('[CreditTab] 📋 Resposta do servidor:', error.response?.data);
           console.error('[CreditTab] 📋 Status:', error.response?.status);
           
           // Mostrar erro específico do backend
-          const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao criar cliente';
+          const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Erro ao processar cliente';
           toast({ title: 'Erro', description: errorMessage, variant: 'destructive' });
           return;
         }
@@ -589,7 +678,7 @@ const CreditTab = () => {
                       <Input
                         id="customer_name"
                         value={formData.customer_name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
+                        onChange={(e) => handleCustomerDataChange('name', e.target.value)}
                         placeholder="Ex: João Silva"
                         className="mt-1"
                       />
@@ -599,7 +688,7 @@ const CreditTab = () => {
                       <Input
                         id="customer_phone"
                         value={formData.customer_phone}
-                        onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
+                        onChange={(e) => handleCustomerDataChange('phone', e.target.value)}
                         placeholder="Ex: 11987654321"
                         className="mt-1"
                       />
