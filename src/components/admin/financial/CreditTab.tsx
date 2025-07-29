@@ -122,6 +122,13 @@ const CreditTab = () => {
         ...prev,
         final_due_date: finalDate.toISOString().split('T')[0]
       }));
+      
+      console.log('[CreditTab] 📅 Data final calculada:', {
+        frequency: formData.frequency,
+        installments: formData.installments,
+        firstDate: formData.first_payment_date,
+        finalDate: finalDate.toISOString().split('T')[0]
+      });
     }
   }, [formData.first_payment_date, formData.installments, formData.frequency]);
 
