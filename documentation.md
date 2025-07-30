@@ -26,6 +26,11 @@
 - **Solução**: Alterado para usar `/api/creditTransactions/debit-with-installments`
 - **Benefício**: Compatibilidade correta entre frontend e backend
 
+### 5. Sistema de Pagamentos no Modal do Cliente
+- **O que faz**: Permite registrar pagamentos diretamente no modal de histórico do cliente
+- **Como funciona**: Botão "Pagar" que abre formulário com opções de pagamento rápido
+- **Benefício**: Facilita o registro de pagamentos sem sair do contexto do cliente
+
 ## Como Funciona
 
 ### Verificação de Cliente Existente
@@ -68,6 +73,27 @@ const debtRes = await api.post('/credit-transactions', debtOperation);
 const debtRes = await api.post('/creditTransactions/debit-with-installments', debtOperation);
 ```
 
+### Sistema de Pagamentos
+```typescript
+const handlePayment = async () => {
+  const paymentData = {
+    credit_account_id: client.id,
+    type: 'payment',
+    amount: amount,
+    description: paymentDescription || `Pagamento de R$ ${amount.toFixed(2).replace('.', ',')}`,
+    date: new Date().toISOString()
+  };
+  
+  const response = await api.post('/credit-transactions', paymentData);
+};
+
+const handleQuickPayment = (percentage: number) => {
+  const amount = (Number(client?.total_debt) * percentage / 100);
+  setPaymentAmount(amount.toFixed(2));
+  setPaymentDescription(`Pagamento de ${percentage}% do débito total`);
+};
+```
+
 ## Benefícios
 
 1. **Eliminação de Erros 400**: Não há mais tentativas de criar clientes duplicados
@@ -75,6 +101,9 @@ const debtRes = await api.post('/creditTransactions/debit-with-installments', de
 3. **Feedback Imediato**: Detecção em tempo real de clientes existentes
 4. **Compatibilidade de API**: Frontend e backend agora se comunicam corretamente
 5. **Logs Detalhados**: Facilita debug e monitoramento
+6. **Pagamentos Simplificados**: Registro rápido de pagamentos diretamente no modal do cliente
+7. **Pagamentos Parciais**: Suporte a pagamentos de 25%, 50%, 75% ou 100% do débito
+8. **Validação Inteligente**: Impede pagamentos maiores que o débito total
 
 ## Status dos Testes
 
@@ -84,20 +113,24 @@ const debtRes = await api.post('/creditTransactions/debit-with-installments', de
 ✅ **Implementado e testado** - Seleção de cliente existente
 ✅ **Implementado e testado** - Criação de novo cliente apenas quando necessário
 ✅ **Implementado** - Correção da rota de API para parcelamento
+✅ **Implementado** - Sistema de pagamentos no modal do cliente
 
 **Correções Recentes:**
 - **Rota de API corrigida**: Alterado de `/api/credit-transactions` para `/api/creditTransactions/debit-with-installments`
 - **Compatibilidade de payload**: Agora o frontend envia dados de parcelamento para a rota correta
 - **Logs melhorados**: Identificação clara de operações de parcelamento
+- **Funcionalidade de pagamento**: Botão "Pagar" no modal do cliente com formulário completo
 
 **Próximos passos:**
 - Testar com dados reais do sistema
 - Validar integração com backend
 - Verificar comportamento com múltiplos clientes similares
+- Testar sistema de pagamentos com diferentes valores
 
 ## Arquivos Modificados
 
 - `src/components/admin/financial/CreditTab.tsx`: Implementação principal das melhorias
+- `src/components/admin/financial/ClientHistoryModal.tsx`: Sistema de pagamentos no modal
 - `documentation.md`: Esta documentação
 
 ## Fluxo de Operação Atualizado
@@ -108,5 +141,7 @@ const debtRes = await api.post('/creditTransactions/debit-with-installments', de
 4. **Se não existir**: Cria novo cliente
 5. **Registra débito**: Usa rota correta de parcelamento
 6. **Feedback**: Confirmação de sucesso
+7. **Pagamentos**: Botão "Pagar" no modal permite registro rápido de pagamentos
+8. **Pagamentos parciais**: Botões de 25%, 50%, 75%, 100% para facilitar operações
 
-O sistema agora está robusto e oferece uma experiência de usuário muito melhor! 
+O sistema agora está robusto e oferece uma experiência de usuário muito melhor, incluindo gestão completa de pagamentos! 
