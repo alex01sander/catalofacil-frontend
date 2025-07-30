@@ -320,7 +320,7 @@ const ExpensesTab = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {expenses.length === 0 ? (
+          {(expenses || []).length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhuma despesa cadastrada</p>
@@ -328,7 +328,7 @@ const ExpensesTab = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {expenses.map((expense) => (
+              {(expenses || []).map((expense) => (
                 <div key={expense.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${

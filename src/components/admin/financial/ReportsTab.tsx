@@ -240,7 +240,7 @@ const ReportsTab = () => {
   ] : [];
 
   const barChartData = reportData ? 
-    reportData.entries.slice(0, 7).map(entry => ({
+    (reportData.entries || []).slice(0, 7).map(entry => ({
       date: format(new Date(entry.date), 'dd/MM'),
       income: entry.type === 'income' ? Number(entry.amount) : 0,
       expense: entry.type === 'expense' ? Number(entry.amount) : 0
@@ -380,14 +380,14 @@ const ReportsTab = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={chartData}
+                      data={chartData || []}
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
                       dataKey="value"
                       label={({ name, value }) => `${name}: R$ ${value.toFixed(2).replace('.', ',')}`}
                     >
-                      {chartData.map((entry, index) => (
+                      {(chartData || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -423,7 +423,7 @@ const ReportsTab = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {reportData.entries.slice(0, 10).map((entry) => (
+                {(reportData.entries || []).slice(0, 10).map((entry) => (
                   <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -457,7 +457,7 @@ const ReportsTab = () => {
           </Card>
 
           {/* Clientes Devedores */}
-          {reportData.debtors.length > 0 && (
+          {(reportData.debtors || []).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -467,7 +467,7 @@ const ReportsTab = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {reportData.debtors.map((debtor) => (
+                  {(reportData.debtors || []).map((debtor) => (
                     <div key={debtor.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{debtor.customer_name}</p>

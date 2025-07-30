@@ -125,9 +125,16 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         products = [];
       }
       
+      // Garantir que todos os arrays sejam arrays válidos
+      const safeCashFlow = Array.isArray(cashFlow) ? cashFlow : [];
+      const safeCreditAccounts = Array.isArray(creditAccounts) ? creditAccounts : [];
+      const safeExpenses = Array.isArray(expenses) ? expenses : [];
+      const safeSales = Array.isArray(sales) ? sales : [];
+      const safeProducts = Array.isArray(products) ? products : [];
+      
       // DEBUG DETALHADO - Verificar dados brutos do fluxo de caixa
       console.log('[FinancialContext] 🔍 DADOS BRUTOS DO FLUXO DE CAIXA:');
-      (cashFlow || []).forEach((entry, index) => {
+      safeCashFlow.forEach((entry, index) => {
         console.log(`📋 Entrada ${index + 1}:`, {
           id: entry.id,
           type: entry.type,
@@ -142,22 +149,22 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       });
       
       // Calcular totais
-      const totalIncome = (cashFlow || [])
+      const totalIncome = safeCashFlow
         .filter(entry => entry.type === 'income' || entry.type === 'entrada')
         .reduce((sum, entry) => sum + Number(entry.amount), 0);
       
-      const totalExpenses = (cashFlow || [])
+      const totalExpenses = safeCashFlow
         .filter(entry => entry.type === 'expense' || entry.type === 'saida')
         .reduce((sum, entry) => sum + Number(entry.amount), 0);
       const balance = totalIncome - totalExpenses;
-      const totalDebt = (creditAccounts || []).reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+      const totalDebt = safeCreditAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
 
       const newData = {
-        cashFlow,
-        creditAccounts,
-        expenses,
-        sales,
-        products,
+        cashFlow: safeCashFlow,
+        creditAccounts: safeCreditAccounts,
+        expenses: safeExpenses,
+        sales: safeSales,
+        products: safeProducts,
         totalIncome,
         totalExpenses,
         balance,
@@ -166,9 +173,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       };
 
       console.log('[FinancialContext] Dados processados:', {
-        cashFlowCount: (cashFlow || []).length,
-        salesCount: (sales || []).length,
-        productsCount: (products || []).length,
+        cashFlowCount: safeCashFlow.length,
+        salesCount: safeSales.length,
+        productsCount: safeProducts.length,
         totalIncome,
         totalExpenses,
         balance,

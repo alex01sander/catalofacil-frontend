@@ -97,10 +97,57 @@ creditAccounts.reduce((sum, acc) => ...)
 cashFlow.length
 
 // Depois
-(cashFlow || []).forEach((entry, index) => (...))
-(cashFlow || []).filter(entry => ...).reduce((sum, entry) => ...)
-(creditAccounts || []).reduce((sum, acc) => ...)
-(cashFlow || []).length
+// Adicionado verificações de segurança para arrays
+const safeCashFlow = Array.isArray(cashFlow) ? cashFlow : [];
+const safeCreditAccounts = Array.isArray(creditAccounts) ? creditAccounts : [];
+const safeExpenses = Array.isArray(expenses) ? expenses : [];
+const safeSales = Array.isArray(sales) ? sales : [];
+const safeProducts = Array.isArray(products) ? products : [];
+
+safeCashFlow.forEach((entry, index) => (...))
+safeCashFlow.filter(entry => ...).reduce((sum, entry) => ...)
+safeCreditAccounts.reduce((sum, acc) => ...)
+safeCashFlow.length
+```
+
+### 5. `src/components/admin/financial/ReportsTab.tsx` (NOVO)
+
+**Problemas encontrados:**
+- `reportData.entries` poderia ser `null` ou `undefined`
+- `reportData.debtors` poderia ser `null` ou `undefined`
+- `chartData` poderia ser `null` ou `undefined`
+
+**Correções aplicadas:**
+```typescript
+// Antes
+reportData.entries.slice(0, 7).map(entry => (...))
+chartData.map((entry, index) => (...))
+reportData.entries.slice(0, 10).map((entry) => (...))
+reportData.debtors.map((debtor) => (...))
+reportData.debtors.length > 0
+
+// Depois
+(reportData.entries || []).slice(0, 7).map(entry => (...))
+(chartData || []).map((entry, index) => (...))
+(reportData.entries || []).slice(0, 10).map((entry) => (...))
+(reportData.debtors || []).map((debtor) => (...))
+(reportData.debtors || []).length > 0
+```
+
+### 6. `src/components/admin/financial/ExpensesTab.tsx` (NOVO)
+
+**Problemas encontrados:**
+- `expenses` poderia ser `null` ou `undefined`
+
+**Correções aplicadas:**
+```typescript
+// Antes
+expenses.length === 0
+expenses.map((expense) => (...))
+
+// Depois
+(expenses || []).length === 0
+(expenses || []).map((expense) => (...))
 ```
 
 ## Estratégia de Correção
@@ -117,6 +164,10 @@ cashFlow.length
 - Garantido que estados iniciais sejam sempre arrays vazios
 - Tratamento de respostas da API que podem retornar `null`
 
+### 4. **Verificações de Segurança Adicionais** (NOVO)
+- Implementado verificações `Array.isArray()` antes de usar arrays
+- Criado variáveis seguras (`safeCashFlow`, `safeCreditAccounts`, etc.) no FinancialContext
+
 ## Resultado
 
 ✅ **Erro resolvido**: O `TypeError: n.map is not a function` não deve mais ocorrer
@@ -124,6 +175,8 @@ cashFlow.length
 ✅ **Código mais robusto**: Todas as operações de array agora são seguras contra valores `null`/`undefined`
 
 ✅ **Manutenção da funcionalidade**: Todas as funcionalidades existentes continuam funcionando normalmente
+
+✅ **Correções abrangentes**: Aplicadas em todos os componentes financeiros principais
 
 ## Prevenção Futura
 
@@ -133,10 +186,23 @@ Para evitar este tipo de erro no futuro:
 2. **Usar verificações defensivas** antes de operações de array
 3. **Tratar respostas da API** que podem retornar dados inesperados
 4. **Usar TypeScript strict mode** para detectar problemas de tipo em tempo de desenvolvimento
+5. **Implementar verificações `Array.isArray()`** antes de usar métodos de array
 
 ## Testes Recomendados
 
 1. Testar com dados vazios da API
 2. Testar com dados corrompidos da API
 3. Testar com conexão lenta da API
-4. Testar com diferentes estados de carregamento 
+4. Testar com diferentes estados de carregamento
+5. Testar com respostas de API que retornam `null` ou `undefined`
+
+## Status das Correções
+
+- ✅ `ClientHistoryModal.tsx` - Corrigido
+- ✅ `CreditTab.tsx` - Corrigido
+- ✅ `CashFlowTab.tsx` - Corrigido
+- ✅ `FinancialContext.tsx` - Corrigido com verificações adicionais
+- ✅ `ReportsTab.tsx` - Corrigido (NOVO)
+- ✅ `ExpensesTab.tsx` - Corrigido (NOVO)
+
+Todas as correções foram aplicadas e o erro `TypeError: n.map is not a function` deve estar resolvido. 

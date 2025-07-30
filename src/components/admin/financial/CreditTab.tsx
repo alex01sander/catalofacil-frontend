@@ -454,7 +454,7 @@ const CreditTab = () => {
         first_payment_date: firstPaymentDateISO,
         final_due_date: finalDueDateISO,
         observations: formData.observations,
-        products: formData.selected_products.map(p => ({
+        products: (formData.selected_products || []).map(p => ({
           product_id: p.product_id,
           quantity: p.quantity,
           price: p.price
