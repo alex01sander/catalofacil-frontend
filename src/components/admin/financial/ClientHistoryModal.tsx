@@ -152,19 +152,9 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
 
       console.log('[ClientHistoryModal] 📤 Registrando pagamento:', paymentData);
       
-      // Tentar rota que funciona primeiro, depois fallback
-      let response;
-      try {
-        // Primeira tentativa: rota específica de pagamentos (se disponível)
-        response = await api.post('/api/creditTransactions/payment', paymentData);
-        console.log('[ClientHistoryModal] ✅ Pagamento registrado via rota específica:', response.data);
-      } catch (error) {
-        console.log('[ClientHistoryModal] ⚠️ Rota específica não disponível, tentando rota geral...');
-        
-        // Segunda tentativa: rota geral com formato em português
-        response = await api.post('/api/creditTransactions', paymentData);
-        console.log('[ClientHistoryModal] ✅ Pagamento registrado via rota geral:', response.data);
-      }
+      // Usar apenas a rota correta de pagamentos
+      const response = await api.post('/api/creditTransactions', paymentData);
+      console.log('[ClientHistoryModal] ✅ Pagamento registrado:', response.data);
       
       toast({
         title: "Sucesso",
