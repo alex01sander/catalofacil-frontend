@@ -27,7 +27,7 @@ type CreditAccount = {
 type CreditTransaction = {
   id: string;
   credit_account_id: string;
-  type: 'debt' | 'payment';
+  type: 'debt' | 'payment' | 'debito' | 'pagamento';
   amount: number;
   date: string;
   description?: string;
@@ -61,13 +61,41 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
     
     try {
       setLoading(true);
-      const { data } = await api.get(`/credit-accounts/${client.id}/transactions`);
-      setTransactions(data || []);
+      
+      // Tentar rota específica primeiro, depois fallback
+      let data;
+      try {
+        // Primeira tentativa: rota específica para histórico
+        const response = await api.get(`/credit-accounts/${client.id}/transactions`);
+        data = response.data || [];
+        console.log('[ClientHistoryModal] ✅ Histórico carregado via rota específica');
+      } catch (error) {
+        console.log('[ClientHistoryModal] ⚠️ Rota específica não disponível, tentando rota geral...');
+        
+        // Segunda tentativa: buscar todas as transações e filtrar
+        const response = await api.get('/creditTransactions');
+        const allTransactions = response.data || [];
+        
+        // Filtrar transações do cliente atual
+        data = allTransactions.filter((transaction: CreditTransaction) => 
+          transaction.credit_account_id === client.id
+        );
+        
+        console.log('[ClientHistoryModal] ✅ Histórico carregado via rota geral (filtrado)');
+      }
+      
+      setTransactions(data);
     } catch (error) {
-      console.error('Erro ao buscar histórico do cliente:', error);
+      console.error('[ClientHistoryModal] ❌ Erro ao buscar histórico do cliente:', error);
+      
+      let errorMessage = "Falha ao carregar histórico do cliente";
+      if (error.response?.status === 404) {
+        errorMessage = "Rota de histórico não disponível. Aguarde reinicialização do servidor.";
+      }
+      
       toast({
         title: "Erro",
-        description: "Falha ao carregar histórico do cliente",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -109,9 +137,10 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
     try {
       setProcessingPayment(true);
       
+      // Solução temporária: usar formato "pagamento" em vez de "payment"
       const paymentData = {
         credit_account_id: client.id,
-        type: 'payment',
+        type: 'pagamento', // Usar formato em português temporariamente
         amount: amount,
         description: paymentDescription || `Pagamento de R$ ${amount.toFixed(2).replace('.', ',')}`,
         date: new Date().toISOString()
@@ -119,9 +148,19 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
 
       console.log('[ClientHistoryModal] 📤 Registrando pagamento:', paymentData);
       
-      const response = await api.post('/credit-transactions', paymentData);
-      
-      console.log('[ClientHistoryModal] ✅ Pagamento registrado:', response.data);
+      // Tentar rota que funciona primeiro, depois fallback
+      let response;
+      try {
+        // Primeira tentativa: rota específica de pagamentos (se disponível)
+        response = await api.post('/creditTransactions/payment', paymentData);
+        console.log('[ClientHistoryModal] ✅ Pagamento registrado via rota específica:', response.data);
+      } catch (error) {
+        console.log('[ClientHistoryModal] ⚠️ Rota específica não disponível, tentando rota geral...');
+        
+        // Segunda tentativa: rota geral com formato em português
+        response = await api.post('/creditTransactions', paymentData);
+        console.log('[ClientHistoryModal] ✅ Pagamento registrado via rota geral:', response.data);
+      }
       
       toast({
         title: "Sucesso",
@@ -143,9 +182,18 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       
     } catch (error) {
       console.error('[ClientHistoryModal] ❌ Erro ao registrar pagamento:', error);
+      
+      // Mensagem de erro mais específica
+      let errorMessage = "Falha ao registrar pagamento. Tente novamente.";
+      if (error.response?.status === 404) {
+        errorMessage = "Rota de pagamento não disponível. Aguarde reinicialização do servidor.";
+      } else if (error.response?.status === 400) {
+        errorMessage = "Dados inválidos. Verifique o valor e tente novamente.";
+      }
+      
       toast({
         title: "Erro",
-        description: "Falha ao registrar pagamento. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -369,8 +417,10 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
                     >
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-1">
-                          <Badge variant={transaction.type === 'debt' ? "destructive" : "default"}>
-                            {transaction.type === 'debt' ? 'Débito' : 'Pagamento'}
+                          <Badge variant={
+                            transaction.type === 'debt' || transaction.type === 'debito' ? "destructive" : "default"
+                          }>
+                            {transaction.type === 'debt' || transaction.type === 'debito' ? 'Débito' : 'Pagamento'}
                           </Badge>
                           <span className="text-xs text-muted-foreground flex items-center space-x-1">
                             <CalendarDays className="h-3 w-3" />
@@ -385,9 +435,9 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
                       </div>
                       <div className="text-right">
                         <p className={`font-semibold ${
-                          transaction.type === 'debt' ? 'text-destructive' : 'text-green-600'
+                          transaction.type === 'debt' || transaction.type === 'debito' ? 'text-destructive' : 'text-green-600'
                         }`}>
-                          {transaction.type === 'debt' ? '+' : '-'}R$ {Number(transaction.amount).toFixed(2).replace('.', ',')}
+                          {transaction.type === 'debt' || transaction.type === 'debito' ? '+' : '-'}R$ {Number(transaction.amount).toFixed(2).replace('.', ',')}
                         </p>
                       </div>
                     </div>
