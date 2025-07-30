@@ -144,11 +144,11 @@ const CreditTab = () => {
     observations: ''
   });
 
-  const accounts = data.creditAccounts;
-  const filteredAccounts = accounts.filter(account => 
+  const accounts = data.creditAccounts || [];
+  const filteredAccounts = Array.isArray(accounts) ? accounts.filter(account => 
     account.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (account.customer_phone || '').includes(searchTerm)
-  );
+  ) : [];
 
   // Calcular valor total dos produtos selecionados
   const totalProductsValue = formData.selected_products.reduce((sum, product) => sum + product.total, 0);
@@ -506,13 +506,13 @@ const CreditTab = () => {
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Relatório de Crediário', 20, 20);
-    doc.text(`Total de clientes: ${accounts.length}`, 20, 40);
-    doc.text(`Total em dívida: R$ ${accounts.reduce((sum, acc) => sum + acc.total_debt, 0).toFixed(2)}`, 20, 50);
+    doc.text(`Total de clientes: ${(accounts || []).length}`, 20, 40);
+    doc.text(`Total em dívida: R$ ${(accounts || []).reduce((sum, acc) => sum + acc.total_debt, 0).toFixed(2)}`, 20, 50);
     doc.save('crediario.pdf');
   };
 
   const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(accounts.map(acc => ({
+    const ws = XLSX.utils.json_to_sheet((accounts || []).map(acc => ({
       Nome: acc.customer_name,
       Telefone: acc.customer_phone,
       'Total em Dívida': acc.total_debt,
@@ -524,7 +524,7 @@ const CreditTab = () => {
   };
 
   const totalDebt = data.totalDebt;
-  const clientsWithDebt = accounts.filter(account => Number(account.total_debt) > 0).length;
+  const clientsWithDebt = (accounts || []).filter(account => Number(account.total_debt) > 0).length;
 
   return (
     <div className="space-y-6">
@@ -591,7 +591,7 @@ const CreditTab = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">👥 Total de Clientes</p>
-                <p className="text-2xl font-bold text-blue-600">{accounts.length}</p>
+                <p className="text-2xl font-bold text-blue-600">{(accounts || []).length}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <Users className="h-6 w-6 text-blue-600" />
@@ -709,7 +709,7 @@ const CreditTab = () => {
                   <div className="space-y-4">
                     <Label>Selecionar Cliente Existente</Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-40 overflow-y-auto">
-                      {filteredAccounts.map((client) => (
+                      {Array.isArray(filteredAccounts) && filteredAccounts.map((client) => (
                         <div
                           key={client.id}
                           onClick={() => handleClientSelect(client)}
@@ -746,9 +746,9 @@ const CreditTab = () => {
                         <SelectValue placeholder="Escolha um produto" />
                       </SelectTrigger>
                       <SelectContent>
-                        {data.products.map((product) => (
+                        {Array.isArray(data.products) && data.products.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} - R$ {Number(product.price).toFixed(2)}
+                            {product.name} - R$ {Number(product.price).toFixed(2).replace('.', ',')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -786,21 +786,25 @@ const CreditTab = () => {
                       {formData.selected_products.length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-4">Nenhum produto adicionado.</p>
                       ) : (
-                        formData.selected_products.map((product) => (
-                          <div key={product.product_id} className="flex items-center justify-between p-2 border-b last:border-b-0">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-medium">{product.name}</span>
-                              <span className="text-sm text-gray-600">x{product.quantity}</span>
+                        Array.isArray(formData.selected_products) && formData.selected_products.map((product) => (
+                          <div key={product.product_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <p className="font-medium">{product.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {product.quantity}x R$ {Number(product.price).toFixed(2).replace('.', ',')}
+                              </p>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm text-gray-600">R$ {product.total.toFixed(2).replace('.', ',')}</span>
-                              <button
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">R$ {Number(product.total).toFixed(2).replace('.', ',')}</p>
+                              <Button
                                 type="button"
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleRemoveProduct(product.product_id)}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-red-600 hover:text-red-700"
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         ))
@@ -840,8 +844,8 @@ const CreditTab = () => {
                         <SelectValue placeholder="Escolha o número de parcelas" />
                       </SelectTrigger>
                       <SelectContent>
-                        {installmentOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
+                        {Array.isArray(installmentOptions) && installmentOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value.toString()}>
                             {option.label}
                           </SelectItem>
                         ))}
@@ -1044,7 +1048,7 @@ const CreditTab = () => {
             </div>
           ) : (
             <div className="divide-y">
-              {filteredAccounts.map((account) => (
+              {Array.isArray(filteredAccounts) && filteredAccounts.map((account) => (
                 <div 
                   key={account.id} 
                   className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"

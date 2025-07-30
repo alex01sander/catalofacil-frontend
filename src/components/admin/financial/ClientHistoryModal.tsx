@@ -63,7 +63,7 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       setLoading(true);
       
       // Tentar rota específica primeiro, depois fallback
-      let data;
+      let data = [];
       try {
         // Primeira tentativa: rota específica para histórico
         const response = await api.get(`/credit-accounts/${client.id}/transactions`);
@@ -79,12 +79,13 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
         // Filtrar transações do cliente atual
         data = allTransactions.filter((transaction: CreditTransaction) => 
           transaction.credit_account_id === client.id
-        );
+        ) || [];
         
         console.log('[ClientHistoryModal] ✅ Histórico carregado via rota geral (filtrado)');
       }
       
-      setTransactions(data);
+      // Garantir que data seja sempre um array
+      setTransactions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('[ClientHistoryModal] ❌ Erro ao buscar histórico do cliente:', error);
       
@@ -98,6 +99,9 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
         description: errorMessage,
         variant: "destructive",
       });
+      
+      // Em caso de erro, definir array vazio
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -400,48 +404,50 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   <span className="ml-2 text-sm text-muted-foreground">Carregando histórico...</span>
                 </div>
-              ) : transactions.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h4 className="text-lg font-medium mb-2">Nenhuma transação encontrada</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Este cliente ainda não possui transações registradas.
-                  </p>
-                </div>
               ) : (
                 <div className="space-y-3">
-                  {transactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-1">
-                          <Badge variant={
-                            transaction.type === 'debt' || transaction.type === 'debito' ? "destructive" : "default"
-                          }>
-                            {transaction.type === 'debt' || transaction.type === 'debito' ? 'Débito' : 'Pagamento'}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground flex items-center space-x-1">
-                            <CalendarDays className="h-3 w-3" />
-                            {format(new Date(transaction.date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </span>
+                  {Array.isArray(transactions) && transactions.length > 0 ? (
+                    transactions.map((transaction) => (
+                      <div
+                        key={transaction.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-1">
+                            <Badge variant={
+                              transaction.type === 'debt' || transaction.type === 'debito' ? "destructive" : "default"
+                            }>
+                              {transaction.type === 'debt' || transaction.type === 'debito' ? 'Débito' : 'Pagamento'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground flex items-center space-x-1">
+                              <CalendarDays className="h-3 w-3" />
+                              {format(new Date(transaction.date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </span>
+                          </div>
+                          {transaction.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {transaction.description}
+                            </p>
+                          )}
                         </div>
-                        {transaction.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {transaction.description}
+                        <div className="text-right">
+                          <p className={`font-semibold ${
+                            transaction.type === 'debt' || transaction.type === 'debito' ? 'text-destructive' : 'text-green-600'
+                          }`}>
+                            {transaction.type === 'debt' || transaction.type === 'debito' ? '+' : '-'}R$ {Number(transaction.amount).toFixed(2).replace('.', ',')}
                           </p>
-                        )}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`font-semibold ${
-                          transaction.type === 'debt' || transaction.type === 'debito' ? 'text-destructive' : 'text-green-600'
-                        }`}>
-                          {transaction.type === 'debt' || transaction.type === 'debito' ? '+' : '-'}R$ {Number(transaction.amount).toFixed(2).replace('.', ',')}
-                        </p>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h4 className="text-lg font-medium mb-2">Nenhuma transação encontrada</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Este cliente ainda não possui transações registradas.
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </CardContent>
