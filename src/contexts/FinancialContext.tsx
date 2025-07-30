@@ -101,11 +101,11 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       // Fazer requisições em paralelo para melhor performance
       const [cashFlowRes, creditRes, expensesRes, salesRes, productsRes] = await Promise.all([
-        api.get('/fluxo-caixa'),
-        api.get('/credit-accounts'),
-        api.get('/despesas'),
-        api.get('/vendas'),
-        api.get('/products')
+        api.get('/api/fluxo-caixa'),
+        api.get('/api/credit-accounts'),
+        api.get('/api/despesas'),
+        api.get('/api/vendas'),
+        api.get('/api/products')
       ]);
       
       console.log('[FinancialContext] Requisições concluídas, processando dados...');
@@ -227,7 +227,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       console.log('[FinancialContext] 📤 Payload enviado para API:', payload);
       
-      const res = await api.post('/fluxo-caixa', payload);
+      const res = await api.post('/api/fluxo-caixa', payload);
       
       console.log('[FinancialContext] ✅ Resposta da API:', res.data);
       console.log('[FinancialContext] 🔍 Tipo retornado pela API:', res.data.type);
@@ -288,7 +288,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       // Remover campos duplicados e garantir apenas um user_id
       const payload = { ...expense, user_id: user.id };
       delete payload["userId"];
-      const res = await api.post('/despesas', payload);
+      const res = await api.post('/api/despesas', payload);
       
       // Atualizar dados localmente
       const newExpense = res.data;
@@ -311,7 +311,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !token) return;
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.put(`/despesas/${id}`, updates);
+      const res = await api.put(`/api/despesas/${id}`, updates);
       
       // Atualizar dados localmente
       const updatedExpense = res.data;
@@ -347,10 +347,10 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         // O backend pode inferir o store_id do usuário autenticado
       };
       
-      console.log('[FinancialContext] 📤 Enviando para nova rota /sales/product-sale:', payload);
+      console.log('[FinancialContext] 📤 Enviando para nova rota /api/sales/product-sale:', payload);
       
       // Usar a nova rota que integra automaticamente
-      const res = await api.post('/sales/product-sale', payload);
+      const res = await api.post('/api/sales/product-sale', payload);
       console.log('[FinancialContext] ✅ Venda registrada com integração automática:', res.data);
       
       // Não precisamos mais criar entrada manual no fluxo de caixa
@@ -377,7 +377,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.post('/credit-transactions', {
+      const res = await api.post('/api/credit-transactions', {
         credit_account_id: accountId,
         type,
         amount,

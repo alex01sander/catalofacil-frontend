@@ -66,14 +66,14 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       let data = [];
       try {
         // Primeira tentativa: rota específica para histórico
-        const response = await api.get(`/credit-accounts/${client.id}/transactions`);
+        const response = await api.get(`/api/credit-accounts/${client.id}/transactions`);
         data = response.data || [];
         console.log('[ClientHistoryModal] ✅ Histórico carregado via rota específica');
       } catch (error) {
         console.log('[ClientHistoryModal] ⚠️ Rota específica não disponível, tentando rota geral...');
         
         // Segunda tentativa: buscar todas as transações e filtrar
-        const response = await api.get('/creditTransactions');
+        const response = await api.get('/api/creditTransactions');
         const allTransactions = response.data || [];
         
         // Filtrar transações do cliente atual
@@ -156,13 +156,13 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       let response;
       try {
         // Primeira tentativa: rota específica de pagamentos (se disponível)
-        response = await api.post('/creditTransactions/payment', paymentData);
+        response = await api.post('/api/creditTransactions/payment', paymentData);
         console.log('[ClientHistoryModal] ✅ Pagamento registrado via rota específica:', response.data);
       } catch (error) {
         console.log('[ClientHistoryModal] ⚠️ Rota específica não disponível, tentando rota geral...');
         
         // Segunda tentativa: rota geral com formato em português
-        response = await api.post('/creditTransactions', paymentData);
+        response = await api.post('/api/creditTransactions', paymentData);
         console.log('[ClientHistoryModal] ✅ Pagamento registrado via rota geral:', response.data);
       }
       

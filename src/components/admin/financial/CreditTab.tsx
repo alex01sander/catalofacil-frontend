@@ -422,7 +422,7 @@ const CreditTab = () => {
             
             console.log('[CreditTab] 📤 Criando novo cliente:', clientData);
             
-            const createClientRes = await api.post('/credit-accounts', clientData);
+            const createClientRes = await api.post('/api/credit-accounts', clientData);
             creditAccountId = createClientRes.data.id;
             console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
           }
@@ -464,7 +464,7 @@ const CreditTab = () => {
       console.log('[CreditTab] 📤 Operação de débito com parcelamento:', debtOperation);
       
       // Usar rota específica para parcelamento (não a rota simples de transações)
-      const debtRes = await api.post('/creditTransactions/debit-with-installments', debtOperation);
+      const debtRes = await api.post('/api/creditTransactions/debit-with-installments', debtOperation);
       console.log('[CreditTab] ✅ Débito com parcelamento registrado:', debtRes.data);
       
       // Atualizar dados
