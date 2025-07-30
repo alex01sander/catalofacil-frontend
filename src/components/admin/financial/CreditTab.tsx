@@ -151,7 +151,7 @@ const CreditTab = () => {
   ) : [];
 
   // Calcular valor total dos produtos selecionados
-  const totalProductsValue = formData.selected_products.reduce((sum, product) => sum + product.total, 0);
+  const totalProductsValue = (formData.selected_products || []).reduce((sum, product) => sum + product.total, 0);
 
   // Atualizar valor total quando produtos mudam
   useEffect(() => {
@@ -235,7 +235,7 @@ const CreditTab = () => {
   const handleAddProduct = () => {
     if (!productToAdd) return;
     
-    const product = data.products.find(p => p.id === productToAdd);
+    const product = (data.products || []).find(p => p.id === productToAdd);
     if (!product) return;
     
     const newProduct: SelectedProduct = {
@@ -281,7 +281,7 @@ const CreditTab = () => {
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanName = name.toLowerCase().trim();
     
-    return accounts.find(account => 
+    return (accounts || []).find(account => 
       account.customer_phone === cleanPhone || 
       account.customer_name.toLowerCase() === cleanName
     );
@@ -709,7 +709,7 @@ const CreditTab = () => {
                   <div className="space-y-4">
                     <Label>Selecionar Cliente Existente</Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-40 overflow-y-auto">
-                      {Array.isArray(filteredAccounts) && filteredAccounts.map((client) => (
+                      {Array.isArray(filteredAccounts) && (filteredAccounts || []).map((client) => (
                         <div
                           key={client.id}
                           onClick={() => handleClientSelect(client)}
@@ -746,7 +746,7 @@ const CreditTab = () => {
                         <SelectValue placeholder="Escolha um produto" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.isArray(data.products) && data.products.map((product) => (
+                        {Array.isArray(data.products) && (data.products || []).map((product) => (
                           <SelectItem key={product.id} value={product.id}>
                             {product.name} - R$ {Number(product.price).toFixed(2).replace('.', ',')}
                           </SelectItem>
@@ -783,10 +783,10 @@ const CreditTab = () => {
                   <div>
                     <Label>Produtos Selecionados</Label>
                     <div className="max-h-40 overflow-y-auto border rounded-lg p-2 mt-1">
-                      {formData.selected_products.length === 0 ? (
+                      {(formData.selected_products || []).length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-4">Nenhum produto adicionado.</p>
                       ) : (
-                        Array.isArray(formData.selected_products) && formData.selected_products.map((product) => (
+                        Array.isArray(formData.selected_products) && (formData.selected_products || []).map((product) => (
                           <div key={product.product_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div>
                               <p className="font-medium">{product.name}</p>
@@ -844,7 +844,7 @@ const CreditTab = () => {
                         <SelectValue placeholder="Escolha o número de parcelas" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.isArray(installmentOptions) && installmentOptions.map(option => (
+                        {Array.isArray(installmentOptions) && (installmentOptions || []).map(option => (
                           <SelectItem key={option.value} value={option.value.toString()}>
                             {option.label}
                           </SelectItem>
@@ -1048,7 +1048,7 @@ const CreditTab = () => {
             </div>
           ) : (
             <div className="divide-y">
-              {Array.isArray(filteredAccounts) && filteredAccounts.map((account) => (
+              {Array.isArray(filteredAccounts) && (filteredAccounts || []).map((account) => (
                 <div 
                   key={account.id} 
                   className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"

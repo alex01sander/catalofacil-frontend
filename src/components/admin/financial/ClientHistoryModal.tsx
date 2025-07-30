@@ -406,8 +406,8 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {Array.isArray(transactions) && transactions.length > 0 ? (
-                    transactions.map((transaction) => (
+                  {Array.isArray(transactions) && (transactions || []).length > 0 ? (
+                    (transactions || []).map((transaction) => (
                       <div
                         key={transaction.id}
                         className="flex items-center justify-between p-4 border rounded-lg"

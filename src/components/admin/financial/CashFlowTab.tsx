@@ -511,7 +511,7 @@ const CashFlowTab = () => {
                   <Select 
                     value={saleData.product_id} 
                     onValueChange={(value) => {
-                      const product = financialData.products.find(p => p.id === value);
+                      const product = (financialData.products || []).find(p => p.id === value);
                       setSaleData({
                         ...saleData, 
                         product_id: value,
@@ -523,7 +523,7 @@ const CashFlowTab = () => {
                       <SelectValue placeholder="Selecione um produto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {financialData.products.map((product) => (
+                      {(financialData.products || []).map((product) => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name} - R$ {Number(product.price).toFixed(2).replace('.', ',')} (Estoque: {product.stock})
                         </SelectItem>
@@ -610,7 +610,7 @@ const CashFlowTab = () => {
                     <strong>Total:</strong> R$ {(parseFloat(saleData.quantity) * parseFloat(saleData.unit_price)).toFixed(2).replace('.', ',')}
                   </p>
                   {(() => {
-                    const product = financialData.products.find(p => p.id === saleData.product_id);
+                    const product = (financialData.products || []).find(p => p.id === saleData.product_id);
                     const quantity = parseInt(saleData.quantity);
                     return product && (
                       <p className="text-blue-700">
@@ -640,7 +640,7 @@ const CashFlowTab = () => {
           <CardTitle>Últimos Lançamentos</CardTitle>
         </CardHeader>
         <CardContent>
-          {financialData.cashFlow.length === 0 ? (
+          {(financialData.cashFlow || []).length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nenhum lançamento ainda</p>
@@ -648,7 +648,7 @@ const CashFlowTab = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {financialData.cashFlow.map((entry) => {
+              {(financialData.cashFlow || []).map((entry) => {
                  // Determinar se é entrada ou saída (suportando ambos os formatos)
                  const isIncome = entry.type === 'income' || entry.type === 'entrada';
                  const isExpense = entry.type === 'expense' || entry.type === 'saida';

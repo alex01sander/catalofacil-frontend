@@ -127,7 +127,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       
       // DEBUG DETALHADO - Verificar dados brutos do fluxo de caixa
       console.log('[FinancialContext] 🔍 DADOS BRUTOS DO FLUXO DE CAIXA:');
-      cashFlow.forEach((entry, index) => {
+      (cashFlow || []).forEach((entry, index) => {
         console.log(`📋 Entrada ${index + 1}:`, {
           id: entry.id,
           type: entry.type,
@@ -142,15 +142,15 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       });
       
       // Calcular totais
-      const totalIncome = cashFlow
+      const totalIncome = (cashFlow || [])
         .filter(entry => entry.type === 'income' || entry.type === 'entrada')
         .reduce((sum, entry) => sum + Number(entry.amount), 0);
       
-      const totalExpenses = cashFlow
+      const totalExpenses = (cashFlow || [])
         .filter(entry => entry.type === 'expense' || entry.type === 'saida')
         .reduce((sum, entry) => sum + Number(entry.amount), 0);
       const balance = totalIncome - totalExpenses;
-      const totalDebt = creditAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+      const totalDebt = (creditAccounts || []).reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
 
       const newData = {
         cashFlow,
@@ -166,9 +166,9 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
       };
 
       console.log('[FinancialContext] Dados processados:', {
-        cashFlowCount: cashFlow.length,
-        salesCount: sales.length,
-        productsCount: products.length,
+        cashFlowCount: (cashFlow || []).length,
+        salesCount: (sales || []).length,
+        productsCount: (products || []).length,
         totalIncome,
         totalExpenses,
         balance,
