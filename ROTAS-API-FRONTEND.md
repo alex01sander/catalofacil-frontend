@@ -33,24 +33,24 @@
 ## 💳 Sistema de Crédito
 | Método | Rota | Descrição | Status |
 |--------|------|-----------|--------|
-| GET | `/api/credit-accounts` | Listar contas de crédito | ✅ Funcionando |
-| POST | `/api/credit-accounts` | Criar conta de crédito | ✅ Funcionando |
-| GET | `/api/credit-accounts/${id}/transactions` | Histórico de transações | ⚠️ Aguarda reinicialização |
-| GET | `/api/creditTransactions` | Listar transações de crédito | ✅ Funcionando |
-| POST | `/api/creditTransactions` | Criar transação simples | ⚠️ Aguarda reinicialização |
-| POST | `/api/creditTransactions/debit-with-installments` | Débito com parcelamento | ✅ Funcionando |
-| POST | `/api/creditTransactions` | Pagamento | ✅ Funcionando |
+| GET | `/credit-accounts` | Listar contas de crédito | ✅ Funcionando |
+| POST | `/credit-accounts` | Criar conta de crédito | ✅ Funcionando |
+| GET | `/credit-accounts/${id}/transactions` | Histórico de transações | ⚠️ Aguarda reinicialização |
+| GET | `/creditTransactions` | Listar transações de crédito | ✅ Funcionando |
+| POST | `/creditTransactions` | Criar transação simples | ⚠️ Aguarda reinicialização |
+| POST | `/creditTransactions/debit-with-installments` | Débito com parcelamento | ✅ Funcionando |
+| POST | `/creditTransactions` | Pagamento | ✅ Funcionando |
 
 ## 💰 Gestão Financeira
 | Método | Rota | Descrição | Status |
 |--------|------|-----------|--------|
-| GET | `/api/fluxo-caixa` | Listar fluxo de caixa | ✅ Funcionando |
-| POST | `/api/fluxo-caixa` | Adicionar entrada no fluxo | ✅ Funcionando |
-| GET | `/api/despesas` | Listar despesas | ✅ Funcionando |
-| POST | `/api/despesas` | Criar despesa | ✅ Funcionando |
-| PUT | `/api/despesas/${id}` | Atualizar despesa | ✅ Funcionando |
-| GET | `/api/vendas` | Listar vendas | ✅ Funcionando |
-| POST | `/api/sales/product-sale` | Registrar venda de produto | ✅ Funcionando |
+| GET | `/fluxo-caixa` | Listar fluxo de caixa | ✅ Funcionando |
+| POST | `/fluxo-caixa` | Adicionar entrada no fluxo | ✅ Funcionando |
+| GET | `/despesas` | Listar despesas | ✅ Funcionando |
+| POST | `/despesas` | Criar despesa | ✅ Funcionando |
+| PUT | `/despesas/${id}` | Atualizar despesa | ✅ Funcionando |
+| GET | `/vendas` | Listar vendas | ✅ Funcionando |
+| POST | `/sales/product-sale` | Registrar venda de produto | ✅ Funcionando |
 
 ## 📋 Pedidos
 | Método | Rota | Descrição | Status |
@@ -89,11 +89,11 @@
 - Transações de crédito (listagem, débito com parcelamento e pagamentos)
 
 ### ⚠️ Aguarda Reinicialização do Servidor
-- `GET /api/credit-accounts/{id}/transactions` (histórico detalhado)
+- `GET /credit-accounts/{id}/transactions` (histórico detalhado)
 
 ## 🔍 Observações Importantes
 
-1. **Prefixo `/api/`**: Algumas rotas foram modificadas para incluir explicitamente o prefixo `/api/` baseado no feedback do usuário.
+1. **Prefixo `/api/`**: O `baseURL` já está configurado como `/api`, então todas as rotas são chamadas sem o prefixo duplicado.
 
 2. **Configuração do Axios**: O `baseURL` está configurado como `/api` em produção, o que significa que rotas sem o prefixo `/api/` serão automaticamente prefixadas.
 
