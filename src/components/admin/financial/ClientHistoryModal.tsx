@@ -147,7 +147,22 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       
       // Buscar todas as transações e filtrar por cliente
       const response = await api.get('/creditTransactions');
-      const allTransactions = response.data || [];
+      console.log('[ClientHistoryModal] 📡 Resposta da API:', response.data);
+      console.log('[ClientHistoryModal] 🔍 Tipo da resposta:', typeof response.data);
+      console.log('[ClientHistoryModal] 🔍 É array?', Array.isArray(response.data));
+      
+      // Garantir que temos um array válido
+      let allTransactions = [];
+      if (Array.isArray(response.data)) {
+        allTransactions = response.data;
+      } else if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+        // Fallback para caso ainda receba o formato antigo
+        allTransactions = response.data.data;
+        console.log('[ClientHistoryModal] ⚠️ Usando formato antigo da API (data.data)');
+      } else {
+        console.log('[ClientHistoryModal] ⚠️ Resposta não é um array válido, usando array vazio');
+        allTransactions = [];
+      }
       
       console.log('[ClientHistoryModal] 📋 Total de transações encontradas:', allTransactions.length);
       
