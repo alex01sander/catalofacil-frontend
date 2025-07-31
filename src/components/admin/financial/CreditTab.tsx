@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Users, DollarSign, Search, FileDown, MessageCircle, Calendar, MapPin, Phone, User, FileText, Trash2 } from "lucide-react";
+import { Plus, Users, DollarSign, Search, FileDown, MessageCircle, Calendar, MapPin, Phone, User, FileText, Trash2, Eye, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFinancial } from "@/contexts/FinancialContext";
 import ClientHistoryModal from "./ClientHistoryModal";
@@ -122,6 +122,7 @@ const CreditTab = () => {
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState<CreditAccount | null>(null);
   const [showClientHistory, setShowClientHistory] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Estados para seleção de produtos
@@ -501,6 +502,60 @@ const CreditTab = () => {
   const handleClientClick = (client: CreditAccount) => {
     setSelectedClient(client);
     setShowClientHistory(true);
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    setShowDeleteConfirm(clientId);
+  };
+
+  const deleteClient = async (clientId: string) => {
+    try {
+      // Verificar se o cliente tem dívidas pendentes
+      const client = accounts?.find(acc => acc.id === clientId);
+      if (client && Number(client.total_debt) > 0) {
+        toast({
+          title: "Erro",
+          description: "Não é possível excluir um cliente com dívidas pendentes. Quite todas as dívidas primeiro.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Excluir cliente
+      await api.delete(`/credit-accounts/${clientId}`);
+      
+      toast({
+        title: "Sucesso",
+        description: "Cliente excluído com sucesso!",
+      });
+
+      // Recarregar dados
+      await refreshData();
+      
+    } catch (error) {
+      console.error('[CreditTab] ❌ Erro ao excluir cliente:', error);
+      
+      let errorMessage = "Falha ao excluir cliente. Tente novamente.";
+      if (error.response?.status === 404) {
+        errorMessage = "Cliente não encontrado.";
+      } else if (error.response?.status === 400) {
+        errorMessage = "Não é possível excluir um cliente com dívidas pendentes.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Sessão expirada. Faça login novamente.";
+      }
+      
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(null);
   };
 
   const exportToPDF = () => {
@@ -1025,37 +1080,30 @@ const CreditTab = () => {
         </Card>
       )}
 
-      {/* Lista Moderna de Clientes */}
-      <Card className="shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-gray-100">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Users className="h-5 w-5" />
-            Meus Clientes ({filteredAccounts.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {filteredAccounts.length === 0 ? (
-            <div className="text-center py-12 px-6">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="text-lg font-medium mb-2 text-muted-foreground">
+      {/* Lista de Clientes em Tabela */}
+      {filteredAccounts.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="text-gray-500">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">
                 {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
-              </p>
-              <p className="text-sm text-muted-foreground">
+              </h3>
+              <p className="text-sm mb-4">
                 {searchTerm ? 'Tente uma busca diferente' : 'Registre sua primeira operação para começar'}
               </p>
             </div>
-          ) : (
-            <div className="divide-y">
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Mobile Client Cards */}
+          <div className="block md:hidden">
+            <div className="space-y-4">
               {Array.isArray(filteredAccounts) && (filteredAccounts || []).map((account) => (
-                <div 
-                  key={account.id} 
-                  className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleClientClick(account)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                <Card key={account.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                         Number(account.total_debt) > 0 ? 'bg-red-100' : 'bg-green-100'
                       }`}>
@@ -1063,44 +1111,158 @@ const CreditTab = () => {
                           Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
                         }`} />
                       </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 text-lg">{account.customer_name}</p>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          {account.customer_phone && (
-                            <span className="flex items-center gap-1">
-                              <MessageCircle className="h-3 w-3" />
-                              {account.customer_phone}
-                            </span>
-                          )}
-                          <span>Clique para ver histórico</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-gray-900 truncate">{account.customer_name}</h3>
+                          <Badge variant={Number(account.total_debt) > 0 ? "destructive" : "default"}>
+                            {Number(account.total_debt) > 0 ? 'Em débito' : 'Quitado'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {account.customer_phone || 'Telefone não informado'}
+                        </p>
+                        <p className={`text-lg font-bold ${
+                          Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {Number(account.total_debt) > 0 
+                            ? `R$ ${Number(account.total_debt).toFixed(2).replace('.', ',')}`
+                            : '✅ Quitado'
+                          }
+                        </p>
+                        <div className="flex space-x-2 mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClientClick(account);
+                            }}
+                            className="flex-1"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Visualizar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClient(account.id);
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-xl font-bold mb-1 ${
-                        Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                        {Number(account.total_debt) > 0 
-                          ? `R$ ${Number(account.total_debt).toFixed(2).replace('.', ',')}`
-                          : '✅ Quitado'
-                        }
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={Number(account.total_debt) > 0 ? "destructive" : "default"} 
-                          className="text-xs"
-                        >
-                          {Number(account.total_debt) > 0 ? 'Aguardando pagamento' : 'Quitado'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+
+          {/* Desktop Table - Hidden on Mobile */}
+          <Card className="hidden md:block">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Meus Clientes ({filteredAccounts.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Cliente</th>
+                      <th className="text-left p-3">Telefone</th>
+                      <th className="text-left p-3">Débito Total</th>
+                      <th className="text-left p-3">Status</th>
+                      <th className="text-left p-3">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.isArray(filteredAccounts) && (filteredAccounts || []).map((account) => (
+                      <tr key={account.id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              Number(account.total_debt) > 0 ? 'bg-red-100' : 'bg-green-100'
+                            }`}>
+                              <Users className={`h-5 w-5 ${
+                                Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
+                              }`} />
+                            </div>
+                            <span className="font-medium">{account.customer_name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-gray-600">
+                          {account.customer_phone || 'Não informado'}
+                        </td>
+                        <td className="p-3">
+                          <span className={`font-semibold ${
+                            Number(account.total_debt) > 0 ? 'text-red-600' : 'text-green-600'
+                          }`}>
+                            {Number(account.total_debt) > 0 
+                              ? `R$ ${Number(account.total_debt).toFixed(2).replace('.', ',')}`
+                              : 'R$ 0,00'
+                            }
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant={Number(account.total_debt) > 0 ? "destructive" : "default"}>
+                            {Number(account.total_debt) > 0 ? 'Em débito' : 'Quitado'}
+                          </Badge>
+                        </td>
+                        <td className="p-3">
+                          {showDeleteConfirm === account.id ? (
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteClient(account.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelDelete}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleClientClick(account)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteClient(account.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Modal de Histórico */}
       <ClientHistoryModal
