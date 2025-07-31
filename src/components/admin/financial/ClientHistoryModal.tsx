@@ -83,18 +83,57 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
   const generateInstallments = (transactions: CreditTransaction[]) => {
     const allInstallments: Installment[] = [];
     
-    transactions.forEach(transaction => {
+    console.log('[ClientHistoryModal] 🔧 GERANDO PARCELAS');
+    console.log('[ClientHistoryModal] 📋 Total de transações:', transactions.length);
+    
+    transactions.forEach((transaction, index) => {
+      console.log(`[ClientHistoryModal] 🔍 Analisando transação ${index + 1}:`, {
+        id: transaction.id,
+        type: transaction.type,
+        amount: transaction.amount,
+        installments: transaction.installments,
+        installment_value: transaction.installment_value,
+        frequency: transaction.frequency,
+        first_payment_date: transaction.first_payment_date,
+        date: transaction.date
+      });
+      
       if (transaction.type === 'debt' || transaction.type === 'debito') {
-        if (transaction.installments && transaction.installments > 1) {
-          // Gerar parcelas para transações parceladas
-          const installmentAmount = transaction.installment_value || (transaction.amount / transaction.installments);
-          const firstDate = transaction.first_payment_date ? new Date(transaction.first_payment_date) : new Date(transaction.date);
+        console.log(`[ClientHistoryModal] ✅ Transação é um débito`);
+        
+        // Converter campos numéricos para garantir que sejam números
+        const installments = Number(transaction.installments) || 0;
+        const installmentValue = Number(transaction.installment_value) || 0;
+        
+        console.log(`[ClientHistoryModal] 🔢 Valores convertidos:`, {
+          installments,
+          installmentValue,
+          originalInstallments: transaction.installments,
+          originalInstallmentValue: transaction.installment_value
+        });
+        
+        if (installments > 1) {
+          console.log(`[ClientHistoryModal] 📦 Transação parcelada: ${installments} parcelas`);
           
-          for (let i = 1; i <= transaction.installments; i++) {
+          // Verificar se temos todos os dados necessários para parcelamento
+          if (!transaction.frequency) {
+            console.log(`[ClientHistoryModal] ⚠️ Transação parcelada sem frequência definida, usando 'monthly' como padrão`);
+          }
+          
+          // Gerar parcelas para transações parceladas
+          const installmentAmount = installmentValue || (transaction.amount / installments);
+          const firstDate = transaction.first_payment_date ? new Date(transaction.first_payment_date) : new Date(transaction.date);
+          const frequency = transaction.frequency || 'monthly';
+          
+          console.log(`[ClientHistoryModal] 💰 Valor da parcela: ${installmentAmount}`);
+          console.log(`[ClientHistoryModal] 📅 Data inicial: ${firstDate.toISOString()}`);
+          console.log(`[ClientHistoryModal] 🔄 Frequência: ${frequency}`);
+          
+          for (let i = 1; i <= installments; i++) {
             const dueDate = new Date(firstDate);
             
             // Calcular data de vencimento baseada na frequência
-            switch (transaction.frequency) {
+            switch (frequency) {
               case 'daily':
                 dueDate.setDate(firstDate.getDate() + (i - 1));
                 break;
@@ -111,16 +150,21 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
                 dueDate.setMonth(firstDate.getMonth() + (i - 1));
             }
             
-            allInstallments.push({
+            const installment = {
               id: `${transaction.id}-${i}`,
               transaction_id: transaction.id,
               installment_number: i,
               due_date: dueDate.toISOString(),
               amount: installmentAmount,
-              status: 'pending',
-            });
+              status: 'pending' as const,
+            };
+            
+            console.log(`[ClientHistoryModal] 📋 Criando parcela ${i}:`, installment);
+            allInstallments.push(installment);
           }
         } else {
+          console.log(`[ClientHistoryModal] 💳 Transação à vista - criando parcela única`);
+          
           // Transação à vista - criar uma parcela única
           allInstallments.push({
             id: `${transaction.id}-1`,
@@ -131,8 +175,13 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
             status: 'pending',
           });
         }
+      } else {
+        console.log(`[ClientHistoryModal] ❌ Transação não é um débito (tipo: ${transaction.type})`);
       }
     });
+    
+    console.log(`[ClientHistoryModal] ✅ Total de parcelas geradas: ${allInstallments.length}`);
+    console.log('[ClientHistoryModal] 📋 Parcelas:', allInstallments);
     
     setInstallments(allInstallments);
   };
@@ -173,6 +222,22 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       
       console.log('[ClientHistoryModal] ✅ Transações do cliente:', clientTransactions.length);
       console.log('[ClientHistoryModal] 📋 Transações:', clientTransactions);
+      
+      // Log detalhado de cada transação para debug
+      clientTransactions.forEach((transaction, index) => {
+        console.log(`[ClientHistoryModal] 🔍 Transação ${index + 1} detalhada:`, {
+          id: transaction.id,
+          type: transaction.type,
+          amount: transaction.amount,
+          installments: transaction.installments,
+          installment_value: transaction.installment_value,
+          frequency: transaction.frequency,
+          first_payment_date: transaction.first_payment_date,
+          final_due_date: transaction.final_due_date,
+          date: transaction.date,
+          description: transaction.description
+        });
+      });
       
       // Garantir que data seja sempre um array
       const transactionsData = Array.isArray(clientTransactions) ? clientTransactions : [];
