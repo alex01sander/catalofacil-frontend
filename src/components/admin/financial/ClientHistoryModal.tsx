@@ -86,7 +86,14 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
     console.log('[ClientHistoryModal] 🔧 GERANDO PARCELAS');
     console.log('[ClientHistoryModal] 📋 Total de transações:', transactions.length);
     
-    transactions.forEach((transaction, index) => {
+    // Separar transações de débito e pagamento
+    const debtTransactions = transactions.filter(t => t.type === 'debt' || t.type === 'debito');
+    const paymentTransactions = transactions.filter(t => t.type === 'payment' || t.type === 'pagamento');
+    
+    console.log('[ClientHistoryModal] 📊 Transações de débito:', debtTransactions.length);
+    console.log('[ClientHistoryModal] 📊 Transações de pagamento:', paymentTransactions.length);
+    
+    debtTransactions.forEach((transaction, index) => {
       console.log(`[ClientHistoryModal] 🔍 Analisando transação ${index + 1}:`, {
         id: transaction.id,
         type: transaction.type,
@@ -98,86 +105,155 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
         date: transaction.date
       });
       
-      if (transaction.type === 'debt' || transaction.type === 'debito') {
-        console.log(`[ClientHistoryModal] ✅ Transação é um débito`);
+      // Converter campos numéricos para garantir que sejam números
+      const installments = Number(transaction.installments) || 0;
+      const installmentValue = Number(transaction.installment_value) || 0;
+      
+      console.log(`[ClientHistoryModal] 🔢 Valores convertidos:`, {
+        installments,
+        installmentValue,
+        originalInstallments: transaction.installments,
+        originalInstallmentValue: transaction.installment_value
+      });
+      
+      if (installments > 1) {
+        console.log(`[ClientHistoryModal] 📦 Transação parcelada: ${installments} parcelas`);
         
-        // Converter campos numéricos para garantir que sejam números
-        const installments = Number(transaction.installments) || 0;
-        const installmentValue = Number(transaction.installment_value) || 0;
+        // Verificar se temos todos os dados necessários para parcelamento
+        if (!transaction.frequency) {
+          console.log(`[ClientHistoryModal] ⚠️ Transação parcelada sem frequência definida, usando 'monthly' como padrão`);
+        }
         
-        console.log(`[ClientHistoryModal] 🔢 Valores convertidos:`, {
-          installments,
-          installmentValue,
-          originalInstallments: transaction.installments,
-          originalInstallmentValue: transaction.installment_value
-        });
+        // Gerar parcelas para transações parceladas
+        const installmentAmount = installmentValue || (transaction.amount / installments);
+        const firstDate = transaction.first_payment_date ? new Date(transaction.first_payment_date) : new Date(transaction.date);
+        const frequency = transaction.frequency || 'monthly';
         
-        if (installments > 1) {
-          console.log(`[ClientHistoryModal] 📦 Transação parcelada: ${installments} parcelas`);
+        console.log(`[ClientHistoryModal] 💰 Valor da parcela: ${installmentAmount}`);
+        console.log(`[ClientHistoryModal] 📅 Data inicial: ${firstDate.toISOString()}`);
+        console.log(`[ClientHistoryModal] 🔄 Frequência: ${frequency}`);
+        
+        for (let i = 1; i <= installments; i++) {
+          const dueDate = new Date(firstDate);
           
-          // Verificar se temos todos os dados necessários para parcelamento
-          if (!transaction.frequency) {
-            console.log(`[ClientHistoryModal] ⚠️ Transação parcelada sem frequência definida, usando 'monthly' como padrão`);
+          // Calcular data de vencimento baseada na frequência
+          switch (frequency) {
+            case 'daily':
+              dueDate.setDate(firstDate.getDate() + (i - 1));
+              break;
+            case 'weekly':
+              dueDate.setDate(firstDate.getDate() + (i - 1) * 7);
+              break;
+            case 'biweekly':
+              dueDate.setDate(firstDate.getDate() + (i - 1) * 14);
+              break;
+            case 'monthly':
+              dueDate.setMonth(firstDate.getMonth() + (i - 1));
+              break;
+            default:
+              dueDate.setMonth(firstDate.getMonth() + (i - 1));
           }
           
-          // Gerar parcelas para transações parceladas
-          const installmentAmount = installmentValue || (transaction.amount / installments);
-          const firstDate = transaction.first_payment_date ? new Date(transaction.first_payment_date) : new Date(transaction.date);
-          const frequency = transaction.frequency || 'monthly';
-          
-          console.log(`[ClientHistoryModal] 💰 Valor da parcela: ${installmentAmount}`);
-          console.log(`[ClientHistoryModal] 📅 Data inicial: ${firstDate.toISOString()}`);
-          console.log(`[ClientHistoryModal] 🔄 Frequência: ${frequency}`);
-          
-          for (let i = 1; i <= installments; i++) {
-            const dueDate = new Date(firstDate);
-            
-            // Calcular data de vencimento baseada na frequência
-            switch (frequency) {
-              case 'daily':
-                dueDate.setDate(firstDate.getDate() + (i - 1));
-                break;
-              case 'weekly':
-                dueDate.setDate(firstDate.getDate() + (i - 1) * 7);
-                break;
-              case 'biweekly':
-                dueDate.setDate(firstDate.getDate() + (i - 1) * 14);
-                break;
-              case 'monthly':
-                dueDate.setMonth(firstDate.getMonth() + (i - 1));
-                break;
-              default:
-                dueDate.setMonth(firstDate.getMonth() + (i - 1));
-            }
-            
-            const installment = {
-              id: `${transaction.id}-${i}`,
-              transaction_id: transaction.id,
-              installment_number: i,
-              due_date: dueDate.toISOString(),
-              amount: installmentAmount,
-              status: 'pending' as const,
-            };
-            
-            console.log(`[ClientHistoryModal] 📋 Criando parcela ${i}:`, installment);
-            allInstallments.push(installment);
-          }
-        } else {
-          console.log(`[ClientHistoryModal] 💳 Transação à vista - criando parcela única`);
-          
-          // Transação à vista - criar uma parcela única
-          allInstallments.push({
-            id: `${transaction.id}-1`,
+          const installment = {
+            id: `${transaction.id}-${i}`,
             transaction_id: transaction.id,
-            installment_number: 1,
-            due_date: transaction.date,
-            amount: transaction.amount,
-            status: 'pending',
-          });
+            installment_number: i,
+            due_date: dueDate.toISOString(),
+            amount: installmentAmount,
+            status: 'pending' as const,
+          };
+          
+          console.log(`[ClientHistoryModal] 📋 Criando parcela ${i}:`, installment);
+          allInstallments.push(installment);
         }
       } else {
-        console.log(`[ClientHistoryModal] ❌ Transação não é um débito (tipo: ${transaction.type})`);
+        console.log(`[ClientHistoryModal] 💳 Transação à vista - criando parcela única`);
+        
+        // Transação à vista - criar uma parcela única
+        allInstallments.push({
+          id: `${transaction.id}-1`,
+          transaction_id: transaction.id,
+          installment_number: 1,
+          due_date: transaction.date,
+          amount: transaction.amount,
+          status: 'pending',
+        });
       }
+    });
+    
+    // Agora aplicar os pagamentos para marcar parcelas como pagas
+    console.log('[ClientHistoryModal] 🔄 APLICANDO PAGAMENTOS ÀS PARCELAS');
+    
+    paymentTransactions.forEach((payment, index) => {
+      console.log(`[ClientHistoryModal] 💳 Processando pagamento ${index + 1}:`, {
+        id: payment.id,
+        amount: payment.amount,
+        description: payment.description,
+        date: payment.date
+      });
+      
+             // Tentar identificar qual parcela foi paga baseado na descrição e valor
+       const paymentAmount = Number(payment.amount);
+       const paymentDate = new Date(payment.date);
+       const paymentDescription = payment.description || '';
+       
+       console.log(`[ClientHistoryModal] 🔍 Procurando parcela para pagamento: R$ ${paymentAmount}`);
+       console.log(`[ClientHistoryModal] 📝 Descrição do pagamento: "${paymentDescription}"`);
+       
+       let installmentToMark = null;
+       
+       // Primeiro, tentar identificar pela descrição (ex: "Pagamento da 1ª parcela")
+       if (paymentDescription.includes('parcela') || paymentDescription.includes('Parcela')) {
+         const match = paymentDescription.match(/(\d+)ª?\s*parcela/i);
+         if (match) {
+           const installmentNumber = parseInt(match[1]);
+           installmentToMark = allInstallments.find(inst => 
+             inst.installment_number === installmentNumber && 
+             Math.abs(inst.amount - paymentAmount) < 0.01 && 
+             inst.status === 'pending'
+           );
+           
+           if (installmentToMark) {
+             console.log(`[ClientHistoryModal] ✅ Encontrada parcela ${installmentNumber} pela descrição`);
+           }
+         }
+       }
+       
+       // Se não encontrou pela descrição, procurar pelo valor
+       if (!installmentToMark) {
+         const matchingInstallments = allInstallments.filter(inst => 
+           Math.abs(inst.amount - paymentAmount) < 0.01 && inst.status === 'pending'
+         );
+         
+         if (matchingInstallments.length > 0) {
+           // Se encontrou parcelas com o mesmo valor, marcar a primeira como paga
+           installmentToMark = matchingInstallments[0];
+           console.log(`[ClientHistoryModal] ✅ Encontrada parcela ${installmentToMark.installment_number} pelo valor`);
+         }
+       }
+       
+       if (installmentToMark) {
+         const installmentIndex = allInstallments.findIndex(inst => inst.id === installmentToMark.id);
+         
+         if (installmentIndex !== -1) {
+           allInstallments[installmentIndex] = {
+             ...allInstallments[installmentIndex],
+             status: 'paid' as const,
+             paid_date: paymentDate.toISOString(),
+             paid_amount: paymentAmount
+           };
+           
+           console.log(`[ClientHistoryModal] ✅ Parcela ${installmentToMark.installment_number} marcada como paga:`, allInstallments[installmentIndex]);
+         }
+       } else {
+         console.log(`[ClientHistoryModal] ⚠️ Nenhuma parcela encontrada para o pagamento de R$ ${paymentAmount}`);
+         console.log(`[ClientHistoryModal] 📋 Parcelas disponíveis:`, allInstallments.map(inst => ({
+           id: inst.id,
+           number: inst.installment_number,
+           amount: inst.amount,
+           status: inst.status
+         })));
+       }
     });
     
     console.log(`[ClientHistoryModal] ✅ Total de parcelas geradas: ${allInstallments.length}`);
