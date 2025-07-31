@@ -13,6 +13,7 @@ import { API_URL } from '@/constants/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFinancial } from '@/contexts/FinancialContext';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -69,6 +70,7 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
   const [processingPayment, setProcessingPayment] = useState(false);
   const [installmentFilter, setInstallmentFilter] = useState<'all' | 'pending' | 'paid' | 'overdue'>('all');
   const { token } = useAuth();
+  const { refreshData: refreshFinancialData } = useFinancial();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -141,40 +143,37 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
     try {
       setLoading(true);
       
-      // Tentar rota específica primeiro, depois fallback
-      let data = [];
-      try {
-        // Primeira tentativa: rota específica para histórico
-        const response = await api.get(`/credit-accounts/${client.id}/transactions`);
-        data = response.data || [];
-        console.log('[ClientHistoryModal] ✅ Histórico carregado via rota específica');
-      } catch (error) {
-        console.log('[ClientHistoryModal] ⚠️ Rota específica não disponível, tentando rota geral...');
-        
-        // Segunda tentativa: buscar todas as transações e filtrar
-        const response = await api.get('/creditTransactions');
-        const allTransactions = response.data || [];
-        
-        // Filtrar transações do cliente atual
-        data = allTransactions.filter((transaction: CreditTransaction) => 
-          transaction.credit_account_id === client.id
-        ) || [];
-        
-        console.log('[ClientHistoryModal] ✅ Histórico carregado via rota geral (filtrado)');
-      }
+      console.log('[ClientHistoryModal] 🔍 Buscando transações para cliente:', client.id);
+      
+      // Buscar todas as transações e filtrar por cliente
+      const response = await api.get('/creditTransactions');
+      const allTransactions = response.data || [];
+      
+      console.log('[ClientHistoryModal] 📋 Total de transações encontradas:', allTransactions.length);
+      
+      // Filtrar transações do cliente atual
+      const clientTransactions = allTransactions.filter((transaction: CreditTransaction) => 
+        transaction.credit_account_id === client.id
+      ) || [];
+      
+      console.log('[ClientHistoryModal] ✅ Transações do cliente:', clientTransactions.length);
+      console.log('[ClientHistoryModal] 📋 Transações:', clientTransactions);
       
       // Garantir que data seja sempre um array
-      const transactionsData = Array.isArray(data) ? data : [];
+      const transactionsData = Array.isArray(clientTransactions) ? clientTransactions : [];
       setTransactions(transactionsData);
       
       // Gerar parcelas baseadas nas transações
       generateInstallments(transactionsData);
+      
     } catch (error) {
       console.error('[ClientHistoryModal] ❌ Erro ao buscar histórico do cliente:', error);
       
       let errorMessage = "Falha ao carregar histórico do cliente";
       if (error.response?.status === 404) {
-        errorMessage = "Rota de histórico não disponível. Aguarde reinicialização do servidor.";
+        errorMessage = "Rota de transações não disponível. Aguarde reinicialização do servidor.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Sessão expirada. Faça login novamente.";
       }
       
       toast({
@@ -185,6 +184,7 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       
       // Em caso de erro, definir array vazio
       setTransactions([]);
+      setInstallments([]);
     } finally {
       setLoading(false);
     }
@@ -224,20 +224,36 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
     try {
       setProcessingPayment(true);
       
-      // Solução temporária: usar formato "pagamento" em vez de "payment"
-      const paymentData = {
+      console.log('[ClientHistoryModal] 💳 INICIANDO REGISTRO DE PAGAMENTO');
+      console.log('[ClientHistoryModal] 📋 Cliente:', client.customer_name);
+      console.log('[ClientHistoryModal] 💰 Valor:', amount);
+      
+      // 1. Registrar transação de crédito
+      const creditPaymentData = {
         credit_account_id: client.id,
-        type: 'pagamento', // Usar formato em português temporariamente
+        type: 'pagamento',
         amount: amount,
         description: paymentDescription || `Pagamento de R$ ${amount.toFixed(2).replace('.', ',')}`,
         date: new Date().toISOString()
       };
 
-      console.log('[ClientHistoryModal] 📤 Registrando pagamento:', paymentData);
+      console.log('[ClientHistoryModal] 📤 Registrando transação de crédito:', creditPaymentData);
+      const creditResponse = await api.post('/creditTransactions', creditPaymentData);
+      console.log('[ClientHistoryModal] ✅ Transação de crédito registrada:', creditResponse.data);
       
-      // Usar apenas a rota correta de pagamentos
-      const response = await api.post('/creditTransactions', paymentData);
-      console.log('[ClientHistoryModal] ✅ Pagamento registrado:', response.data);
+      // 2. Registrar entrada no fluxo de caixa (receita)
+      const cashFlowData = {
+        type: 'entrada', // ou 'income'
+        category: 'Pagamento Crediário',
+        description: `Pagamento de ${client.customer_name} - ${paymentDescription || 'Crediário'}`,
+        amount: amount,
+        date: new Date().toISOString(),
+        payment_method: 'cash' // ou pode ser dinâmico
+      };
+
+      console.log('[ClientHistoryModal] 📤 Registrando entrada no fluxo de caixa:', cashFlowData);
+      const cashFlowResponse = await api.post('/fluxo-caixa', cashFlowData);
+      console.log('[ClientHistoryModal] ✅ Entrada no fluxo de caixa registrada:', cashFlowResponse.data);
       
       toast({
         title: "Sucesso",
@@ -249,8 +265,9 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       setPaymentDescription('');
       setShowPaymentForm(false);
       
-      // Recarregar transações
+      // Recarregar transações e dados financeiros
       await fetchTransactions();
+      await refreshFinancialData();
       
       // Fechar modal após sucesso
       setTimeout(() => {
@@ -266,6 +283,8 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
         errorMessage = "Rota de pagamento não disponível. Aguarde reinicialização do servidor.";
       } else if (error.response?.status === 400) {
         errorMessage = "Dados inválidos. Verifique o valor e tente novamente.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Sessão expirada. Faça login novamente.";
       }
       
       toast({
@@ -356,7 +375,12 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
     try {
       setProcessingPayment(true);
       
-      const paymentData = {
+      console.log('[ClientHistoryModal] 💳 INICIANDO PAGAMENTO DE PARCELA');
+      console.log('[ClientHistoryModal] 📋 Parcela:', selectedInstallment.installment_number);
+      console.log('[ClientHistoryModal] 💰 Valor:', amount);
+      
+      // 1. Registrar transação de crédito
+      const creditPaymentData = {
         credit_account_id: client!.id,
         type: 'pagamento',
         amount: amount,
@@ -364,10 +388,23 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
         date: new Date().toISOString()
       };
 
-      console.log('[ClientHistoryModal] 📤 Registrando pagamento de parcela:', paymentData);
+      console.log('[ClientHistoryModal] 📤 Registrando transação de crédito:', creditPaymentData);
+      const creditResponse = await api.post('/creditTransactions', creditPaymentData);
+      console.log('[ClientHistoryModal] ✅ Transação de crédito registrada:', creditResponse.data);
       
-      const response = await api.post('/creditTransactions', paymentData);
-      console.log('[ClientHistoryModal] ✅ Pagamento de parcela registrado:', response.data);
+      // 2. Registrar entrada no fluxo de caixa (receita)
+      const cashFlowData = {
+        type: 'entrada',
+        category: 'Pagamento Crediário',
+        description: `Pagamento da ${selectedInstallment.installment_number}ª parcela - ${client!.customer_name}`,
+        amount: amount,
+        date: new Date().toISOString(),
+        payment_method: 'cash'
+      };
+
+      console.log('[ClientHistoryModal] 📤 Registrando entrada no fluxo de caixa:', cashFlowData);
+      const cashFlowResponse = await api.post('/fluxo-caixa', cashFlowData);
+      console.log('[ClientHistoryModal] ✅ Entrada no fluxo de caixa registrada:', cashFlowResponse.data);
       
       // Atualizar status da parcela
       setInstallments(prev => prev.map(inst => 
@@ -387,14 +424,23 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
       setShowInstallmentPayment(false);
       setSelectedInstallment(null);
       
-      // Recarregar transações
+      // Recarregar transações e dados financeiros
       await fetchTransactions();
+      await refreshFinancialData();
       
     } catch (error) {
       console.error('[ClientHistoryModal] ❌ Erro ao pagar parcela:', error);
+      
+      let errorMessage = "Não foi possível registrar o pagamento da parcela";
+      if (error.response?.status === 401) {
+        errorMessage = "Sessão expirada. Faça login novamente.";
+      } else if (error.response?.status === 400) {
+        errorMessage = "Dados inválidos. Verifique o valor e tente novamente.";
+      }
+      
       toast({
         title: "Erro",
-        description: "Não foi possível registrar o pagamento da parcela",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -767,16 +813,15 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
                 <CardTitle>Histórico de Transações</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <span className="ml-2 text-sm text-muted-foreground">Carregando histórico...</span>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {Array.isArray(transactions) && (transactions || []).length > 0 ? (
-                    (transactions || []).map((transaction) => (
+                         <CardContent>
+               <div className="space-y-3">
+                 {loading ? (
+                   <div className="flex items-center justify-center py-8">
+                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                     <span className="ml-2 text-sm text-muted-foreground">Carregando histórico...</span>
+                   </div>
+                 ) : Array.isArray(transactions) && (transactions || []).length > 0 ? (
+                   (transactions || []).map((transaction) => (
                       <div
                         key={transaction.id}
                         className="flex items-center justify-between p-4 border rounded-lg"
@@ -818,7 +863,6 @@ const ClientHistoryModal = ({ isOpen, onClose, client }: ClientHistoryModalProps
                     </div>
                   )}
                 </div>
-              )}
             </CardContent>
           </Card>
         </div>
