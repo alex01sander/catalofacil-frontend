@@ -128,6 +128,7 @@ const CreditTab = () => {
   // Estados para seleção de produtos
   const [productToAdd, setProductToAdd] = useState('');
   const [quantityToAdd, setQuantityToAdd] = useState(1);
+  const [maxQuantity, setMaxQuantity] = useState(1);
   
   const [formData, setFormData] = useState<NewDebtFormData>({
     is_new_customer: true,
@@ -232,6 +233,27 @@ const CreditTab = () => {
     label: `${num}x`
   }));
 
+  // Atualizar quantidade máxima quando produto é selecionado
+  const handleProductSelect = (productId: string) => {
+    setProductToAdd(productId);
+    
+    const product = (data.products || []).find(p => p.id === productId);
+    if (product) {
+      const productStock = Number(product.stock) || 0;
+      setMaxQuantity(productStock);
+      
+      // Verificar se já existe o produto na lista
+      const existingProduct = formData.selected_products.find(p => p.product_id === productId);
+      if (existingProduct) {
+        const availableQuantity = productStock - existingProduct.quantity;
+        setMaxQuantity(Math.max(1, availableQuantity));
+        setQuantityToAdd(Math.min(quantityToAdd, availableQuantity));
+      } else {
+        setQuantityToAdd(1);
+      }
+    }
+  };
+
   // Adicionar produto à lista
   const handleAddProduct = () => {
     if (!productToAdd) return;
@@ -239,21 +261,72 @@ const CreditTab = () => {
     const product = (data.products || []).find(p => p.id === productToAdd);
     if (!product) return;
     
-    const newProduct: SelectedProduct = {
-      product_id: product.id,
-      name: product.name,
-      price: Number(product.price),
-      quantity: quantityToAdd,
-      total: Number(product.price) * quantityToAdd
-    };
+    // Validar estoque
+    const productStock = Number(product.stock) || 0;
+    if (productStock === 0) {
+      toast({ 
+        title: 'Produto fora de estoque', 
+        description: `${product.name} não possui estoque disponível`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
     
-    setFormData(prev => ({
-      ...prev,
-      selected_products: [...prev.selected_products, newProduct]
-    }));
+    if (quantityToAdd > productStock) {
+      toast({ 
+        title: 'Estoque insuficiente', 
+        description: `Estoque disponível: ${productStock} unidades. Quantidade solicitada: ${quantityToAdd}`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    // Verificar se o produto já foi adicionado
+    const existingProduct = formData.selected_products.find(p => p.product_id === product.id);
+    if (existingProduct) {
+      const newTotalQuantity = existingProduct.quantity + quantityToAdd;
+      if (newTotalQuantity > productStock) {
+        toast({ 
+          title: 'Estoque insuficiente', 
+          description: `Quantidade total (${newTotalQuantity}) excede o estoque disponível (${productStock})`, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+      
+      // Atualizar quantidade do produto existente
+      setFormData(prev => ({
+        ...prev,
+        selected_products: prev.selected_products.map(p => 
+          p.product_id === product.id 
+            ? { ...p, quantity: newTotalQuantity, total: Number(product.price) * newTotalQuantity }
+            : p
+        )
+      }));
+    } else {
+      // Adicionar novo produto
+      const newProduct: SelectedProduct = {
+        product_id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        quantity: quantityToAdd,
+        total: Number(product.price) * quantityToAdd
+      };
+      
+      setFormData(prev => ({
+        ...prev,
+        selected_products: [...prev.selected_products, newProduct]
+      }));
+    }
     
     setProductToAdd('');
     setQuantityToAdd(1);
+    
+    toast({ 
+      title: 'Produto adicionado', 
+      description: `${quantityToAdd}x ${product.name} adicionado à venda`, 
+      variant: 'default' 
+    });
   };
 
   // Remover produto da lista
@@ -262,6 +335,16 @@ const CreditTab = () => {
       ...prev,
       selected_products: prev.selected_products.filter(p => p.product_id !== productId)
     }));
+    
+    // Se o produto removido era o selecionado, atualizar a quantidade máxima
+    if (productToAdd === productId) {
+      const product = (data.products || []).find(p => p.id === productId);
+      if (product) {
+        const productStock = Number(product.stock) || 0;
+        setMaxQuantity(productStock);
+        setQuantityToAdd(1);
+      }
+    }
   };
 
   // Preencher dados do cliente quando selecionado
@@ -354,6 +437,31 @@ const CreditTab = () => {
       toast({ title: 'Erro', description: 'Adicione pelo menos um produto à venda', variant: 'destructive' });
       return;
     }
+    
+    // Validar estoque de todos os produtos antes de finalizar a venda
+    console.log('[CreditTab] 🔍 VALIDANDO ESTOQUE ANTES DA VENDA');
+    for (const selectedProduct of formData.selected_products) {
+      const product = (data.products || []).find(p => p.id === selectedProduct.product_id);
+      if (product) {
+        const currentStock = Number(product.stock) || 0;
+        if (currentStock < selectedProduct.quantity) {
+          toast({ 
+            title: 'Estoque insuficiente', 
+            description: `${product.name} não possui estoque suficiente. Disponível: ${currentStock}, Solicitado: ${selectedProduct.quantity}`, 
+            variant: 'destructive' 
+          });
+          return;
+        }
+      } else {
+        toast({ 
+          title: 'Produto não encontrado', 
+          description: `Produto ${selectedProduct.name} não foi encontrado no sistema`, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+    console.log('[CreditTab] ✅ Estoque validado para todos os produtos');
     
     if (!formData.total_value || parseFloat(formData.total_value) <= 0) {
       toast({ title: 'Erro', description: 'Valor total deve ser maior que zero', variant: 'destructive' });
@@ -468,6 +576,80 @@ const CreditTab = () => {
       const debtRes = await api.post('/creditTransactions/debit-with-installments', debtOperation);
       console.log('[CreditTab] ✅ Débito com parcelamento registrado:', debtRes.data);
       
+      // Dar baixa no estoque dos produtos
+      console.log('[CreditTab] 📦 DANDO BAIXA NO ESTOQUE');
+      const stockUpdatePromises = formData.selected_products.map(async (selectedProduct) => {
+        try {
+          const product = (data.products || []).find(p => p.id === selectedProduct.product_id);
+          if (product) {
+            const currentStock = Number(product.stock) || 0;
+            const newStock = currentStock - selectedProduct.quantity;
+            
+            console.log(`[CreditTab] 📦 Atualizando estoque de ${product.name}:`, {
+              produto: product.name,
+              estoqueAtual: currentStock,
+              quantidadeVendida: selectedProduct.quantity,
+              novoEstoque: newStock
+            });
+            
+            // Atualizar estoque do produto
+            const updateResponse = await api.put(`/products/${product.id}`, {
+              stock: newStock
+            });
+            
+            console.log(`[CreditTab] ✅ Estoque de ${product.name} atualizado para ${newStock}:`, updateResponse.data);
+            return { success: true, product: product.name, newStock };
+          } else {
+            console.error(`[CreditTab] ❌ Produto não encontrado: ${selectedProduct.product_id}`);
+            return { success: false, error: 'Produto não encontrado', product: selectedProduct.name };
+          }
+        } catch (error) {
+          console.error(`[CreditTab] ❌ Erro ao atualizar estoque do produto ${selectedProduct.name}:`, error);
+          return { success: false, error: error.message, product: selectedProduct.name };
+        }
+      });
+      
+      // Aguardar todas as atualizações de estoque
+      const stockUpdateResults = await Promise.all(stockUpdatePromises);
+      
+      // Verificar resultados
+      const failedUpdates = stockUpdateResults.filter(result => !result.success);
+      if (failedUpdates.length > 0) {
+        console.error('[CreditTab] ❌ Falhas na atualização de estoque:', failedUpdates);
+        toast({ 
+          title: 'Atenção', 
+          description: `${failedUpdates.length} produto(s) com erro na atualização de estoque. Verifique manualmente.`, 
+          variant: 'destructive' 
+        });
+      } else {
+        console.log('[CreditTab] ✅ Todos os estoques foram atualizados com sucesso');
+      }
+      
+      // Registrar entrada no fluxo de caixa (venda a prazo)
+      try {
+        const totalValue = parseFloat(formData.total_value);
+        const cashFlowData = {
+          type: 'entrada',
+          category: 'Venda a Prazo',
+          description: `Venda a prazo para ${formData.customer_name} - ${formData.selected_products.length} produtos`,
+          amount: totalValue,
+          date: new Date().toISOString(),
+          payment_method: 'credit'
+        };
+        
+        console.log('[CreditTab] 📤 Registrando entrada no fluxo de caixa:', cashFlowData);
+        const cashFlowResponse = await api.post('/fluxo-caixa', cashFlowData);
+        console.log('[CreditTab] ✅ Entrada no fluxo de caixa registrada:', cashFlowResponse.data);
+        
+      } catch (error) {
+        console.error('[CreditTab] ❌ Erro ao registrar no fluxo de caixa:', error);
+        toast({ 
+          title: 'Atenção', 
+          description: 'Venda registrada, mas erro ao contabilizar no financeiro. Verifique manualmente.', 
+          variant: 'destructive' 
+        });
+      }
+      
       // Atualizar dados
       await refreshData();
       
@@ -491,7 +673,16 @@ const CreditTab = () => {
       setShowTransactionForm(false);
       setSelectedClient(null);
       
-      toast({ title: 'Sucesso', description: 'Operação de débito com parcelamento registrada com sucesso!' });
+      // Preparar mensagem de sucesso
+      const totalProducts = formData.selected_products.length;
+      const totalItems = formData.selected_products.reduce((sum, p) => sum + p.quantity, 0);
+      const successMessage = `Venda registrada com sucesso! ${totalProducts} produto(s), ${totalItems} item(s), total: R$ ${parseFloat(formData.total_value).toFixed(2).replace('.', ',')}`;
+      
+      toast({ 
+        title: 'Sucesso', 
+        description: successMessage,
+        variant: 'default'
+      });
       
     } catch (error) {
       console.error('[CreditTab] ❌ Erro ao registrar débito:', error);
@@ -796,30 +987,57 @@ const CreditTab = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="product_to_add">Selecionar Produto *</Label>
-                    <Select value={productToAdd} onValueChange={setProductToAdd}>
+                    <Select value={productToAdd} onValueChange={handleProductSelect}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Escolha um produto" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.isArray(data.products) && (data.products || []).map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name} - R$ {Number(product.price).toFixed(2).replace('.', ',')}
-                          </SelectItem>
-                        ))}
+                        {Array.isArray(data.products) && (data.products || []).map((product) => {
+                          const stock = Number(product.stock) || 0;
+                          const isOutOfStock = stock === 0;
+                          const existingQuantity = formData.selected_products.find(p => p.product_id === product.id)?.quantity || 0;
+                          const availableQuantity = stock - existingQuantity;
+                          
+                          return (
+                            <SelectItem 
+                              key={product.id} 
+                              value={product.id}
+                              disabled={isOutOfStock}
+                            >
+                              <div className="flex justify-between items-center w-full">
+                                <span>{product.name} - R$ {Number(product.price).toFixed(2).replace('.', ',')}</span>
+                                <span className={`text-xs ${isOutOfStock ? 'text-red-500' : 'text-green-600'}`}>
+                                  {isOutOfStock ? 'Fora de estoque' : `Estoque: ${availableQuantity}`}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="quantity_to_add">Quantidade *</Label>
-                    <Input
-                      id="quantity_to_add"
-                      type="number"
-                      min="1"
-                      value={quantityToAdd}
-                      onChange={(e) => setQuantityToAdd(parseInt(e.target.value) || 1)}
-                      placeholder="Ex: 2"
-                      className="mt-1"
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        id="quantity_to_add"
+                        type="number"
+                        min="1"
+                        max={maxQuantity}
+                        value={quantityToAdd}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1;
+                          setQuantityToAdd(Math.min(Math.max(1, value), maxQuantity));
+                        }}
+                        placeholder="Ex: 2"
+                        className="mt-1"
+                      />
+                      {productToAdd && (
+                        <p className="text-xs text-muted-foreground">
+                          Máximo disponível: {maxQuantity} unidades
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-end">
                     <Button
@@ -841,28 +1059,37 @@ const CreditTab = () => {
                       {(formData.selected_products || []).length === 0 ? (
                         <p className="text-sm text-gray-500 text-center py-4">Nenhum produto adicionado.</p>
                       ) : (
-                        Array.isArray(formData.selected_products) && (formData.selected_products || []).map((product) => (
-                          <div key={product.product_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {product.quantity}x R$ {Number(product.price).toFixed(2).replace('.', ',')}
-                              </p>
+                        Array.isArray(formData.selected_products) && (formData.selected_products || []).map((product) => {
+                          const originalProduct = (data.products || []).find(p => p.id === product.product_id);
+                          const originalStock = Number(originalProduct?.stock) || 0;
+                          const remainingStock = originalStock - product.quantity;
+                          
+                          return (
+                            <div key={product.product_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {product.quantity}x R$ {Number(product.price).toFixed(2).replace('.', ',')}
+                                </p>
+                                <p className="text-xs text-blue-600">
+                                  Estoque restante: {remainingStock} unidades
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold">R$ {Number(product.total).toFixed(2).replace('.', ',')}</p>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveProduct(product.product_id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold">R$ {Number(product.total).toFixed(2).replace('.', ',')}</p>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveProduct(product.product_id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
