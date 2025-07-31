@@ -6,13 +6,14 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 import ProductManagement from "@/components/admin/ProductManagement";
 import CategoryManagement from "@/components/admin/CategoryManagement";
 import OrderManagement from "@/components/admin/OrderManagement";
+import CustomerManagement from "@/components/admin/CustomerManagement";
 import FinancialManagement from "@/components/admin/FinancialManagement";
 import CreditManagement from "@/components/admin/CreditManagement";
 import ExpensesManagement from "@/components/admin/ExpensesManagement";
 import ReportsManagement from "@/components/admin/ReportsManagement";
 import StoreSettings from "@/components/admin/StoreSettings";
 
-type AdminView = "dashboard" | "products" | "categories" | "orders" | "financial" | "financial-cash" | "financial-credit" | "financial-expenses" | "financial-reports" | "settings";
+type AdminView = "dashboard" | "products" | "categories" | "orders" | "customers" | "financial" | "financial-cash" | "financial-credit" | "financial-expenses" | "financial-reports" | "settings";
 
 const Admin = () => {
   const [currentView, setCurrentView] = useState<AdminView>("dashboard");
@@ -27,6 +28,8 @@ const Admin = () => {
         return <CategoryManagement />;
       case "orders":
         return <OrderManagement />;
+      case "customers":
+        return <CustomerManagement />;
       case "financial":
       case "financial-cash":
         return <FinancialManagement />;
