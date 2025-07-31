@@ -148,6 +148,21 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         });
       });
       
+      // DEBUG DETALHADO - Verificar dados brutos das contas de crédito
+      console.log('[FinancialContext] 🔍 DADOS BRUTOS DAS CONTAS DE CRÉDITO:');
+      safeCreditAccounts.forEach((account, index) => {
+        console.log(`👤 Conta ${index + 1}:`, {
+          id: account.id,
+          customer_name: account.customer_name,
+          customer_phone: account.customer_phone,
+          total_debt: account.total_debt,
+          total_debt_type: typeof account.total_debt,
+          balance: account.balance, // Verificar se existe
+          balance_type: typeof account.balance,
+          created_at: account.created_at
+        });
+      });
+      
       // Calcular totais
       const totalIncome = safeCashFlow
         .filter(entry => entry.type === 'income' || entry.type === 'entrada')
@@ -157,7 +172,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
         .filter(entry => entry.type === 'expense' || entry.type === 'saida')
         .reduce((sum, entry) => sum + Number(entry.amount), 0);
       const balance = totalIncome - totalExpenses;
-      const totalDebt = safeCreditAccounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
+      const totalDebt = safeCreditAccounts.reduce((sum, acc) => sum + Number(acc.total_debt || 0), 0);
 
       const newData = {
         cashFlow: safeCashFlow,
