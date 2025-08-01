@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Users, DollarSign, Search, FileDown, MessageCircle, Calendar, MapPin, Phone, User, FileText, Trash2, Eye, Check, X } from "lucide-react";
+import { Plus, Users, DollarSign, Search, FileDown, MessageCircle, Calendar, MapPin, Phone, User, FileText, Trash2, Eye, Check, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFinancial } from "@/contexts/FinancialContext";
 import ClientHistoryModal from "./ClientHistoryModal";
@@ -25,6 +26,17 @@ type CreditAccount = {
   customer_address?: string;
   total_debt: number;
   created_at: string;
+};
+
+type Customer = {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  store_owner_id: string;
+  created_at: string;
+  updated_at: string;
 };
 
 type InstallmentFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
@@ -118,17 +130,125 @@ const isValidDate = (dateStr: string): boolean => {
 const CreditTab = () => {
   const { toast } = useToast();
   const { data, addCreditTransaction, refreshData } = useFinancial();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState<CreditAccount | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showClientHistory, setShowClientHistory] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   
   // Estados para seleção de produtos
   const [productToAdd, setProductToAdd] = useState('');
   const [quantityToAdd, setQuantityToAdd] = useState(1);
   const [maxQuantity, setMaxQuantity] = useState(1);
+
+  // Buscar clientes da API
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ['customers'],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/customers', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        return response.data;
+      } catch (error: any) {
+        console.error('Erro ao buscar clientes:', error);
+        toast({
+          title: 'Erro ao carregar clientes',
+          description: 'Não foi possível carregar a lista de clientes.',
+          variant: 'destructive'
+        });
+        return [];
+      }
+    },
+    enabled: !!token
+  });
+
+  // Filtrar clientes por busca
+  const filteredCustomers = customers.filter((customer: Customer) => {
+    const searchLower = customerSearchTerm.toLowerCase();
+    return customer.name.toLowerCase().includes(searchLower) ||
+           customer.phone.includes(customerSearchTerm) ||
+           (customer.email && customer.email.toLowerCase().includes(searchLower));
+  });
+
+  // Verificar se cliente já tem crediário
+  const checkCustomerHasCredit = (customerId: string): boolean => {
+    return accounts.some(account => account.id === customerId);
+  };
+
+  // Verificar se cliente já tem crediário por telefone
+  const checkCustomerHasCreditByPhone = (phone: string): CreditAccount | null => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    return accounts.find(account => 
+      account.customer_phone.replace(/\D/g, '') === cleanPhone
+    ) || null;
+  };
+
+  // Selecionar cliente
+  const handleCustomerSelect = (customer: Customer) => {
+    // Verificar se cliente já tem crediário
+    const existingCredit = checkCustomerHasCreditByPhone(customer.phone);
+    
+    if (existingCredit) {
+      toast({
+        title: 'Cliente já possui crediário',
+        description: `O cliente ${customer.name} já possui um crediário ativo. Deseja visualizar o histórico?`,
+        variant: 'destructive'
+      });
+      
+      // Selecionar o crediário existente para visualização
+      setSelectedClient(existingCredit);
+      setShowClientHistory(true);
+      return;
+    }
+
+    // Preencher dados do cliente selecionado
+    setSelectedCustomer(customer);
+    setFormData(prev => ({
+      ...prev,
+      is_new_customer: false,
+      customer_name: customer.name,
+      customer_phone: customer.phone,
+      customer_address: customer.address || '',
+      existing_customer_id: customer.id
+    }));
+
+    toast({
+      title: 'Cliente selecionado',
+      description: `Dados de ${customer.name} preenchidos automaticamente.`,
+    });
+  };
+
+  // Resetar formulário
+  const resetForm = () => {
+    setFormData({
+      is_new_customer: true,
+      customer_name: '',
+      customer_phone: '',
+      customer_address: '',
+      existing_customer_id: '',
+      selected_products: [],
+      total_value: '',
+      installments: '1',
+      installment_value: '',
+      frequency: 'monthly',
+      first_payment_date: formatDateToBR(new Date()),
+      final_due_date: '',
+      observations: ''
+    });
+    setSelectedCustomer(null);
+    setSelectedClient(null);
+    setProductToAdd('');
+    setQuantityToAdd(1);
+    setMaxQuantity(1);
+    setCustomerSearchTerm('');
+  };
   
   const [formData, setFormData] = useState<NewDebtFormData>({
     is_new_customer: true,
@@ -410,12 +530,24 @@ const CreditTab = () => {
         });
       }
     }
+
+    // Verificar se telefone já tem crediário
+    if (field === 'phone' && value.trim()) {
+      const existingCredit = checkCustomerHasCreditByPhone(value);
+      if (existingCredit) {
+        toast({
+          title: 'Telefone já possui crediário',
+          description: `Este telefone já está associado a um crediário ativo.`,
+          variant: 'destructive'
+        });
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validações
+    // Validações básicas
     if (!formData.customer_name.trim()) {
       toast({ title: 'Erro', description: 'Nome do cliente é obrigatório', variant: 'destructive' });
       return;
@@ -431,6 +563,30 @@ const CreditTab = () => {
     if (!phoneRegex.test(formData.customer_phone.replace(/\D/g, ''))) {
       toast({ title: 'Erro', description: 'Telefone deve conter apenas números', variant: 'destructive' });
       return;
+    }
+
+    // Verificar se cliente já possui crediário
+    const existingCredit = checkCustomerHasCreditByPhone(formData.customer_phone);
+    if (existingCredit) {
+      toast({ 
+        title: 'Cliente já possui crediário', 
+        description: `O cliente ${formData.customer_name} já possui um crediário ativo. Não é possível criar outro.`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    // Se for cliente selecionado da base, verificar se ainda está disponível
+    if (selectedCustomer && !formData.is_new_customer) {
+      const currentHasCredit = checkCustomerHasCreditByPhone(selectedCustomer.phone);
+      if (currentHasCredit) {
+        toast({ 
+          title: 'Cliente não está mais disponível', 
+          description: `O cliente ${selectedCustomer.name} já possui um crediário ativo.`, 
+          variant: 'destructive' 
+        });
+        return;
+      }
     }
     
     if (formData.selected_products.length === 0) {
@@ -522,18 +678,45 @@ const CreditTab = () => {
               return;
             }
           } else {
-            // Cliente não existe, criar novo
-            const clientData = {
-              customer_name: formData.customer_name.trim(),
-              customer_phone: phone,
-              customer_address: formData.customer_address.trim() || null // Envia null se vazio
+            // Cliente não existe, criar novo na API de clientes
+            const customerData = {
+              name: formData.customer_name.trim(),
+              phone: phone,
+              address: formData.customer_address.trim() || '',
+              store_owner_id: user?.id || ''
             };
             
-            console.log('[CreditTab] 📤 Criando novo cliente:', clientData);
+            console.log('[CreditTab] 📤 Criando novo cliente na API:', customerData);
             
-            const createClientRes = await api.post('/credit-accounts', clientData);
-            creditAccountId = createClientRes.data.id;
-            console.log('[CreditTab] ✅ Cliente criado:', creditAccountId);
+            try {
+              const createCustomerRes = await api.post('/customers', customerData, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              const newCustomer = createCustomerRes.data;
+              console.log('[CreditTab] ✅ Cliente criado na API:', newCustomer);
+              
+              // Agora criar o crediário usando o ID do cliente criado
+              const creditAccountData = {
+                customer_id: newCustomer.id,
+                customer_name: newCustomer.name,
+                customer_phone: newCustomer.phone,
+                customer_address: newCustomer.address || null
+              };
+              
+              const createCreditRes = await api.post('/credit-accounts', creditAccountData);
+              creditAccountId = createCreditRes.data.id;
+              console.log('[CreditTab] ✅ Crediário criado:', creditAccountId);
+              
+            } catch (error: any) {
+              console.error('[CreditTab] ❌ Erro ao criar cliente na API:', error);
+              const errorMessage = error.response?.data?.error || 'Erro ao criar cliente';
+              toast({ title: 'Erro', description: errorMessage, variant: 'destructive' });
+              return;
+            }
           }
         } catch (error: any) {
           console.error('[CreditTab] ❌ Erro ao verificar/criar cliente:', error);
@@ -654,24 +837,8 @@ const CreditTab = () => {
       await refreshData();
       
       // Limpar formulário
-      setFormData({
-        is_new_customer: true,
-        customer_name: '',
-        customer_phone: '',
-        customer_address: '',
-        existing_customer_id: '',
-        selected_products: [],
-        total_value: '',
-        installments: '1',
-        installment_value: '',
-        frequency: 'monthly',
-        first_payment_date: formatDateToBR(new Date()),
-        final_due_date: '',
-        observations: ''
-      });
-      
+      resetForm();
       setShowTransactionForm(false);
-      setSelectedClient(null);
       
       // Preparar mensagem de sucesso
       const totalProducts = formData.selected_products.length;
@@ -953,26 +1120,102 @@ const CreditTab = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Label>Selecionar Cliente Existente</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-40 overflow-y-auto">
-                      {Array.isArray(filteredAccounts) && (filteredAccounts || []).map((client) => (
-                        <div
-                          key={client.id}
-                          onClick={() => handleClientSelect(client)}
-                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                            selectedClient?.id === client.id
-                              ? 'border-orange-300 bg-orange-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="font-medium text-sm">{client.customer_name}</div>
-                          <div className="text-xs text-gray-600">{client.customer_phone}</div>
-                          <div className="text-xs text-red-600 font-medium">
-                            Dívida: R$ {Number(client.total_debt).toFixed(2)}
-                          </div>
-                        </div>
-                      ))}
+                    <Label>Selecionar Cliente da Base de Dados</Label>
+                    
+                    {/* Busca de clientes */}
+                    <div className="flex items-center space-x-2">
+                      <Search className="h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Buscar cliente por nome, telefone ou email..."
+                        value={customerSearchTerm}
+                        onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                        className="max-w-sm"
+                      />
                     </div>
+
+                    {customersLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-sm text-gray-600">Carregando clientes...</span>
+                      </div>
+                    ) : filteredCustomers.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        {customerSearchTerm ? 'Nenhum cliente encontrado para esta busca.' : 'Nenhum cliente cadastrado.'}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                        {filteredCustomers.map((customer) => {
+                          const hasCredit = checkCustomerHasCreditByPhone(customer.phone);
+                          return (
+                            <div
+                              key={customer.id}
+                              onClick={() => handleCustomerSelect(customer)}
+                              className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                                selectedCustomer?.id === customer.id
+                                  ? 'border-green-300 bg-green-50'
+                                  : hasCredit
+                                  ? 'border-red-200 bg-red-50'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <div className="font-medium text-sm">{customer.name}</div>
+                              <div className="text-xs text-gray-600">{customer.phone}</div>
+                              {customer.email && (
+                                <div className="text-xs text-blue-600">{customer.email}</div>
+                              )}
+                              {hasCredit ? (
+                                <div className="flex items-center mt-1">
+                                  <AlertCircle className="h-3 w-3 text-red-500 mr-1" />
+                                  <span className="text-xs text-red-600 font-medium">
+                                    Já possui crediário
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center mt-1">
+                                  <Check className="h-3 w-3 text-green-500 mr-1" />
+                                  <span className="text-xs text-green-600 font-medium">
+                                    Disponível para crediário
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Cliente selecionado */}
+                    {selectedCustomer && (
+                      <div className="p-4 border border-green-200 bg-green-50 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-green-800">Cliente Selecionado</h4>
+                            <p className="text-sm text-green-700">{selectedCustomer.name}</p>
+                            <p className="text-sm text-green-600">{selectedCustomer.phone}</p>
+                            {selectedCustomer.email && (
+                              <p className="text-sm text-green-600">{selectedCustomer.email}</p>
+                            )}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCustomer(null);
+                              setFormData(prev => ({
+                                ...prev,
+                                is_new_customer: true,
+                                customer_name: '',
+                                customer_phone: '',
+                                customer_address: '',
+                                existing_customer_id: ''
+                              }));
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
