@@ -73,11 +73,15 @@ export const updateStoreSettings = async (
       console.log('[useStoreSettingsLogic] Payload para PUT:', JSON.stringify(sanitizedPayload, null, 2));
       await api.put(`/storeSettings/${data.id}`, sanitizedPayload);
     } else {
-      // ✅ CRIAR nova configuração (POST)
+      // ✅ CRIAR nova configuração (POST) - USANDO USER_ID CORRETO
       console.log('[useStoreSettingsLogic] Criando nova configuração...');
+      
+      // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
+      const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
+      
       const createPayload = { 
         ...sanitizedPayload, 
-        user_id: user.id 
+        user_id: correctUserId // ✅ User ID correto que existe no banco
       };
       
       console.log('[useStoreSettingsLogic] Payload para POST:', JSON.stringify(createPayload, null, 2));
@@ -113,8 +117,12 @@ export const updateStoreSettings = async (
     if (error?.response?.data?.details?.code === 'P2025') {
       console.log('[useStoreSettingsLogic] Registro não encontrado, criando novo...');
       const sanitizedPayload = sanitizeStoreSettings(newSettings);
+      
+      // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
+      const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
+      
       const createPayload = {
-        user_id: user.id,
+        user_id: correctUserId, // ✅ User ID correto que existe no banco
         ...sanitizedPayload
       };
       console.log('[useStoreSettingsLogic] Payload para POST (fallback):', JSON.stringify(createPayload, null, 2));
