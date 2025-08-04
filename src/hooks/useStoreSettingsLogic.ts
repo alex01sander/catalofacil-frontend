@@ -38,10 +38,10 @@ const sanitizeStoreSettings = (settings: Partial<StoreSettings>) => {
     store_subtitle: String(settings.store_subtitle || 'Produtos Incríveis').trim(),
     instagram_url: String(settings.instagram_url || 'https://instagram.com/').trim(),
     whatsapp_number: String(settings.whatsapp_number || '5511999999999').trim(),
-    mobile_logo: settings.mobile_logo || null,
-    desktop_banner: settings.desktop_banner || null,
+    mobile_logo: settings.mobile_logo || '', // ✅ String vazia em vez de null
+    desktop_banner: settings.desktop_banner || '', // ✅ String vazia em vez de null
     mobile_banner_color: String(settings.mobile_banner_color || 'verde').trim(),
-    mobile_banner_image: settings.mobile_banner_image || null,
+    mobile_banner_image: settings.mobile_banner_image || '', // ✅ String vazia em vez de null
   };
 };
 
