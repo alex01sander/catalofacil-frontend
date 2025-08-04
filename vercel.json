@@ -32,10 +32,5 @@
         { "key": "Cache-Control", "value": "no-cache" }
       ]
     }
-  ],
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 } 
