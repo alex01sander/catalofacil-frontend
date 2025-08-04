@@ -8,7 +8,7 @@ export function usePublicCategories(slug: string) {
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
-    api.get(`/site/${slug}/categories`)
+    api.get(`/site/public/${slug}/categories`)
       .then(res => {
         // Verificar se é resposta paginada ou array direto
         if (res.data && res.data.data && Array.isArray(res.data.data)) {

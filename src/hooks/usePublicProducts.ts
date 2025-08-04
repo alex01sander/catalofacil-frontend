@@ -12,7 +12,7 @@ export function usePublicProducts(slug: string) {
     }
     setLoading(true);
     
-    api.get(`/site/${slug}/products`)
+    api.get(`/site/public/${slug}/products`)
       .then(res => {
         // Verificar se é resposta paginada ou array direto
         let productsData = [];

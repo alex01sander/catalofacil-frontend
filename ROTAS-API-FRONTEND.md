@@ -15,8 +15,8 @@
 |--------|------|-----------|--------|
 | GET | `/storeSettings?store_id=${storeId}` | Configurações da loja por ID | ✅ Funcionando |
 | GET | `/storeSettings?user_id=${user.id}` | Configurações da loja por usuário | ✅ Funcionando |
-| GET | `/site/${slug}` | Dados públicos da loja | ✅ Funcionando |
-| GET | `/site/${slug}/owner` | Dados do proprietário da loja | ✅ Funcionando |
+| GET | `/site/public/${slug}` | Dados públicos da loja | ✅ Funcionando |
+| GET | `/site/public/${slug}/owner` | Dados do proprietário da loja | ✅ Funcionando |
 
 ## 📦 Produtos e Categorias
 | Método | Rota | Descrição | Status |

@@ -118,7 +118,7 @@ const Cart = () => {
           try {
             const slug = getStoreSlug();
             console.log('[Cart] Tentando obter store_owner_id via API pública para slug:', slug);
-            const publicStoreRes = await api.get(`/site/${slug}/owner`);
+            const publicStoreRes = await api.get(`/site/public/${slug}/owner`);
             console.log('[Cart] Resposta API pública:', publicStoreRes.data);
             ownerId = publicStoreRes.data?.owner_id || publicStoreRes.data?.user_id;
             console.log('[Cart] Owner ID obtido via API pública:', ownerId);
