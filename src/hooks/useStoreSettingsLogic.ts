@@ -48,9 +48,8 @@ export const updateStoreSettings = async (
     const { data } = await api.get(`/storeSettings?user_id=${user.id}`);
     console.log('[useStoreSettingsLogic] Configurações existentes:', data);
     
-    // Preparar payload com valores padrão para campos obrigatórios
+    // Preparar payload SEM user_id (não enviar user_id em atualizações)
     const payload = {
-      user_id: user.id,
       store_name: newSettings.store_name || 'Minha Loja',
       store_description: newSettings.store_description || 'Catálogo de produtos',
       store_subtitle: newSettings.store_subtitle || 'Produtos Incríveis',
@@ -63,12 +62,16 @@ export const updateStoreSettings = async (
     };
     
     if (data && data.id) {
+      // ✅ ATUALIZAR configuração existente (PUT)
       console.log('[useStoreSettingsLogic] Atualizando configuração existente com ID:', data.id);
+      console.log('[useStoreSettingsLogic] Payload para PUT:', payload);
       await api.put(`/storeSettings/${data.id}`, payload);
     } else {
+      // ✅ CRIAR nova configuração (POST)
       console.log('[useStoreSettingsLogic] Criando nova configuração...');
-      console.log('[useStoreSettingsLogic] Payload para POST:', payload);
-      await api.post('/storeSettings', payload);
+      const createPayload = { ...payload, user_id: user.id };
+      console.log('[useStoreSettingsLogic] Payload para POST:', createPayload);
+      await api.post('/storeSettings', createPayload);
     }
   } catch (error: any) {
     console.error('[useStoreSettingsLogic] Erro na operação:', error);
@@ -78,7 +81,7 @@ export const updateStoreSettings = async (
     // Se for erro de registro não encontrado (P2025), faz POST para criar
     if (error?.response?.data?.details?.code === 'P2025') {
       console.log('[useStoreSettingsLogic] Registro não encontrado, criando novo...');
-      const payload = {
+      const createPayload = {
         user_id: user.id,
         store_name: newSettings.store_name || 'Minha Loja',
         store_description: newSettings.store_description || 'Catálogo de produtos',
@@ -90,8 +93,8 @@ export const updateStoreSettings = async (
         mobile_banner_color: newSettings.mobile_banner_color || 'verde',
         mobile_banner_image: newSettings.mobile_banner_image || null,
       };
-      console.log('[useStoreSettingsLogic] Payload para POST (fallback):', payload);
-      await api.post('/storeSettings', payload);
+      console.log('[useStoreSettingsLogic] Payload para POST (fallback):', createPayload);
+      await api.post('/storeSettings', createPayload);
     } else {
       throw error;
     }
