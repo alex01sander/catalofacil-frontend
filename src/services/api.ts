@@ -8,6 +8,23 @@ const api = axios.create({
 
 // Interceptor para adicionar token nas requisições
 api.interceptors.request.use(config => {
+  // Lista de rotas públicas que não precisam de autenticação
+  const publicRoutes = [
+    '/site/',
+    '/auth/login',
+    '/auth/verify'
+  ];
+  
+  // Verificar se a rota atual é pública
+  const isPublicRoute = publicRoutes.some(route => 
+    config.url?.includes(route)
+  );
+  
+  if (isPublicRoute) {
+    console.log('[API] 🌐 Rota pública detectada, não adicionando token:', config.url);
+    return config;
+  }
+  
   // Usar 'token' ao invés de 'jwt_token' (corrigido)
   const token = localStorage.getItem("token");
   if (token) {
