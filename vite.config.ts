@@ -10,6 +10,20 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    // Configurações específicas para produção
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          admin: ['@/components/admin'],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     mode === 'development' &&
