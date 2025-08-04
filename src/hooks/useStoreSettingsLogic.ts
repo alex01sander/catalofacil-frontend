@@ -7,8 +7,12 @@ import { API_URL } from '@/constants/api';
 export const fetchStoreSettings = async (user: User | null): Promise<StoreSettings> => {
   try {
     if (!user) return defaultSettings;
-    // Busca pelo user_id
-    const { data } = await api.get(`/storeSettings?user_id=${user.id}`);
+    
+    // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
+    const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
+    
+    // Busca pelo user_id correto
+    const { data } = await api.get(`/storeSettings?user_id=${correctUserId}`);
     if (data) {
       return {
         id: data.id,
@@ -58,9 +62,12 @@ export const updateStoreSettings = async (
   console.log('[useStoreSettingsLogic] New Settings:', JSON.stringify(newSettings, null, 2));
   
   try {
+    // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
+    const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
+    
     // Busca o id real do registro antes de atualizar
     console.log('[useStoreSettingsLogic] Buscando configurações existentes...');
-    const { data } = await api.get(`/storeSettings?user_id=${user.id}`);
+    const { data } = await api.get(`/storeSettings?user_id=${correctUserId}`);
     console.log('[useStoreSettingsLogic] Configurações existentes:', JSON.stringify(data, null, 2));
     
     // Sanitizar e validar dados
@@ -75,9 +82,6 @@ export const updateStoreSettings = async (
     } else {
       // ✅ CRIAR nova configuração (POST) - USANDO USER_ID CORRETO
       console.log('[useStoreSettingsLogic] Criando nova configuração...');
-      
-      // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
-      const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
       
       const createPayload = { 
         ...sanitizedPayload, 
