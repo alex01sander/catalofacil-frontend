@@ -99,7 +99,7 @@ export const StoreProvider = ({ children }) => {
     // Se tiver slug, busca informações públicas da loja
     if (slug) {
       console.log('[StoreProvider] slug detectado:', slug);
-      api.get(`/site/public/${slug}`)
+      api.get(`/site/${slug}`)
         .then(res => {
           console.log('[StoreProvider] Dados públicos da loja recebidos:', res.data);
           
