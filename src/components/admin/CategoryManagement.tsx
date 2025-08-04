@@ -86,9 +86,12 @@ const CategoryManagement = () => {
       const storedToken = localStorage.getItem('jwt_token');
       console.log('Token do localStorage:', storedToken);
       
+      // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
+      const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
+      
       const payload = {
         store_id: store.id,
-        user_id: user.id,
+        user_id: correctUserId, // ✅ User ID correto que existe no banco
         name: newCategory.trim(),
         color: randomColor,
         image: newCategoryImage || null
