@@ -19,6 +19,13 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
 
   // Função para buscar produtos (pode ser chamada sob demanda)
   const fetchProducts = async () => {
+    console.log('[useOptimizedProducts] === INICIANDO BUSCA DE PRODUTOS ===');
+    console.log('[useOptimizedProducts] User:', user);
+    console.log('[useOptimizedProducts] Token:', token);
+    console.log('[useOptimizedProducts] AuthLoading:', authLoading);
+    console.log('[useOptimizedProducts] Enabled:', enabled);
+    console.log('[useOptimizedProducts] CategoryId:', categoryId);
+    
     // Verificar cache global primeiro
     const now = Date.now();
     const cacheValid = now - globalProductsCache.timestamp < 120000; // 2 minutos
@@ -44,18 +51,28 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       : "/products";
       
     try {
-      console.log('[useOptimizedProducts] Buscando produtos:', url);
+      console.log('[useOptimizedProducts] Buscando produtos na URL:', url);
+      console.log('[useOptimizedProducts] Headers da requisição:', api.defaults.headers);
+      
       const res = await api.get(url);
+      
+      console.log('[useOptimizedProducts] Resposta da API:', res.data);
+      console.log('[useOptimizedProducts] Status da resposta:', res.status);
       
       let productsData = [];
       // Verificar se é resposta paginada ou array direto
       if (res.data && res.data.data && Array.isArray(res.data.data)) {
         productsData = res.data.data;
+        console.log('[useOptimizedProducts] Dados paginados encontrados');
       } else if (Array.isArray(res.data)) {
         productsData = res.data;
+        console.log('[useOptimizedProducts] Array direto encontrado');
       } else {
         productsData = [];
+        console.log('[useOptimizedProducts] Nenhum dado encontrado');
       }
+      
+      console.log('[useOptimizedProducts] Produtos processados:', productsData);
       
       // Atualizar cache global
       globalProductsCache.data = productsData;
@@ -65,7 +82,10 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
       console.log(`[useOptimizedProducts] ✅ ${productsData.length} produtos carregados`);
       
     } catch (err) {
-      console.error('[useOptimizedProducts] Erro na fetchProducts:', err);
+      console.error('[useOptimizedProducts] ❌ Erro na fetchProducts:', err);
+      console.error('[useOptimizedProducts] Detalhes do erro:', err.response?.data);
+      console.error('[useOptimizedProducts] Status do erro:', err.response?.status);
+      console.error('[useOptimizedProducts] Headers do erro:', err.response?.headers);
       setError(err || new Error('Erro desconhecido'));
       setProducts([]);
     } finally {
@@ -75,20 +95,31 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
   };
 
   useEffect(() => {
+    console.log('[useOptimizedProducts] useEffect executado');
+    console.log('[useOptimizedProducts] authLoading:', authLoading);
+    console.log('[useOptimizedProducts] enabled:', enabled);
+    console.log('[useOptimizedProducts] user:', user);
+    console.log('[useOptimizedProducts] token:', token);
+    
     if (authLoading) {
+      console.log('[useOptimizedProducts] Auth ainda carregando, aguardando...');
       setLoading(true);
       return;
     }
     
     if (!enabled) {
+      console.log('[useOptimizedProducts] Hook desabilitado');
       setLoading(false);
       return;
     }
     
     if (!user && !token) {
+      console.log('[useOptimizedProducts] ❌ Sem usuário ou token, não buscando produtos');
       setLoading(false);
       return;
     }
+    
+    console.log('[useOptimizedProducts] ✅ Condições atendidas, iniciando busca...');
     
     // Debounce para evitar múltiplas requisições
     const timeoutId = setTimeout(() => {
@@ -100,6 +131,7 @@ export const useOptimizedProducts = (categoryId = null, enabled = true) => {
 
   // Função para forçar atualização (usada quando necessário)
   const refetch = () => {
+    console.log('[useOptimizedProducts] 🔄 Forçando atualização...');
     globalProductsCache.timestamp = 0; // Forçar nova busca
     fetchProducts();
   };
