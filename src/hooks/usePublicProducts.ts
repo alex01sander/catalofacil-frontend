@@ -12,8 +12,12 @@ export function usePublicProducts(slug: string) {
     }
     setLoading(true);
     
+    console.log('[usePublicProducts] Buscando produtos para slug:', slug);
+    
     api.get(`/site/public/${slug}/products`)
       .then(res => {
+        console.log('[usePublicProducts] Resposta da API:', res.data);
+        
         // Verificar se é resposta paginada ou array direto
         let productsData = [];
         if (res.data && res.data.data && Array.isArray(res.data.data)) {
@@ -24,20 +28,35 @@ export function usePublicProducts(slug: string) {
           productsData = [];
         }
 
-        // Normalizar dados dos produtos - agora que a API retorna os campos corretos
-        const normalizedProducts = productsData.map(product => ({
-          ...product,
-          stock: Number(product.stock) || 0,
-          price: Number(product.price) || 0,
-          is_active: Boolean(product.is_active),
-          images: Array.isArray(product.images) ? product.images : [],
-          category_id: product.category_id || null
-        }));
+        console.log('[usePublicProducts] Produtos brutos:', productsData);
+
+        // Normalizar dados dos produtos - preservar valores originais quando válidos
+        const normalizedProducts = productsData.map(product => {
+          // Preservar valores originais quando válidos
+          const normalizedProduct = {
+            ...product,
+            stock: product.stock !== null && product.stock !== undefined ? Number(product.stock) : 0,
+            price: product.price !== null && product.price !== undefined ? Number(product.price) : 0,
+            is_active: product.is_active === true || product.is_active === 'true' || product.is_active === 1,
+            images: Array.isArray(product.images) ? product.images : (product.image ? [product.image] : []),
+            category_id: product.category_id || null
+          };
+
+          // Log da normalização para debug
+          console.log(`[usePublicProducts] Normalização do produto ${product.name}:`, {
+            original: { stock: product.stock, price: product.price, is_active: product.is_active },
+            normalized: { stock: normalizedProduct.stock, price: normalizedProduct.price, is_active: normalizedProduct.is_active }
+          });
+
+          return normalizedProduct;
+        });
         
+        console.log('[usePublicProducts] Produtos normalizados:', normalizedProducts);
         setProducts(normalizedProducts);
       })
       .catch(error => {
         console.error('[usePublicProducts] Erro ao buscar produtos:', error);
+        console.error('[usePublicProducts] Detalhes do erro:', error.response?.data);
         setProducts([]);
       })
       .finally(() => {
