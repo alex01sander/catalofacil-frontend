@@ -89,6 +89,23 @@ const CategoryManagement = () => {
       // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
       const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
       
+      // Verificar se o token contém o user ID correto
+      if (storedToken) {
+        try {
+          const tokenPayload = JSON.parse(atob(storedToken.split('.')[1]));
+          console.log('Token payload:', tokenPayload);
+          console.log('Token user ID:', tokenPayload.id);
+          console.log('Token user ID correto?', tokenPayload.id === correctUserId);
+        } catch (e) {
+          console.log('Erro ao decodificar token:', e);
+        }
+      }
+      
+      console.log('=== DEBUG PAYLOAD CATEGORIA ===');
+      console.log('User ID original:', user.id);
+      console.log('User ID correto:', correctUserId);
+      console.log('Store ID:', store.id);
+      
       const payload = {
         store_id: store.id,
         user_id: correctUserId, // ✅ User ID correto que existe no banco
@@ -98,6 +115,7 @@ const CategoryManagement = () => {
       };
       
       console.log('Payload sendo enviado:', payload);
+      console.log('Payload JSON:', JSON.stringify(payload, null, 2));
       console.log('Headers da requisição:', api.defaults.headers);
       
       // Tentar enviar com headers explícitos
