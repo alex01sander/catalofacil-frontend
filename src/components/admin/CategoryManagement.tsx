@@ -89,6 +89,9 @@ const CategoryManagement = () => {
       // ✅ USAR O USER_ID CORRETO QUE EXISTE NO BANCO
       const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
       
+      console.log('🔧 CORREÇÃO APLICADA - User ID correto:', correctUserId);
+      console.log('🔧 CORREÇÃO APLICADA - Timestamp:', new Date().toISOString());
+      
       // Verificar se o token contém o user ID correto
       if (storedToken) {
         try {
@@ -114,6 +117,7 @@ const CategoryManagement = () => {
         image: newCategoryImage || null
       };
       
+      console.log('🔧 CORREÇÃO APLICADA - Payload com user_id correto:', payload.user_id);
       console.log('Payload sendo enviado:', payload);
       console.log('Payload JSON:', JSON.stringify(payload, null, 2));
       console.log('Headers da requisição:', api.defaults.headers);
