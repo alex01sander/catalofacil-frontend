@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import api from "@/services/api";
 
 interface EditDomainModalProps {
   domain: {
@@ -33,13 +34,8 @@ const EditDomainModal = ({ domain, isOpen, onClose }: EditDomainModalProps) => {
   const { data: users = [] } = useQuery({
     queryKey: ['all_users_for_domain_edit'],
     queryFn: async () => {
-      // TODO: Migrar todas as chamadas supabase para axios/backend próprio.
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profiles/all`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
+      const response = await api.get('/api/profiles/all');
+      return response.data;
     },
     enabled: isOpen
   });
@@ -69,38 +65,26 @@ const EditDomainModal = ({ domain, isOpen, onClose }: EditDomainModalProps) => {
       }
 
       // Buscar o usuário pelo email
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profiles/email/${newUserEmail}`);
-      if (!response.ok) {
-        throw new Error('Usuário não encontrado com este email');
-      }
-      const profile = await response.json();
+      const response = await api.get(`/api/profiles/email/${newUserEmail}`);
+      const profile = response.data;
 
       if (!profile) {
         throw new Error('Usuário não encontrado com este email');
       }
 
       // Verificar se já existe um domínio com o mesmo nome
-      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/domain_owners/check/${newDomain.toLowerCase()}/${domainId}`);
-      if (!checkResponse.ok) {
+      try {
+        await api.get(`/api/domain_owners/check/${newDomain.toLowerCase()}/${domainId}`);
+      } catch (error) {
         throw new Error('Este domínio já está cadastrado');
       }
       
       // Atualizar o domínio
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/domain_owners/${domainId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          domain: newDomain.toLowerCase(), 
-          user_id: profile.id,
-          domain_type: domainType
-        }),
+      await api.put(`/api/domain_owners/${domainId}`, { 
+        domain: newDomain.toLowerCase(), 
+        user_id: profile.id,
+        domain_type: domainType
       });
-
-      if (!updateResponse.ok) {
-        throw new Error('Erro ao atualizar domínio');
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['domain_owners'] });
