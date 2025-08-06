@@ -17,9 +17,13 @@ export const useControllerAccess = () => {
       }
 
       try {
+        console.log('[DEBUG] Verificando acesso controller para user.id:', user.id);
+        console.log('[DEBUG] URL da requisição:', `/controller-admins/${user.id}`);
         const { data } = await api.get(`/controller-admins/${user.id}`);
+        console.log('[DEBUG] Resposta da API:', data);
         setIsController(!!data);
       } catch (error) {
+        console.error('[DEBUG] Erro ao verificar acesso controller:', error);
         setIsController(false);
       } finally {
         setLoading(false);
