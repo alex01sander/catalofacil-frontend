@@ -4,8 +4,9 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import ControllerSidebar from "@/components/controller/ControllerSidebar";
 import DomainManagement from "@/components/controller/DomainManagement";
 import UserManagement from "@/components/controller/UserManagement";
+import SystemStats from "@/components/controller/SystemStats";
 
-type ControllerView = "domains" | "users";
+type ControllerView = "domains" | "users" | "stats";
 
 const Controller = () => {
   const [currentView, setCurrentView] = useState<ControllerView>("domains");
@@ -16,6 +17,8 @@ const Controller = () => {
         return <DomainManagement />;
       case "users":
         return <UserManagement />;
+      case "stats":
+        return <SystemStats />;
       default:
         return <DomainManagement />;
     }

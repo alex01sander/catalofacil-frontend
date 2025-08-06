@@ -1,4 +1,4 @@
-import { Settings, Users, Globe, UserPlus } from "lucide-react";
+import { Settings, Users, Globe, UserPlus, BarChart3 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +13,7 @@ import {
 
 interface ControllerSidebarProps {
   currentView: string;
-  onViewChange: (view: "domains" | "users") => void;
+  onViewChange: (view: "domains" | "users" | "stats") => void;
 }
 
 const ControllerSidebar = ({ currentView, onViewChange }: ControllerSidebarProps) => {
@@ -27,6 +27,11 @@ const ControllerSidebar = ({ currentView, onViewChange }: ControllerSidebarProps
       title: "Gerenciar Usuários",
       icon: Users,
       value: "users" as const,
+    },
+    {
+      title: "Estatísticas",
+      icon: BarChart3,
+      value: "stats" as const,
     },
   ];
 
