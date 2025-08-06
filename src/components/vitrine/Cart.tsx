@@ -104,7 +104,7 @@ const Cart = () => {
       if (!ownerId) {
         try {
           console.log('[Cart] Tentando obter store_owner_id via storeSettings para store:', storeId);
-          const storeSettingsRes = await api.get(`/storeSettings?store_id=${storeId}`);
+          const storeSettingsRes = await api.get(`/api/storeSettings?store_id=${storeId}`);
           console.log('[Cart] Resposta storeSettings:', storeSettingsRes.data);
           
           // storeSettings retorna um array, acessar o primeiro item

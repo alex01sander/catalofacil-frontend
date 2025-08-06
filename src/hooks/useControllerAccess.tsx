@@ -18,8 +18,8 @@ export const useControllerAccess = () => {
 
       try {
         console.log('[DEBUG] Verificando acesso controller para user.id:', user.id);
-        console.log('[DEBUG] URL da requisição:', `/controller-admins/${user.id}`);
-        const { data } = await api.get(`/controller-admins/${user.id}`);
+        console.log('[DEBUG] URL da requisição:', `/api/controller-admins/${user.id}`);
+        const { data } = await api.get(`/api/controller-admins/${user.id}`);
         console.log('[DEBUG] Resposta da API:', data);
         setIsController(!!data);
       } catch (error) {

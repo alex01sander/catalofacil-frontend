@@ -115,7 +115,7 @@ export const StoreProvider = ({ children }) => {
     // Se não tiver slug mas tiver usuário logado, busca a loja do usuário
     else if (user && user.id) {
       console.log('[StoreProvider] Buscando loja do usuário:', user.id);
-      api.get(`/storeSettings?user_id=${user.id}`)
+              api.get(`/api/storeSettings?user_id=${user.id}`)
         .then(res => {
           console.log('[StoreProvider] Resposta da API para loja do usuário:', res);
           console.log('[StoreProvider] Estrutura completa da resposta:', JSON.stringify(res.data, null, 2));

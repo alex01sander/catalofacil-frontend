@@ -48,7 +48,7 @@ const AdminDashboard = () => {
       }
       try {
         console.log('[AdminDashboard] Buscando pedidos para usuário:', user.id);
-        const { data } = await api.get(`/pedidos?store_owner_id=${user.id}&include=order_items`);
+        const { data } = await api.get(`/api/pedidos?store_owner_id=${user.id}&include=order_items`);
         console.log('[AdminDashboard] Pedidos recebidos:', data?.length || 0);
         console.log('[AdminDashboard] Primeiros 3 pedidos:', data?.slice(0, 3));
         setOrders(data || []);

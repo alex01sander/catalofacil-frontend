@@ -326,7 +326,7 @@ export const FinancialProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !token) return;
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const res = await api.put(`/despesas/${id}`, updates);
+              const res = await api.put(`/api/despesas/${id}`, updates);
       
       // Atualizar dados localmente
       const updatedExpense = res.data;

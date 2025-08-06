@@ -105,7 +105,7 @@ const CustomerManagement = () => {
     
     try {
       setIsCheckingEmail(true);
-      const response = await api.get(`/customers?email=${encodeURIComponent(email)}`, {
+              const response = await api.get(`/api/customers?email=${encodeURIComponent(email)}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

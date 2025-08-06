@@ -12,7 +12,7 @@ export const fetchStoreSettings = async (user: User | null): Promise<StoreSettin
     const correctUserId = "b669b536-7bef-4181-b32b-8970ee6d8f49";
     
     // Busca pelo user_id correto
-    const { data } = await api.get(`/storeSettings?user_id=${correctUserId}`);
+    const { data } = await api.get(`/api/storeSettings?user_id=${correctUserId}`);
     if (data) {
       return {
         id: data.id,
@@ -67,7 +67,7 @@ export const updateStoreSettings = async (
     
     // Busca o id real do registro antes de atualizar
     console.log('[useStoreSettingsLogic] Buscando configurações existentes...');
-    const { data } = await api.get(`/storeSettings?user_id=${correctUserId}`);
+    const { data } = await api.get(`/api/storeSettings?user_id=${correctUserId}`);
     console.log('[useStoreSettingsLogic] Configurações existentes:', JSON.stringify(data, null, 2));
     
     // Sanitizar e validar dados
@@ -78,7 +78,7 @@ export const updateStoreSettings = async (
       // ✅ ATUALIZAR configuração existente (PUT)
       console.log('[useStoreSettingsLogic] Atualizando configuração existente com ID:', data.id);
       console.log('[useStoreSettingsLogic] Payload para PUT:', JSON.stringify(sanitizedPayload, null, 2));
-      await api.put(`/storeSettings/${data.id}`, sanitizedPayload);
+      await api.put(`/api/storeSettings/${data.id}`, sanitizedPayload);
     } else {
       // ✅ CRIAR nova configuração (POST) - USANDO USER_ID CORRETO
       console.log('[useStoreSettingsLogic] Criando nova configuração...');
