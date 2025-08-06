@@ -141,6 +141,15 @@ const ControllerProtectedRoute = ({ children }: ControllerProtectedRouteProps) =
     );
   }
 
+  // Debug: Log do estado atual
+  console.log('[ControllerProtectedRoute] DEBUG:', {
+    user: user?.email,
+    userId: user?.id,
+    isControllerAdmin,
+    authLoading,
+    accessLoading
+  });
+
   // Se está logado mas não é admin controller
   if (!isControllerAdmin) {
     return (
