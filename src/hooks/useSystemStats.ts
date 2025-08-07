@@ -16,8 +16,26 @@ export const useSystemStats = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/api/admin-management/stats');
-      setStats(response.data);
+      // Como não há rota específica de estatísticas, vamos calcular baseado nos usuários
+      const response = await api.get('/admin/users');
+      const users = response.data.users;
+      
+      const total_users = users.length;
+      const total_admins = users.filter((user: any) => user.role === 'admin').length;
+      const total_clients = users.filter((user: any) => user.role === 'user').length;
+      
+      // Por enquanto, vamos usar valores padrão para domínios e lojas
+      // até que essas rotas sejam implementadas no backend
+      const total_domains = total_users; // Assumindo 1 domínio por usuário
+      const total_stores = total_users; // Assumindo 1 loja por usuário
+      
+      setStats({
+        total_users,
+        total_admins,
+        total_clients,
+        total_domains,
+        total_stores
+      });
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
     } finally {

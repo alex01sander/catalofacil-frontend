@@ -7,15 +7,12 @@ interface User {
   email: string;
   role: 'admin' | 'user';
   created_at: string;
-  domain: string;
-  store_name: string;
-  store_slug: string;
+  updated_at: string;
 }
 
 interface UserFormData {
   email: string;
   password: string;
-  domain: string;
   role: 'admin' | 'user';
 }
 
@@ -26,7 +23,7 @@ export const useUserManagement = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/api/admin-management/users');
+      const response = await api.get('/admin/users');
       setUsers(response.data.users);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
@@ -38,7 +35,7 @@ export const useUserManagement = () => {
 
   const createUser = async (userData: UserFormData) => {
     try {
-      const response = await api.post('/api/admin-management/users', userData);
+      const response = await api.post('/admin/users', userData);
       await fetchUsers(); // Recarregar lista
       toast.success('Usuário criado com sucesso!');
       return response.data;
@@ -51,7 +48,7 @@ export const useUserManagement = () => {
 
   const updateUser = async (userId: string, userData: Partial<UserFormData>) => {
     try {
-      const response = await api.put(`/api/admin-management/users/${userId}`, userData);
+      const response = await api.put(`/admin/users/${userId}`, userData);
       await fetchUsers(); // Recarregar lista
       toast.success('Usuário atualizado com sucesso!');
       return response.data;
@@ -64,7 +61,7 @@ export const useUserManagement = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      await api.delete(`/api/admin-management/users/${userId}`);
+      await api.delete(`/admin/users/${userId}`);
       await fetchUsers(); // Recarregar lista
       toast.success('Usuário deletado com sucesso!');
     } catch (error) {
