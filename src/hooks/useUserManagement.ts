@@ -27,7 +27,7 @@ export const useUserManagement = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/users');
+      const response = await api.get('/api/admin-management/users');
       setUsers(response.data.users || response.data);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
@@ -39,7 +39,7 @@ export const useUserManagement = () => {
 
   const createUser = async (userData: UserFormData) => {
     try {
-      const response = await api.post('/users', userData);
+      const response = await api.post('/api/admin-management/users', userData);
       await fetchUsers(); // Recarregar lista
       toast.success('Usuário criado com sucesso!');
       return response.data;
@@ -52,7 +52,7 @@ export const useUserManagement = () => {
 
   const updateUser = async (userId: string, userData: Partial<UserFormData>) => {
     try {
-      const response = await api.put(`/users/${userId}`, userData);
+      const response = await api.put(`/api/admin-management/users/${userId}`, userData);
       await fetchUsers(); // Recarregar lista
       toast.success('Usuário atualizado com sucesso!');
       return response.data;
@@ -65,7 +65,7 @@ export const useUserManagement = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      await api.delete(`/users/${userId}`);
+      await api.delete(`/api/admin-management/users/${userId}`);
       await fetchUsers(); // Recarregar lista
       toast.success('Usuário deletado com sucesso!');
     } catch (error) {
