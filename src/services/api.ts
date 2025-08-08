@@ -11,8 +11,7 @@ api.interceptors.request.use(config => {
   // Lista de rotas públicas que não precisam de autenticação
   const publicRoutes = [
     '/site/public/', // ✅ Rotas públicas
-    '/auth/login',
-    '/auth/verify'
+    '/auth/login'
   ];
   
   // Verificar se a rota atual é pública

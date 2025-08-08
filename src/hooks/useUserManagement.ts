@@ -42,15 +42,6 @@ export const useUserManagement = () => {
         console.log('[DEBUG] Problema de conectividade:', healthError.response?.status);
       }
       
-      // Teste: verificar se outras rotas funcionam
-      try {
-        console.log('[DEBUG] Testando rota de verificação de token...');
-        const testResponse = await api.get('/auth/verify');
-        console.log('[DEBUG] Rota de verificação funcionou:', testResponse.status);
-      } catch (testError) {
-        console.log('[DEBUG] Rota de verificação falhou:', testError.response?.status);
-      }
-      
       const response = await api.get('/api/admin-management/users');
       console.log('[DEBUG] Resposta recebida:', response.data);
       setUsers(response.data.users || response.data);
