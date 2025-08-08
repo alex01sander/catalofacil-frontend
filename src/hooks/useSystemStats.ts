@@ -17,7 +17,7 @@ export const useSystemStats = () => {
     setLoading(true);
     try {
       // Como não há rota específica de estatísticas, vamos calcular baseado nos usuários
-      const response = await api.get('/admin/users');
+      const response = await api.get('/api/admin-management/users');
       const users = response.data.users;
       
       const total_users = users.length;
