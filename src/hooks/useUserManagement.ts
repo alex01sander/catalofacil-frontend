@@ -66,6 +66,20 @@ export const useUserManagement = () => {
         baseURL: error.config?.baseURL
       });
       
+      // Tratar diferentes tipos de erro
+      if (error.response?.status === 401) {
+        console.log('[DEBUG] Erro 401 - Token inválido ou expirado');
+        toast.error('Sessão expirada. Faça login novamente.');
+        // Não redirecionar automaticamente - deixar o usuário decidir
+        return;
+      }
+      
+      if (error.response?.status === 403) {
+        console.log('[DEBUG] Erro 403 - Acesso negado');
+        toast.error('Acesso negado. Você não tem permissão para acessar esta funcionalidade.');
+        return;
+      }
+      
       // Se for 404, tentar rota alternativa
       if (error.response?.status === 404) {
         console.log('[DEBUG] Tentando rota alternativa /users...');

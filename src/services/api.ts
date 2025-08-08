@@ -40,26 +40,32 @@ api.interceptors.request.use(config => {
 // Interceptor para lidar com respostas e tokens expirados
 api.interceptors.response.use(
   (response) => {
+    console.log('[API] ✅ Resposta recebida:', response.config.url, response.status);
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
+    
+    console.log('[API] ❌ Erro na requisição:', {
+      url: originalRequest.url,
+      method: originalRequest.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
 
     // Se for erro 401 (Unauthorized) e não for uma tentativa de renovação
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      console.log('[API] ❌ Token expirado (401), tentando renovar...');
+      console.log('[API] ❌ Token expirado (401), mas não redirecionando automaticamente...');
       
       // Limpar token inválido
       localStorage.removeItem('token');
       
-      // Redirecionar para login se estivermos em uma página protegida
-      if (window.location.pathname.includes('/admin') || window.location.pathname.includes('/controller')) {
-        console.log('[API] 🔄 Redirecionando para login...');
-        window.location.href = '/auth';
-        return Promise.reject(error);
-      }
+      // Não redirecionar automaticamente - deixar o componente decidir
+      console.log('[API] 🔄 Token removido, mas mantendo na página atual');
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

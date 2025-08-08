@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Users, Search, Edit, Plus, Trash2 } from "lucide-react";
 import { useUserManagement } from "@/hooks/useUserManagement";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface User {
   id: string;
@@ -23,6 +24,7 @@ interface User {
 }
 
 const UserManagement = () => {
+  const { user, token } = useAuth();
   const { users, loading, fetchUsers, createUser, updateUser, deleteUser } = useUserManagement();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -35,8 +37,19 @@ const UserManagement = () => {
   });
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    // Debug: verificar autenticação
+    console.log('[DEBUG UserManagement] Componente montado');
+    console.log('[DEBUG UserManagement] User:', user);
+    console.log('[DEBUG UserManagement] Token:', token ? 'Presente' : 'Ausente');
+    console.log('[DEBUG UserManagement] Token (primeiros 20 chars):', token ? token.substring(0, 20) + '...' : 'Nenhum');
+    
+    if (user && token) {
+      console.log('[DEBUG UserManagement] Usuário autenticado, buscando usuários...');
+      fetchUsers();
+    } else {
+      console.log('[DEBUG UserManagement] Usuário não autenticado ou sem token');
+    }
+  }, [user, token]);
 
   // Filtrar usuários por busca
   const filteredUsers = users.filter(user => {
